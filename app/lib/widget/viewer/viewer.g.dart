@@ -40,8 +40,7 @@ extension $ViewerPositionInfoCopyWith on ViewerPositionInfo {
 abstract class $_StateCopyWithWorker {
   _State call({
     Map<int, String>? pageAfIdMap,
-    List<FileDescriptor>? remoteFiles,
-    List<LocalFile>? localFiles,
+    Map<String, AnyFile>? anyFiles,
     Map<String, AnyFile>? mergedAfIdFileMap,
     Map<String, _PageState>? fileStates,
     int? index,
@@ -57,6 +56,8 @@ abstract class $_StateCopyWithWorker {
     Unique<bool>? closeDetailPane,
     bool? isZoomed,
     bool? isInitialLoad,
+    int? forwardBound,
+    int? backwardBound,
     bool? isShowAppBar,
     List<ViewerAppBarButtonType>? appBarButtons,
     List<ViewerAppBarButtonType>? bottomAppBarButtons,
@@ -69,6 +70,7 @@ abstract class $_StateCopyWithWorker {
     Unique<_SlideshowRequest?>? slideshowRequest,
     Unique<_SetAsRequest?>? setAsRequest,
     Unique<_UploadRequest?>? uploadRequest,
+    Unique<_DeleteRequest?>? deleteRequest,
     bool? isBusy,
     ExceptionEvent? error,
   });
@@ -80,8 +82,7 @@ class _$_StateCopyWithWorkerImpl implements $_StateCopyWithWorker {
   @override
   _State call({
     dynamic pageAfIdMap,
-    dynamic remoteFiles,
-    dynamic localFiles,
+    dynamic anyFiles,
     dynamic mergedAfIdFileMap,
     dynamic fileStates,
     dynamic index,
@@ -97,6 +98,8 @@ class _$_StateCopyWithWorkerImpl implements $_StateCopyWithWorker {
     dynamic closeDetailPane,
     dynamic isZoomed,
     dynamic isInitialLoad,
+    dynamic forwardBound = copyWithNull,
+    dynamic backwardBound = copyWithNull,
     dynamic isShowAppBar,
     dynamic appBarButtons,
     dynamic bottomAppBarButtons,
@@ -109,37 +112,32 @@ class _$_StateCopyWithWorkerImpl implements $_StateCopyWithWorker {
     dynamic slideshowRequest,
     dynamic setAsRequest,
     dynamic uploadRequest,
+    dynamic deleteRequest,
     dynamic isBusy,
     dynamic error = copyWithNull,
   }) {
     return _State(
       pageAfIdMap: pageAfIdMap as Map<int, String>? ?? that.pageAfIdMap,
-      remoteFiles: remoteFiles as List<FileDescriptor>? ?? that.remoteFiles,
-      localFiles: localFiles as List<LocalFile>? ?? that.localFiles,
+      anyFiles: anyFiles as Map<String, AnyFile>? ?? that.anyFiles,
       mergedAfIdFileMap:
           mergedAfIdFileMap as Map<String, AnyFile>? ?? that.mergedAfIdFileMap,
       fileStates: fileStates as Map<String, _PageState>? ?? that.fileStates,
       index: index as int? ?? that.index,
-      currentFile:
-          currentFile == copyWithNull
-              ? that.currentFile
-              : currentFile as AnyFile?,
-      currentFileState:
-          currentFileState == copyWithNull
-              ? that.currentFileState
-              : currentFileState as _PageState?,
-      collection:
-          collection == copyWithNull
-              ? that.collection
-              : collection as Collection?,
-      collectionItemsController:
-          collectionItemsController == copyWithNull
-              ? that.collectionItemsController
-              : collectionItemsController as CollectionItemsController?,
-      collectionItems:
-          collectionItems == copyWithNull
-              ? that.collectionItems
-              : collectionItems as Map<String, CollectionFileItem>?,
+      currentFile: currentFile == copyWithNull
+          ? that.currentFile
+          : currentFile as AnyFile?,
+      currentFileState: currentFileState == copyWithNull
+          ? that.currentFileState
+          : currentFileState as _PageState?,
+      collection: collection == copyWithNull
+          ? that.collection
+          : collection as Collection?,
+      collectionItemsController: collectionItemsController == copyWithNull
+          ? that.collectionItemsController
+          : collectionItemsController as CollectionItemsController?,
+      collectionItems: collectionItems == copyWithNull
+          ? that.collectionItems
+          : collectionItems as Map<String, CollectionFileItem>?,
       isShowDetailPane: isShowDetailPane as bool? ?? that.isShowDetailPane,
       isClosingDetailPane:
           isClosingDetailPane as bool? ?? that.isClosingDetailPane,
@@ -151,6 +149,12 @@ class _$_StateCopyWithWorkerImpl implements $_StateCopyWithWorker {
       closeDetailPane: closeDetailPane as Unique<bool>? ?? that.closeDetailPane,
       isZoomed: isZoomed as bool? ?? that.isZoomed,
       isInitialLoad: isInitialLoad as bool? ?? that.isInitialLoad,
+      forwardBound: forwardBound == copyWithNull
+          ? that.forwardBound
+          : forwardBound as int?,
+      backwardBound: backwardBound == copyWithNull
+          ? that.backwardBound
+          : backwardBound as int?,
       isShowAppBar: isShowAppBar as bool? ?? that.isShowAppBar,
       appBarButtons:
           appBarButtons as List<ViewerAppBarButtonType>? ?? that.appBarButtons,
@@ -178,6 +182,8 @@ class _$_StateCopyWithWorkerImpl implements $_StateCopyWithWorker {
           setAsRequest as Unique<_SetAsRequest?>? ?? that.setAsRequest,
       uploadRequest:
           uploadRequest as Unique<_UploadRequest?>? ?? that.uploadRequest,
+      deleteRequest:
+          deleteRequest as Unique<_DeleteRequest?>? ?? that.deleteRequest,
       isBusy: isBusy as bool? ?? that.isBusy,
       error: error == copyWithNull ? that.error : error as ExceptionEvent?,
     );
@@ -209,8 +215,9 @@ class _$_PageStateCopyWithWorkerImpl implements $_PageStateCopyWithWorker {
     dynamic shouldPlayLivePhoto,
   }) {
     return _PageState(
-      itemHeight:
-          itemHeight == copyWithNull ? that.itemHeight : itemHeight as double?,
+      itemHeight: itemHeight == copyWithNull
+          ? that.itemHeight
+          : itemHeight as double?,
       hasLoaded: hasLoaded as bool? ?? that.hasLoaded,
       shouldPlayLivePhoto:
           shouldPlayLivePhoto as bool? ?? that.shouldPlayLivePhoto,
@@ -279,7 +286,7 @@ extension _$ViewerContentProviderResultToString on ViewerContentProviderResult {
 extension _$_StateToString on _State {
   String _$toString() {
     // ignore: unnecessary_string_interpolations
-    return "_State {pageAfIdMap: {length: ${pageAfIdMap.length}}, remoteFiles: [length: ${remoteFiles.length}], localFiles: [length: ${localFiles.length}], mergedAfIdFileMap: {length: ${mergedAfIdFileMap.length}}, fileStates: {length: ${fileStates.length}}, index: $index, currentFile: $currentFile, currentFileState: $currentFileState, collection: $collection, collectionItemsController: $collectionItemsController, collectionItems: ${collectionItems == null ? null : "{length: ${collectionItems!.length}}"}, isShowDetailPane: $isShowDetailPane, isClosingDetailPane: $isClosingDetailPane, isDetailPaneActive: $isDetailPaneActive, openDetailPaneRequest: $openDetailPaneRequest, closeDetailPane: $closeDetailPane, isZoomed: $isZoomed, isInitialLoad: $isInitialLoad, isShowAppBar: $isShowAppBar, appBarButtons: [length: ${appBarButtons.length}], bottomAppBarButtons: [length: ${bottomAppBarButtons.length}], pendingRemoveFile: $pendingRemoveFile, removedAfIds: [length: ${removedAfIds.length}], imageEditorRequest: $imageEditorRequest, imageEnhancerRequest: $imageEnhancerRequest, shareRequest: $shareRequest, startSlideshowRequest: $startSlideshowRequest, slideshowRequest: $slideshowRequest, setAsRequest: $setAsRequest, uploadRequest: $uploadRequest, isBusy: $isBusy, error: $error}";
+    return "_State {pageAfIdMap: {length: ${pageAfIdMap.length}}, anyFiles: {length: ${anyFiles.length}}, mergedAfIdFileMap: {length: ${mergedAfIdFileMap.length}}, fileStates: {length: ${fileStates.length}}, index: $index, currentFile: $currentFile, currentFileState: $currentFileState, collection: $collection, collectionItemsController: $collectionItemsController, collectionItems: ${collectionItems == null ? null : "{length: ${collectionItems!.length}}"}, isShowDetailPane: $isShowDetailPane, isClosingDetailPane: $isClosingDetailPane, isDetailPaneActive: $isDetailPaneActive, openDetailPaneRequest: $openDetailPaneRequest, closeDetailPane: $closeDetailPane, isZoomed: $isZoomed, isInitialLoad: $isInitialLoad, forwardBound: $forwardBound, backwardBound: $backwardBound, isShowAppBar: $isShowAppBar, appBarButtons: [length: ${appBarButtons.length}], bottomAppBarButtons: [length: ${bottomAppBarButtons.length}], pendingRemoveFile: $pendingRemoveFile, removedAfIds: [length: ${removedAfIds.length}], imageEditorRequest: $imageEditorRequest, imageEnhancerRequest: $imageEnhancerRequest, shareRequest: $shareRequest, startSlideshowRequest: $startSlideshowRequest, slideshowRequest: $slideshowRequest, setAsRequest: $setAsRequest, uploadRequest: $uploadRequest, deleteRequest: $deleteRequest, isBusy: $isBusy, error: $error}";
   }
 }
 
@@ -336,6 +343,20 @@ extension _$_NewPageContentToString on _NewPageContent {
   String _$toString() {
     // ignore: unnecessary_string_interpolations
     return "_NewPageContent {value: {length: ${value.length}}}";
+  }
+}
+
+extension _$_SetForwardBoundToString on _SetForwardBound {
+  String _$toString() {
+    // ignore: unnecessary_string_interpolations
+    return "_SetForwardBound {value: $value}";
+  }
+}
+
+extension _$_SetBackwardBoundToString on _SetBackwardBound {
+  String _$toString() {
+    // ignore: unnecessary_string_interpolations
+    return "_SetBackwardBound {value: $value}";
   }
 }
 
@@ -448,6 +469,13 @@ extension _$_DeleteToString on _Delete {
   String _$toString() {
     // ignore: unnecessary_string_interpolations
     return "_Delete {afId: $afId}";
+  }
+}
+
+extension _$_DeleteWithHintToString on _DeleteWithHint {
+  String _$toString() {
+    // ignore: unnecessary_string_interpolations
+    return "_DeleteWithHint {file: $file, hint: ${hint.name}}";
   }
 }
 

@@ -7,10 +7,11 @@ import 'package:logging/logging.dart';
 import 'package:mutex/mutex.dart';
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/controller/files_controller.dart';
+import 'package:nc_photos/controller/server_controller.dart';
 import 'package:nc_photos/debug_util.dart';
 import 'package:nc_photos/di_container.dart';
 import 'package:nc_photos/entity/collection.dart';
-import 'package:nc_photos/entity/collection/adapter.dart';
+import 'package:nc_photos/entity/collection/worker/factory.dart';
 import 'package:nc_photos/entity/collection_item.dart';
 import 'package:nc_photos/entity/collection_item/new_item.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
@@ -45,6 +46,7 @@ class CollectionItemsController {
   CollectionItemsController(
     this._c, {
     required this.filesController,
+    required this.serverController,
     required this.account,
     required this.collection,
     required this.onCollectionUpdated,
@@ -98,14 +100,13 @@ class CollectionItemsController {
     final isInited = _isDataStreamInited;
     final List<FileDescriptor> toAdd;
     if (isInited) {
-      toAdd =
-          files
-              .where(
-                (a) => _dataStreamController.value.items
-                    .whereType<CollectionFileItem>()
-                    .every((b) => !a.compareServerIdentity(b.file)),
-              )
-              .toList();
+      toAdd = files
+          .where(
+            (a) => _dataStreamController.value.items
+                .whereType<CollectionFileItem>()
+                .every((b) => !a.compareServerIdentity(b.file)),
+          )
+          .toList();
       _log.info("[addFiles] Adding ${toAdd.length} non duplicated files");
       if (toAdd.isEmpty) {
         return;
@@ -165,27 +166,26 @@ class CollectionItemsController {
           });
         }
         // convert intermediate items
-        finalize =
-            (await finalize.asyncMap((e) async {
-              try {
-                if (e is NewCollectionFileItem) {
-                  return await CollectionAdapter.of(
-                    _c,
-                    account,
-                    collection,
-                  ).adaptToNewItem(e);
-                } else {
-                  return e;
-                }
-              } catch (e, stackTrace) {
-                _log.severe(
-                  "[addFiles] Item not found in resulting collection: $e",
-                  e,
-                  stackTrace,
-                );
-                return null;
-              }
-            })).nonNulls.toList();
+        finalize = (await finalize.asyncMap((e) async {
+          try {
+            if (e is NewCollectionFileItem) {
+              return await CollectionWorkerFactory.adaptToNewItem(
+                _c,
+                account,
+                collection,
+              ).adaptToNewItem(e);
+            } else {
+              return e;
+            }
+          } catch (e, stackTrace) {
+            _log.severe(
+              "[addFiles] Item not found in resulting collection: $e",
+              e,
+              stackTrace,
+            );
+            return null;
+          }
+        })).nonNulls.toList();
         _dataStreamController.addWithValue(
           (value) => value.copyWith(items: finalize),
         );
@@ -206,10 +206,9 @@ class CollectionItemsController {
     if (isInited) {
       _dataStreamController.addWithValue(
         (value) => value.copyWith(
-          items:
-              value.items
-                  .where((a) => !items.any((b) => identical(a, b)))
-                  .toList(),
+          items: value.items
+              .where((a) => !items.any((b) => identical(a, b)))
+              .toList(),
         ),
       );
     }
@@ -319,7 +318,13 @@ class CollectionItemsController {
       List<CollectionItem>? items;
       ExceptionEvent? originalException;
       try {
-        await for (final r in ListCollectionItem(_c)(account, collection)) {
+        await for (final r in ListCollectionItem(_c)(
+          account,
+          collection,
+          shouldUseRecognizeApiKey: serverController.isSupported(
+            ServerFeature.recognizeApiKey,
+          ),
+        )) {
           items = r;
           _dataStreamController.add(
             CollectionItemStreamData(items: r, hasNext: true),
@@ -339,6 +344,9 @@ class CollectionItemsController {
           await for (final r in ListCollectionItem(_c.withLocalRepo())(
             account,
             collection,
+            shouldUseRecognizeApiKey: serverController.isSupported(
+              ServerFeature.recognizeApiKey,
+            ),
           )) {
             items = r;
             _dataStreamController.add(
@@ -382,28 +390,27 @@ class CollectionItemsController {
       return;
     }
     await _mutex.protect(() async {
-      final newItems =
-          _dataStreamController.value.items
-              .map((e) {
-                if (e is CollectionFileItem) {
-                  final file = ev.dataMap[e.file.fdId];
-                  if (file == null) {
-                    if (file_util.isNcAlbumFile(account, e.file)) {
-                      // file shared with us are not in our db
-                      return e;
-                    } else {
-                      // removed
-                      return null;
-                    }
-                  } else {
-                    return e.copyWith(file: file.replacePath(e.file.fdPath));
-                  }
-                } else {
+      final newItems = _dataStreamController.value.items
+          .map((e) {
+            if (e is CollectionFileItem) {
+              final file = ev.dataMap[e.file.fdId];
+              if (file == null) {
+                if (file_util.isNcAlbumFile(account, e.file)) {
+                  // file shared with us are not in our db
                   return e;
+                } else {
+                  // removed
+                  return null;
                 }
-              })
-              .nonNulls
-              .toList();
+              } else {
+                return e.copyWith(file: file.replacePath(e.file.fdPath));
+              }
+            } else {
+              return e;
+            }
+          })
+          .nonNulls
+          .toList();
       _dataStreamController.addWithValue(
         (value) => value.copyWith(items: newItems),
       );
@@ -412,6 +419,7 @@ class CollectionItemsController {
 
   final DiContainer _c;
   final FilesController filesController;
+  final ServerController serverController;
   final Account account;
   Collection collection;
   ValueChanged<Collection> onCollectionUpdated;

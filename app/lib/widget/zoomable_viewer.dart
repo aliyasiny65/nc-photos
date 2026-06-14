@@ -76,7 +76,7 @@ class _ZoomableViewerState extends State<ZoomableViewer>
         },
         child: InteractiveViewer(
           minScale: 1.0,
-          maxScale: 3.5,
+          maxScale: 10,
           transformationController: _transformationController,
           panEnabled: _isZoomed,
           // allow the image to be zoomed to fill the whole screen
@@ -113,10 +113,9 @@ class _ZoomableViewerState extends State<ZoomableViewer>
     final originY = -_prevFingerPosition.dy / 2;
     final anim = Matrix4Tween(
       begin: Matrix4.identity(),
-      end:
-          Matrix4.identity()
-            ..scale(2.0)
-            ..translate(originX, originY),
+      end: Matrix4.identity()
+        ..scaleByDouble(2, 2, 2, 1)
+        ..translateByDouble(originX, originY, 0, 1),
     ).animate(animController);
     animController
       ..addListener(() {

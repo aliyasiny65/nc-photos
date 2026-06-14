@@ -1,4 +1,4 @@
-part of '../protected_page_password_auth_dialog.dart';
+part of 'protected_page_password_auth_dialog.dart';
 
 class _DialogBody extends StatelessWidget {
   const _DialogBody();
@@ -51,10 +51,9 @@ class _PasswordInputState extends State<_PasswordInput> {
               _isVisible = !_isVisible;
             });
           },
-          icon:
-              _isVisible
-                  ? const Icon(Icons.visibility_outlined)
-                  : const Icon(Icons.visibility_off_outlined),
+          icon: _isVisible
+              ? const Icon(Icons.visibility_outlined)
+              : const Icon(Icons.visibility_off_outlined),
         ),
       ),
       onSubmitted: (value) {

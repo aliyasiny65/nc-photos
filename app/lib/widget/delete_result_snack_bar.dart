@@ -18,31 +18,32 @@ SnackBar buildDeleteResultSnackBar(
     failureText = (_) => L10n.global().deleteFailureNotification;
   } else {
     successText = L10n.global().deleteSelectedSuccessNotification;
-    failureText =
-        (count) => L10n.global().deleteSelectedFailureNotification(count);
+    failureText = (count) =>
+        L10n.global().deleteSelectedFailureNotification(count);
   }
-  final trashAction =
-      isMoveToTrash
-          ? SnackBarAction(
-            label: L10n.global().albumTrashLabel,
-            onPressed: () {
-              NavigationManager().getNavigator()?.pushNamed(
-                TrashbinBrowser.routeName,
-                arguments: TrashbinBrowserArguments(account),
-              );
-            },
-          )
-          : null;
+  final trashAction = isMoveToTrash
+      ? SnackBarAction(
+          label: L10n.global().albumTrashLabel,
+          onPressed: () {
+            NavigationManager().getNavigator()?.pushNamed(
+              TrashbinBrowser.routeName,
+              arguments: TrashbinBrowserArguments(account),
+            );
+          },
+        )
+      : null;
   if (failureCount == 0) {
     return SnackBar(
       content: Text(successText),
       duration: k.snackBarDurationNormal,
+      persist: false,
       action: trashAction,
     );
   } else {
     return SnackBar(
       content: Text(failureText(failureCount)),
       duration: k.snackBarDurationNormal,
+      persist: false,
       action: trashAction,
     );
   }

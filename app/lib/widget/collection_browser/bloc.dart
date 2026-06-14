@@ -1,4 +1,4 @@
-part of '../collection_browser.dart';
+part of 'collection_browser.dart';
 
 @npLog
 class _Bloc extends Bloc<_Event, _State>
@@ -9,13 +9,14 @@ class _Bloc extends Bloc<_Event, _State>
     required this.prefController,
     required this.collectionsController,
     required this.filesController,
+    required this.serverController,
     required this.db,
     required Collection collection,
+    required this.dateHeight,
   }) : _c = container,
-       _isAdHocCollection =
-           !collectionsController.stream.value.data.any(
-             (e) => e.collection.compareIdentity(collection),
-           ),
+       _isAdHocCollection = !collectionsController.stream.value.data.any(
+         (e) => e.collection.compareIdentity(collection),
+       ),
        super(
          _State.init(
            collection: collection,
@@ -31,17 +32,30 @@ class _Bloc extends Bloc<_Event, _State>
     on<_ImportPendingSharedCollection>(_onImportPendingSharedCollection);
 
     on<_Download>(_onDownload);
+    on<_StartSlideshow>(_onStartSlideshow);
+    on<_StartSlideshowResult>(_onStartSlideshowResult);
 
     on<_BeginEdit>(_onBeginEdit);
     on<_EditName>(_onEditName);
+    on<_RequestAddLabel>(_onRequestAddLabel);
+    on<_RequestAddLabel2>(_onRequestAddLabel2);
     on<_AddLabelToCollection>(_onAddLabelToCollection);
+    on<_RequestEditLabel>(_onRequestEditLabel);
+    on<_EditLabel>(_onEditLabel);
     on<_RequestAddMap>(_onRequestAddMap);
+    on<_RequestAddMap2>(_onRequestAddMap2);
     on<_AddMapToCollection>(_onAddMapToCollection);
+    on<_RequestEditMap>(_onRequestEditMap);
+    on<_EditMap>(_onEditMap);
     on<_EditSort>(_onEditSort);
     on<_EditManualSort>(_onEditManualSort);
     on<_TransformEditItems>(_onTransformEditItems);
     on<_DoneEdit>(_onDoneEdit, transformer: concurrent());
     on<_CancelEdit>(_onCancelEdit);
+    on<_CancelEditPickerMode>((ev, emit) {
+      _log.info(ev);
+      emit(state.copyWith(editPickerMode: null));
+    });
 
     on<_UnsetCover>(_onUnsetCover);
 
@@ -56,12 +70,15 @@ class _Bloc extends Bloc<_Event, _State>
       transformer: concurrent(),
     );
     on<_DeleteSelectedItems>(_onDeleteSelectedItems);
+    on<_ShareSelectedItems>(_onShareSelectedItems);
 
     on<_SetDragging>(_onSetDragging);
 
     on<_StartScaling>(_onStartScaling);
     on<_EndScaling>(_onEndScaling);
     on<_SetScale>(_onSetScale);
+
+    on<_SetCoverColorScheme>(_onSetCoverColorScheme);
 
     on<_SetError>(_onSetError);
     on<_SetMessage>(_onSetMessage);
@@ -126,7 +143,7 @@ class _Bloc extends Bloc<_Event, _State>
   }
 
   bool isCollectionCapabilityPermitted(CollectionCapability capability) {
-    return CollectionAdapter.of(
+    return CollectionWorkerFactory.isPermitted(
       _c,
       account,
       state.collection,
@@ -147,12 +164,11 @@ class _Bloc extends Bloc<_Event, _State>
       forEach(
         emit,
         itemsController.stream,
-        onData:
-            (data) => state.copyWith(
-              items: _filterItems(data.items, state.itemsWhitelist),
-              rawItems: data.items,
-              isLoading: data.hasNext,
-            ),
+        onData: (data) => state.copyWith(
+          items: _filterItems(data.items, state.itemsWhitelist),
+          rawItems: data.items,
+          isLoading: data.hasNext,
+        ),
       ),
       forEach(
         emit,
@@ -174,11 +190,10 @@ class _Bloc extends Bloc<_Event, _State>
       forEach(
         emit,
         filesController.errorStream,
-        onData:
-            (data) => state.copyWith(
-              isLoading: false,
-              error: ExceptionEvent(data.error, data.stackTrace),
-            ),
+        onData: (data) => state.copyWith(
+          isLoading: false,
+          error: ExceptionEvent(data.error, data.stackTrace),
+        ),
       ),
     ]);
   }
@@ -218,6 +233,36 @@ class _Bloc extends Bloc<_Event, _State>
     }
   }
 
+  void _onStartSlideshow(_StartSlideshow ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        startSlideshowRequest: Unique(const _StartSlideshowRequest()),
+      ),
+    );
+  }
+
+  void _onStartSlideshowResult(_StartSlideshowResult ev, _Emitter emit) {
+    _log.info(ev);
+    final afIds = state.items
+        .whereType<CollectionFileItem>()
+        .map((e) => AnyFileNextcloudProvider.toAfId(e.file.fdId))
+        .toList();
+    if (afIds.isEmpty) {
+      return;
+    }
+    final req = _SlideshowRequest(
+      afIds: afIds,
+      collectionId: state.collection.id,
+      config: ev.config,
+    );
+    unawaited(prefController.setSlideshowDuration(ev.config.duration));
+    unawaited(prefController.setSlideshowShuffle(ev.config.isShuffle));
+    unawaited(prefController.setSlideshowRepeat(ev.config.isRepeat));
+    unawaited(prefController.setSlideshowReverse(ev.config.isReverse));
+    emit(state.copyWith(slideshowRequest: Unique(req)));
+  }
+
   void _onBeginEdit(_BeginEdit ev, Emitter<_State> emit) {
     _log.info(ev);
     emit(state.copyWith(isEditMode: true));
@@ -228,49 +273,128 @@ class _Bloc extends Bloc<_Event, _State>
     emit(state.copyWith(editName: ev.name));
   }
 
-  void _onAddLabelToCollection(_AddLabelToCollection ev, Emitter<_State> emit) {
+  void _onRequestAddLabel(_RequestAddLabel ev, _Emitter emit) {
     _log.info(ev);
-    assert(isCollectionCapabilityPermitted(CollectionCapability.labelItem));
+    if (state.transformedItems.isNotEmpty) {
+      emit(state.copyWith(editPickerMode: _EditPickerMode.label));
+    } else {
+      add(const _RequestAddLabel2(before: null));
+    }
+  }
+
+  void _onRequestAddLabel2(_RequestAddLabel2 ev, _Emitter emit) {
+    _log.info(ev);
     emit(
       state.copyWith(
-        editItems: [
-          NewCollectionLabelItem(ev.label, clock.now().toUtc()),
-          ...state.editItems ?? state.items,
-        ],
+        editPickerMode: null,
+        newLabelRequest: Unique(_NewLabelRequest(before: ev.before)),
       ),
     );
   }
 
-  Future<void> _onRequestAddMap(_RequestAddMap ev, _Emitter emit) async {
+  void _onAddLabelToCollection(_AddLabelToCollection ev, Emitter<_State> emit) {
     _log.info(ev);
-    emit(state.copyWith(isAddMapBusy: true));
+    assert(isCollectionCapabilityPermitted(CollectionCapability.labelItem));
+    var at = 0;
+    if (ev.before != null) {
+      at = (state.editItems ?? state.items).indexOf(ev.before!.original);
+      if (at == -1) {
+        at = 0;
+      }
+    }
+    emit(
+      state.copyWith(
+        editItems: (state.editItems ?? state.items).inserted(
+          at,
+          NewCollectionLabelItem(ev.label, clock.now().toUtc()),
+        ),
+      ),
+    );
+  }
+
+  void _onRequestEditLabel(_RequestEditLabel ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(editLabelRequest: Unique(_EditLabelRequest(ev.item))));
+  }
+
+  void _onEditLabel(_EditLabel ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        editItems: (state.editItems ?? state.items).map((e) {
+          if (e.id == ev.item.id) {
+            return NewCollectionLabelItem(ev.newText, clock.now().toUtc());
+          } else {
+            return e;
+          }
+        }).toList(),
+      ),
+    );
+  }
+
+  void _onRequestAddMap(_RequestAddMap ev, _Emitter emit) {
+    _log.info(ev);
+    if (state.transformedItems.isNotEmpty) {
+      emit(state.copyWith(editPickerMode: _EditPickerMode.map));
+    } else {
+      add(const _RequestAddMap2(before: null));
+    }
+  }
+
+  Future<void> _onRequestAddMap2(_RequestAddMap2 ev, _Emitter emit) async {
+    _log.info(ev);
+    emit(state.copyWith(isAddMapBusy: true, editPickerMode: null));
+    MapCoord? mapCoord;
     try {
-      final location = await db.getFirstLocationOfFileIds(
-        account: account.toDb(),
-        fileIds:
-            state.transformedItems
+      if (ev.before != null) {
+        final interest = state.editTransformedItems ?? state.transformedItems;
+        final i = interest.indexOf(ev.before!);
+        if (i != -1) {
+          // take the first gps data from the next 20 files
+          final files = await FindFile(_c).call(
+            account,
+            interest
+                .pySlice(i)
                 .whereType<_FileItem>()
                 .map((e) => e.file.fdId)
+                .take(20)
                 .toList(),
-      );
-      final mapCoord = location?.let(
-        (e) => MapCoord(e.latitude!, e.longitude!),
-      );
+            onFileNotFound: (_) {},
+          );
+          final location = files
+              .firstWhereOrNull((e) => e.metadata?.gpsCoord != null)
+              ?.metadata
+              ?.gpsCoord;
+          mapCoord = location?.let((e) => MapCoord(e.lat, e.lng));
+        }
+      }
+      if (mapCoord == null && state.transformedItems.isNotEmpty) {
+        final latlng = await db.getFirstLocationLatLngOfFileIds(
+          account: account.toDb(),
+          fileIds: state.transformedItems
+              .whereType<_FileItem>()
+              .map((e) => e.file.fdId)
+              .toList(),
+        );
+        mapCoord = latlng?.let((e) => MapCoord(e.lat, e.lng));
+      }
       emit(
         state.copyWith(
           placePickerRequest: Unique(
-            _PlacePickerRequest(initialPosition: mapCoord),
+            _PlacePickerRequest(initialPosition: mapCoord, before: ev.before),
           ),
         ),
       );
     } catch (e, stackTrace) {
       _log.severe(
-        "[_onRequestAddMap] Failed while getFirstLocationOfFileIds",
+        "[_onRequestAddMap2] Failed while getFirstLocationOfFileIds",
         e,
         stackTrace,
       );
       emit(
-        state.copyWith(placePickerRequest: Unique(const _PlacePickerRequest())),
+        state.copyWith(
+          placePickerRequest: Unique(_PlacePickerRequest(before: ev.before)),
+        ),
       );
     } finally {
       emit(state.copyWith(isAddMapBusy: false));
@@ -280,12 +404,39 @@ class _Bloc extends Bloc<_Event, _State>
   void _onAddMapToCollection(_AddMapToCollection ev, Emitter<_State> emit) {
     _log.info(ev);
     assert(isCollectionCapabilityPermitted(CollectionCapability.mapItem));
+    var at = 0;
+    if (ev.before != null) {
+      at = (state.editItems ?? state.items).indexOf(ev.before!.original);
+      if (at == -1) {
+        at = 0;
+      }
+    }
     emit(
       state.copyWith(
-        editItems: [
+        editItems: (state.editItems ?? state.items).inserted(
+          at,
           NewCollectionMapItem(ev.location, clock.now().toUtc()),
-          ...state.editItems ?? state.items,
-        ],
+        ),
+      ),
+    );
+  }
+
+  void _onRequestEditMap(_RequestEditMap ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(editMapRequest: Unique(_EditMapRequest(ev.item))));
+  }
+
+  void _onEditMap(_EditMap ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        editItems: (state.editItems ?? state.items).map((e) {
+          if (e.id == ev.item.id) {
+            return NewCollectionMapItem(ev.newLocation, clock.now().toUtc());
+          } else {
+            return e;
+          }
+        }).toList(),
       ),
     );
   }
@@ -307,8 +458,10 @@ class _Bloc extends Bloc<_Event, _State>
     emit(
       state.copyWith(
         editSort: CollectionItemSort.manual,
-        editItems:
-            ev.sorted.whereType<_ActualItem>().map((e) => e.original).toList(),
+        editItems: ev.sorted
+            .whereType<_ActualItem>()
+            .map((e) => e.original)
+            .toList(),
         editTransformedItems: ev.sorted,
       ),
     );
@@ -375,18 +528,27 @@ class _Bloc extends Bloc<_Event, _State>
 
   void _onSetSelectedItems(_SetSelectedItems ev, Emitter<_State> emit) {
     _log.info(ev);
-    final adapter = CollectionAdapter.of(_c, account, state.collection);
+    final itemRemovableWorker = CollectionWorkerFactory.isItemRemovable(
+      _c,
+      account,
+      state.collection,
+    );
+    final itemDeletableWorker = CollectionWorkerFactory.isItemDeletable(
+      _c,
+      account,
+      state.collection,
+    );
     emit(
       state.copyWith(
         selectedItems: ev.items,
         isSelectionRemovable: ev.items
             .whereType<_ActualItem>()
             .map((e) => e.original)
-            .any(adapter.isItemRemovable),
+            .any(itemRemovableWorker.isItemRemovable),
         isSelectionDeletable: ev.items
             .whereType<_ActualItem>()
             .map((e) => e.original)
-            .any(adapter.isItemDeletable),
+            .any(itemDeletableWorker.isItemDeletable),
       ),
     );
   }
@@ -398,8 +560,10 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected.whereType<_FileItem>().map((e) => e.file).toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .toList();
     if (selectedFiles.isNotEmpty) {
       unawaited(DownloadHandler(_c).downloadFiles(account, selectedFiles));
     }
@@ -412,8 +576,10 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected.whereType<_FileItem>().map((e) => e.file).toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .toList();
     if (selectedFiles.isNotEmpty) {
       final targetController = collectionsController.stream.value
           .itemsControllerByCollection(ev.collection);
@@ -432,13 +598,16 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final adapter = CollectionAdapter.of(_c, account, state.collection);
-    final selectedItems =
-        selected
-            .whereType<_ActualItem>()
-            .map((e) => e.original)
-            .where(adapter.isItemRemovable)
-            .toList();
+    final itemRemovableWorker = CollectionWorkerFactory.isItemRemovable(
+      _c,
+      account,
+      state.collection,
+    );
+    final selectedItems = selected
+        .whereType<_ActualItem>()
+        .map((e) => e.original)
+        .where(itemRemovableWorker.isItemRemovable)
+        .toList();
     if (selectedItems.isNotEmpty) {
       unawaited(itemsController.removeItems(selectedItems));
     }
@@ -448,8 +617,10 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected.whereType<_FileItem>().map((e) => e.file).toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .toList();
     if (selectedFiles.isNotEmpty) {
       filesController.updateProperty(
         selectedFiles,
@@ -466,19 +637,26 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final adapter = CollectionAdapter.of(_c, account, state.collection);
-    final selectedItems =
-        selected
-            .whereType<_ActualItem>()
-            .map((e) => e.original)
-            .where(adapter.isItemRemovable)
-            .toList();
-    final selectedFiles =
-        selected
-            .whereType<_FileItem>()
-            .where((e) => adapter.isItemDeletable(e.original))
-            .map((e) => e.file)
-            .toList();
+    final itemRemovableWorker = CollectionWorkerFactory.isItemRemovable(
+      _c,
+      account,
+      state.collection,
+    );
+    final itemDeletableWorker = CollectionWorkerFactory.isItemDeletable(
+      _c,
+      account,
+      state.collection,
+    );
+    final selectedItems = selected
+        .whereType<_ActualItem>()
+        .map((e) => e.original)
+        .where(itemRemovableWorker.isItemRemovable)
+        .toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .where((e) => itemDeletableWorker.isItemDeletable(e.original))
+        .map((e) => e.file)
+        .toList();
     if (selectedFiles.isNotEmpty) {
       await filesController.remove(
         selectedFiles,
@@ -488,6 +666,27 @@ class _Bloc extends Bloc<_Event, _State>
       );
       // deleting files will also remove them from the collection
       unawaited(itemsController.removeItems(selectedItems));
+    }
+  }
+
+  void _onShareSelectedItems(_ShareSelectedItems ev, Emitter<_State> emit) {
+    _log.info(ev);
+    final selected = state.selectedItems;
+    _clearSelection(emit);
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file.toAnyFile())
+        .toList();
+    if (selectedFiles.isNotEmpty) {
+      emit(
+        state.copyWith(
+          shareRequest: Unique(_ShareRequest(files: selectedFiles)),
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(message: L10n.global().shareSelectedEmptyNotification),
+      );
     }
   }
 
@@ -522,6 +721,11 @@ class _Bloc extends Bloc<_Event, _State>
     emit(state.copyWith(scale: ev.scale));
   }
 
+  void _onSetCoverColorScheme(_SetCoverColorScheme ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(coverColorScheme: ev.value));
+  }
+
   void _onSetError(_SetError ev, Emitter<_State> emit) {
     _log.info(ev);
     emit(state.copyWith(error: ExceptionEvent(ev.error, ev.stackTrace)));
@@ -547,6 +751,7 @@ class _Bloc extends Bloc<_Event, _State>
         account: account,
         collection: collection,
         onCollectionUpdated: (_) {},
+        serverController: serverController,
       );
     }
   }
@@ -580,7 +785,7 @@ class _Bloc extends Bloc<_Event, _State>
             item.file.fdDateTime.toLocal().toDate(),
           );
           if (date != null) {
-            transformed.add(_DateItem(date: date));
+            transformed.add(_DateItem(date: date, height: dateHeight));
           }
         }
 
@@ -604,7 +809,7 @@ class _Bloc extends Bloc<_Event, _State>
             id: item.id,
             text: item.text,
             onEditPressed: () {
-              // TODO
+              add(_RequestEditLabel(item));
             },
           ),
         );
@@ -615,7 +820,7 @@ class _Bloc extends Bloc<_Event, _State>
             id: item.id,
             location: item.location,
             onEditPressed: () {
-              // TODO
+              add(_RequestEditMap(item));
             },
           ),
         );
@@ -632,19 +837,18 @@ class _Bloc extends Bloc<_Event, _State>
     if (whitelist == null) {
       return rawItems;
     }
-    final results =
-        rawItems.where((e) {
-          if (e is CollectionFileItem) {
-            if (file_util.isNcAlbumFile(account, e.file)) {
-              // file shared with us are not in our db
-              return true;
-            } else {
-              return whitelist.contains(e.file.fdId);
-            }
-          } else {
-            return true;
-          }
-        }).toList();
+    final results = rawItems.where((e) {
+      if (e is CollectionFileItem) {
+        if (file_util.isNcAlbumFile(account, e.file)) {
+          // file shared with us are not in our db
+          return true;
+        } else {
+          return whitelist.contains(e.file.fdId);
+        }
+      } else {
+        return true;
+      }
+    }).toList();
     if (rawItems.length != results.length) {
       _log.fine(
         "[_filterItems] ${rawItems.length - results.length} items filtered out",
@@ -655,13 +859,15 @@ class _Bloc extends Bloc<_Event, _State>
 
   CollectionCoverResult? _getCoverByItems() {
     try {
-      final firstFile =
-          state.transformedItems.whereType<_FileItem>().first.file;
+      final firstFile = state.transformedItems
+          .whereType<_FileItem>()
+          .first
+          .file;
       return CollectionCoverResult(
         url: getStaticViewUrlForImageFile(
           account,
           firstFile,
-          size: const SizeInt(k.coverSize, k.coverSize),
+          size: const SizeInt(k.photoLargeSize, k.photoLargeSize),
           isKeepAspectRatio: false,
         ),
         mime: firstFile.fdMime,
@@ -673,7 +879,10 @@ class _Bloc extends Bloc<_Event, _State>
 
   static CollectionCoverResult? _getCover(Collection collection) {
     try {
-      return collection.contentProvider.getCoverUrl(k.coverSize, k.coverSize);
+      return collection.contentProvider.getCoverUrl(
+        k.photoLargeSize,
+        k.photoLargeSize,
+      );
     } catch (_) {
       return null;
     }
@@ -692,7 +901,9 @@ class _Bloc extends Bloc<_Event, _State>
   final PrefController prefController;
   final CollectionsController collectionsController;
   final FilesController filesController;
+  final ServerController serverController;
   final NpDb db;
+  final double dateHeight;
   late final CollectionItemsController itemsController;
 
   /// Specify if the supplied [collection] is an "inline" one, which means it's

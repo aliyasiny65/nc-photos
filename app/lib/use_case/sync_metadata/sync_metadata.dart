@@ -5,18 +5,15 @@ import 'package:nc_photos/account.dart';
 import 'package:nc_photos/controller/account_pref_controller.dart';
 import 'package:nc_photos/controller/server_controller.dart';
 import 'package:nc_photos/db/entity_converter.dart';
-import 'package:nc_photos/entity/exif_util.dart';
 import 'package:nc_photos/entity/file.dart';
 import 'package:nc_photos/entity/file/file_cache_manager.dart';
 import 'package:nc_photos/entity/file/repo.dart';
 import 'package:nc_photos/entity/file_util.dart' as file_util;
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/geocoder_util.dart';
 import 'package:nc_photos/service/service.dart';
-import 'package:nc_photos/use_case/battery_ensurer.dart';
-import 'package:nc_photos/use_case/get_file_binary.dart';
 import 'package:nc_photos/use_case/load_metadata.dart';
 import 'package:nc_photos/use_case/update_property.dart';
-import 'package:nc_photos/use_case/wifi_ensurer.dart';
 import 'package:np_collection/np_collection.dart';
 import 'package:np_common/or_null.dart';
 import 'package:np_db/np_db.dart';
@@ -36,8 +33,7 @@ class SyncMetadata {
     required this.fileRepoRemote,
     required this.db,
     this.interrupter,
-    required this.wifiEnsurer,
-    required this.batteryEnsurer,
+    this.progressLogger,
   });
 
   Stream<File> syncAccount(
@@ -46,15 +42,17 @@ class SyncMetadata {
   ) async* {
     final bool isNcMetadataSupported;
     try {
-      isNcMetadataSupported =
-          (await _isNcMetadataSupported(account, accountPrefController))!;
+      isNcMetadataSupported = (await _isNcMetadataSupported(
+        account,
+        accountPrefController,
+      ))!;
     } catch (e) {
       _log.severe("[syncAccount] Failed to get server version", e);
       return;
     }
     final files = await db.getFilesByMissingMetadata(
       account: account.toDb(),
-      mimes: file_util.supportedImageFormatMimes,
+      mimes: file_util.supportedMetadataFormatMimes,
       ownerId: account.userId.toCaseInsensitiveString(),
     );
     _log.info("[syncAccount] Missing count: ${files.items.length}");
@@ -75,8 +73,7 @@ class SyncMetadata {
       fileRepo2: fileRepo2,
       db: db,
       interrupter: interrupter,
-      wifiEnsurer: wifiEnsurer,
-      batteryEnsurer: batteryEnsurer,
+      progressLogger: progressLogger,
     );
     await op.init();
     final stream = op.syncFiles(
@@ -95,8 +92,7 @@ class SyncMetadata {
       fileRepo2: fileRepo2,
       db: db,
       interrupter: interrupter,
-      wifiEnsurer: wifiEnsurer,
-      batteryEnsurer: batteryEnsurer,
+      progressLogger: progressLogger,
     );
     await fallback.init();
     final op = _SyncByServer(
@@ -106,6 +102,7 @@ class SyncMetadata {
       db: db,
       interrupter: interrupter,
       fallback: fallback,
+      progressLogger: progressLogger,
     );
     await op.init();
     final fileIds = <int>[];
@@ -135,6 +132,5 @@ class SyncMetadata {
   final FileRepo fileRepoRemote;
   final NpDb db;
   final Stream<void>? interrupter;
-  final WifiEnsurer wifiEnsurer;
-  final BatteryEnsurer batteryEnsurer;
+  final StreamController<String>? progressLogger;
 }

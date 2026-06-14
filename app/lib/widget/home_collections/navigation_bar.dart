@@ -1,4 +1,4 @@
-part of '../home_collections.dart';
+part of 'home_collections.dart';
 
 enum HomeCollectionsNavBarButtonType {
   // the order must not be changed
@@ -38,11 +38,10 @@ class _NavigationBarState extends State<_NavigationBar> {
               child: _BlocSelector(
                 selector: (state) => state.navBarButtons,
                 builder: (context, navBarButtons) {
-                  final buttons =
-                      navBarButtons
-                          .map((e) => _buildButton(context, e))
-                          .nonNulls
-                          .toList();
+                  final buttons = navBarButtons
+                      .map((e) => _buildButton(context, e))
+                      .nonNulls
+                      .toList();
                   return ListView.separated(
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,

@@ -1,4 +1,4 @@
-part of '../search_landing.dart';
+part of 'search_landing.dart';
 
 class _PersonItemView extends StatelessWidget {
   const _PersonItemView({
@@ -62,7 +62,7 @@ class _PlaceItemView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Expanded(child: _LabelView(label: item.name)),
+          Expanded(child: _LabelView(label: item.name.of(context))),
         ],
       ),
     );

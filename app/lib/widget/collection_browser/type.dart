@@ -1,4 +1,4 @@
-part of '../collection_browser.dart';
+part of 'collection_browser.dart';
 
 abstract class _Item implements SelectableItemMetadata, DraggableItemMetadata {
   const _Item();
@@ -120,11 +120,9 @@ class _LabelItem extends _ActualItem {
   Widget buildWidget(BuildContext context) {
     return _BlocSelector(
       selector: (state) => state.isEditMode,
-      builder:
-          (context, isEditMode) =>
-              isEditMode
-                  ? _EditLabelView(text: text, onEditPressed: onEditPressed)
-                  : _LabelView(text: text),
+      builder: (context, isEditMode) => isEditMode
+          ? _EditLabelView(text: text, onEditPressed: onEditPressed)
+          : _LabelView(text: text),
     );
   }
 
@@ -163,19 +161,14 @@ class _MapItem extends _ActualItem {
   Widget buildWidget(BuildContext context) {
     return _BlocSelector(
       selector: (state) => state.isEditMode,
-      builder:
-          (context, isEditMode) =>
-              isEditMode
-                  ? _EditMapView(
-                    location: location,
-                    onEditPressed: onEditPressed,
-                  )
-                  : _MapView(
-                    location: location,
-                    onTap: () {
-                      launchExternalMap(location);
-                    },
-                  ),
+      builder: (context, isEditMode) => isEditMode
+          ? _EditMapView(location: location, onEditPressed: onEditPressed)
+          : _MapView(
+              location: location,
+              onTap: () {
+                launchExternalMap(location);
+              },
+            ),
     );
   }
 
@@ -197,7 +190,7 @@ class _MapItem extends _ActualItem {
 }
 
 class _DateItem extends _Item {
-  const _DateItem({required this.date});
+  const _DateItem({required this.date, required this.height});
 
   @override
   bool get isSelectable => false;
@@ -206,20 +199,65 @@ class _DateItem extends _Item {
   bool get isDraggable => false;
 
   @override
-  StaggeredTile get staggeredTile => const StaggeredTile.extent(99, 32);
+  StaggeredTile get staggeredTile => StaggeredTile.extent(99, height);
 
   @override
   Widget buildWidget(BuildContext context) {
-    return PhotoListDate(date: date);
+    return SizedBox(
+      height: height,
+      child: PhotoListDate(date: date),
+    );
   }
 
   final Date date;
+  final double height;
+}
+
+class _ShareRequest {
+  const _ShareRequest({required this.files});
+
+  final List<AnyFile> files;
+}
+
+class _StartSlideshowRequest {
+  const _StartSlideshowRequest();
+}
+
+class _SlideshowRequest {
+  const _SlideshowRequest({
+    required this.afIds,
+    required this.collectionId,
+    required this.config,
+  });
+
+  final List<String> afIds;
+  final String collectionId;
+  final SlideshowConfig config;
+}
+
+class _NewLabelRequest {
+  const _NewLabelRequest({this.before});
+
+  final _ActualItem? before;
 }
 
 class _PlacePickerRequest {
-  const _PlacePickerRequest({this.initialPosition});
+  const _PlacePickerRequest({this.initialPosition, this.before});
 
   final MapCoord? initialPosition;
+  final _ActualItem? before;
+}
+
+class _EditLabelRequest {
+  const _EditLabelRequest(this.original);
+
+  final CollectionLabelItem original;
+}
+
+class _EditMapRequest {
+  const _EditMapRequest(this.original);
+
+  final CollectionMapItem original;
 }
 
 @toString

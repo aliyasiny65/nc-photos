@@ -31,28 +31,24 @@ class FilesBuilder {
     DbImageData? imageData,
     DbLocation? location,
   }) {
+    final fid = fileId++;
     files.add(
       DbFile(
-        fileId: fileId++,
+        fileId: fid,
         contentLength: contentLength,
         contentType: contentType,
         etag: etag,
-        lastModified:
-            lastModified ?? DateTime.utc(2020, 1, 2, 3, 4, 5 + files.length),
+        lastModified: lastModified ?? DateTime.utc(2020, 1, 2, 3, 4, 5 + fid),
         isCollection: isCollection,
-        usedBytes: null,
         hasPreview: hasPreview,
         ownerId: ownerId.toCi(),
         ownerDisplayName: ownerDisplayName ?? ownerId.toString(),
         relativePath: relativePath,
         isFavorite: isFavorite,
-        isArchived: null,
-        overrideDateTime: null,
         bestDateTime: _getBestDateTime(
           overrideDateTime: null,
-          dateTimeOriginal: imageData?.exifDateTimeOriginal,
-          lastModified:
-              lastModified ?? DateTime.utc(2020, 1, 2, 3, 4, 5 + files.length),
+          dateTimeOriginal: imageData?.dateTime,
+          lastModified: lastModified ?? DateTime.utc(2020, 1, 2, 3, 4, 5 + fid),
         ),
         imageData: imageData,
         location: location,
@@ -104,18 +100,18 @@ class FilesBuilder {
     isFavorite: isFavorite,
     ownerId: ownerId,
     ownerDisplayName: ownerDisplayName,
-    imageData:
-        imageData == null
-            ? DbImageData(
-              lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5),
-              fileEtag: etag,
-              width: 640,
-              height: 480,
-              exif: null,
-              exifDateTimeOriginal: null,
-              src: 0,
-            )
-            : imageData.obj,
+    imageData: imageData == null
+        ? DbImageData(
+            lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5),
+            fileEtag: etag,
+            width: 640,
+            height: 480,
+            exif: null,
+            xmp: null,
+            dateTime: null,
+            src: 0,
+          )
+        : imageData.obj,
     location: location,
   );
 
@@ -189,9 +185,8 @@ Future<void> insertFiles(
           ..addColumns([db.files.rowId])
           ..where(db.accountFiles.account.equals(sqlAccount.rowId).not())
           ..where(db.files.fileId.equals(f.fileId));
-    var rowId =
-        (await sharedQuery.map((r) => r.read(db.files.rowId)).get())
-            .firstOrNull;
+    var rowId = (await sharedQuery.map((r) => r.read(db.files.rowId)).get())
+        .firstOrNull;
     final insert = FileConverter.toSql(f);
     if (rowId == null) {
       final dbFile = await db
@@ -224,6 +219,22 @@ Future<void> insertFiles(
               accountFile: Value(sqlAccountFile.rowId),
             ),
           );
+    }
+    if (insert.imageLocationIds != null) {
+      for (final e in insert.imageLocationIds!) {
+        await db
+            .into(db.imageLocationIds)
+            .insert(e.copyWith(accountFile: Value(sqlAccountFile.rowId)));
+      }
+    }
+    if (insert.imageLocationNames != null) {
+      for (final e in insert.imageLocationNames!) {
+        await db
+            .into(db.imageLocationNames)
+            .insertOnConflictUpdate(
+              e.copyWith(dataRevision: insert.imageLocation!.dataRevision),
+            );
+      }
     }
     if (insert.trash != null) {
       await db

@@ -103,9 +103,9 @@ class _WrappedThemeSettingsState extends State<_WrappedThemeSettings>
                       subtitle: Text(
                         isUseBlackInDarkTheme
                             ? L10n.global()
-                                .settingsUseBlackInDarkThemeTrueDescription
+                                  .settingsUseBlackInDarkThemeTrueDescription
                             : L10n.global()
-                                .settingsUseBlackInDarkThemeFalseDescription,
+                                  .settingsUseBlackInDarkThemeFalseDescription,
                       ),
                       value: isUseBlackInDarkTheme,
                       onChanged: (value) {
@@ -118,6 +118,7 @@ class _WrappedThemeSettingsState extends State<_WrappedThemeSettings>
                 ),
               ]),
             ),
+            const SliverSafeBottom(),
           ],
         ),
       ),
@@ -133,10 +134,9 @@ class _SeedColorOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.seedColor != current.seedColor ||
-              previous.secondarySeedColor != current.secondarySeedColor,
+      buildWhen: (previous, current) =>
+          previous.seedColor != current.seedColor ||
+          previous.secondarySeedColor != current.secondarySeedColor,
       builder: (context, state) {
         return ListTile(
           title: Text(L10n.global().settingsSeedColorTitle),
@@ -168,11 +168,10 @@ class _SeedColorOption extends StatelessWidget {
     final parentContext = context;
     await showDialog(
       context: context,
-      builder:
-          (context) => BlocProvider.value(
-            value: parentContext.read<_Bloc>(),
-            child: const _SeedColorPicker(),
-          ),
+      builder: (context) => BlocProvider.value(
+        value: parentContext.read<_Bloc>(),
+        child: const _SeedColorPicker(),
+      ),
     );
   }
 }
@@ -200,11 +199,10 @@ class _SeedColorPickerState extends State<_SeedColorPicker> {
               leading: const SizedBox(width: 48),
               trailing: _BlocSelector<int?>(
                 selector: (state) => state.seedColor,
-                builder:
-                    (context, seedColor) => _SeedColorPickerItem(
-                      seedColor: seedColor?.run(ColorInt.new),
-                      onSelected: () => _onPrimaryTap(this.context),
-                    ),
+                builder: (context, seedColor) => _SeedColorPickerItem(
+                  seedColor: seedColor?.run(ColorInt.new),
+                  onSelected: () => _onPrimaryTap(this.context),
+                ),
               ),
               contentPadding: EdgeInsets.zero,
               onTap: () => _onPrimaryTap(context),
@@ -213,30 +211,28 @@ class _SeedColorPickerState extends State<_SeedColorPicker> {
               title: Text(L10n.global().settingsThemeSecondaryColor),
               leading: _BlocSelector<bool>(
                 selector: (state) => state.secondarySeedColor != null,
-                builder:
-                    (context, isSecondaryEnabled) => Checkbox(
-                      value: isSecondaryEnabled,
-                      onChanged: (value) {
-                        if (value == true) {
-                          _onSecondaryTap(this.context);
-                        } else {
-                          context.addEvent(
-                            _SetThemeColor(
-                              context.state.seedColor?.let(ColorInt.new),
-                              null,
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                builder: (context, isSecondaryEnabled) => Checkbox(
+                  value: isSecondaryEnabled,
+                  onChanged: (value) {
+                    if (value == true) {
+                      _onSecondaryTap(this.context);
+                    } else {
+                      context.addEvent(
+                        _SetThemeColor(
+                          context.state.seedColor?.let(ColorInt.new),
+                          null,
+                        ),
+                      );
+                    }
+                  },
+                ),
               ),
               trailing: _BlocSelector<int?>(
                 selector: (state) => state.secondarySeedColor,
-                builder:
-                    (context, secondarySeedColor) => _SeedColorPickerItem(
-                      seedColor: secondarySeedColor?.run(ColorInt.new),
-                      onSelected: () => _onSecondaryTap(this.context),
-                    ),
+                builder: (context, secondarySeedColor) => _SeedColorPickerItem(
+                  seedColor: secondarySeedColor?.run(ColorInt.new),
+                  onSelected: () => _onSecondaryTap(this.context),
+                ),
               ),
               contentPadding: EdgeInsets.zero,
               onTap: () => _onSecondaryTap(context),
@@ -273,30 +269,27 @@ class _SeedColorPickerState extends State<_SeedColorPicker> {
                       .map(
                         (e) => _PresetItemView(
                           item: e,
-                          onSelected:
-                              () => _onPresetSelected(
-                                context,
-                                primary: e.primary,
-                                secondary: e.secondary,
-                              ),
+                          onSelected: () => _onPresetSelected(
+                            context,
+                            primary: e.primary,
+                            secondary: e.secondary,
+                          ),
                         ),
                       )
                       .toList(),
             ),
           ],
         ),
-        actions:
-            SessionStorage().isSupportDynamicColor
-                ? [
-                  TextButton(
-                    onPressed: () => _onSystemColorSelected(context),
-                    child: Text(
-                      L10n.global()
-                          .settingsSeedColorPickerSystemColorButtonLabel,
-                    ),
+        actions: SessionStorage().isSupportDynamicColor
+            ? [
+                TextButton(
+                  onPressed: () => _onSystemColorSelected(context),
+                  child: Text(
+                    L10n.global().settingsSeedColorPickerSystemColorButtonLabel,
                   ),
-                ]
-                : null,
+                ),
+              ]
+            : null,
       ),
     );
   }
@@ -308,12 +301,10 @@ class _SeedColorPickerState extends State<_SeedColorPicker> {
     try {
       final color = await showDialog<ColorInt>(
         context: context,
-        builder:
-            (_) => _SeedColorCustomPicker(
-              initialColor:
-                  context.bloc.prefController.seedColorValue ??
-                  defaultSeedColor,
-            ),
+        builder: (_) => _SeedColorCustomPicker(
+          initialColor:
+              context.bloc.prefController.seedColorValue ?? defaultSeedColor,
+        ),
         barrierColor: Colors.transparent,
       );
       if (color == null) {
@@ -341,12 +332,11 @@ class _SeedColorPickerState extends State<_SeedColorPicker> {
     try {
       final color = await showDialog<ColorInt>(
         context: context,
-        builder:
-            (_) => _SeedColorCustomPicker(
-              initialColor:
-                  context.bloc.prefController.secondarySeedColorValue ??
-                  defaultSeedColor,
-            ),
+        builder: (_) => _SeedColorCustomPicker(
+          initialColor:
+              context.bloc.prefController.secondarySeedColorValue ??
+              defaultSeedColor,
+        ),
         barrierColor: Colors.transparent,
       );
       if (color == null) {
@@ -431,14 +421,9 @@ class _SeedColorPickerItem extends StatelessWidget {
     final content = SizedBox.square(
       dimension: _size,
       child: Center(
-        child:
-            seedColor != null
-                ? Icon(
-                  Icons.circle,
-                  size: _size * .9,
-                  color: seedColor?.toColor(),
-                )
-                : const Icon(Icons.edit_outlined),
+        child: seedColor != null
+            ? Icon(Icons.circle, size: _size * .9, color: seedColor?.toColor())
+            : const Icon(Icons.edit_outlined),
       ),
     );
     if (onSelected != null) {
@@ -466,27 +451,26 @@ class _PresetItemView extends StatelessWidget {
     final content = SizedBox.square(
       dimension: _size,
       child: Center(
-        child:
-            item.emoji != null
-                ? Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const Icon(
-                      Icons.circle,
-                      size: _size * .9,
-                      color: Colors.white,
-                    ),
-                    Text(
-                      item.emoji!,
-                      style: const TextStyle(fontSize: _size * .35),
-                    ),
-                  ],
-                )
-                : Icon(
-                  Icons.circle,
-                  size: _size * .9,
-                  color: item.primary.toColor(),
-                ),
+        child: item.emoji != null
+            ? Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(
+                    Icons.circle,
+                    size: _size * .9,
+                    color: Colors.white,
+                  ),
+                  Text(
+                    item.emoji!,
+                    style: const TextStyle(fontSize: _size * .35),
+                  ),
+                ],
+              )
+            : Icon(
+                Icons.circle,
+                size: _size * .9,
+                color: item.primary.toColor(),
+              ),
       ),
     );
     if (onSelected != null) {

@@ -1,4 +1,4 @@
-part of '../file_content_view.dart';
+part of 'file_content_view.dart';
 
 @npLog
 class _Bloc extends Bloc<_Event, _State> with BlocLogger {
@@ -236,11 +236,10 @@ class _Bloc extends Bloc<_Event, _State> with BlocLogger {
   }
 
   Future<VideoPlayerController> _initVideoController() async {
-    final controller =
-        await AnyFilePresenterFactory.videoPlayerController(
-          file,
-          account: account,
-        ).build();
+    final controller = await AnyFilePresenterFactory.videoPlayerController(
+      file,
+      account: account,
+    ).build();
     await controller.initialize();
     return controller;
   }

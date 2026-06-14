@@ -1,4 +1,4 @@
-part of '../home_collections.dart';
+part of 'home_collections.dart';
 
 @npLog
 class _Bloc extends Bloc<_Event, _State>
@@ -90,11 +90,10 @@ class _Bloc extends Bloc<_Event, _State>
       forEach(
         emit,
         controller.stream,
-        onData:
-            (data) => state.copyWith(
-              collections: data.data.map((d) => d.collection).toList(),
-              isLoading: data.hasNext,
-            ),
+        onData: (data) => state.copyWith(
+          collections: data.data.map((d) => d.collection).toList(),
+          isLoading: data.hasNext,
+        ),
       ),
       forEach(
         emit,

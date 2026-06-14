@@ -13,6 +13,7 @@ import 'package:nc_photos/entity/local_file.dart';
 import 'package:nc_photos/exception_event.dart';
 import 'package:nc_photos/rx_extension.dart';
 import 'package:nc_photos/use_case/local_file/find_local_file.dart';
+import 'package:nc_photos/use_case/local_file/get_local_files_summary.dart';
 import 'package:nc_photos/use_case/local_file/list_local_file.dart';
 import 'package:nc_photos/use_case/local_file/trash_local_file.dart';
 import 'package:np_collection/np_collection.dart';
@@ -106,6 +107,11 @@ class LocalFilesControllerImpl implements LocalFilesController {
         _reload();
       }),
     );
+    _subscriptions.add(
+      prefController.isEnableLocalFileChange.listen((_) {
+        _reload();
+      }),
+    );
   }
 
   @override
@@ -147,19 +153,22 @@ class LocalFilesControllerImpl implements LocalFilesController {
   @override
   Future<void> queryByFileId(List<String> fileIds) async {
     try {
-      final interests =
-          fileIds
-              .where((e) => !_dataStreamController.value.files.containsKey(e))
-              .toList();
+      final interests = fileIds
+          .where((e) => !_dataStreamController.value.files.containsKey(e))
+          .toList();
       if (interests.isEmpty) {
         return;
       }
-      final files = await FindLocalFile(_c)(
-        interests,
-        onFileNotFound: (fileId) {
-          _log.warning("[queryByFileId] File missing: $fileId");
-        },
-      );
+      final files =
+          await FindLocalFile(
+            localFileRepo: _c.localFileRepo,
+            prefController: prefController,
+          )(
+            interests,
+            onFileNotFound: (fileId) {
+              _log.warning("[queryByFileId] File missing: $fileId");
+            },
+          );
       final data = _toFileMap(files);
       _dataStreamController.addWithValue(
         (v) => v.copyWith(files: v.files.addedAll(data)),
@@ -172,10 +181,14 @@ class LocalFilesControllerImpl implements LocalFilesController {
   @override
   Future<void> queryTimelineByDateRange(DateRange dateRange) async {
     try {
-      final files = await ListLocalFile(_c.localFileRepo)(
-        timeRange: dateRange.toLocalTimeRange(),
-        dirWhitelist: ["DCIM", ...prefController.localDirsValue],
-      );
+      final files =
+          await ListLocalFile(
+            localFileRepo: _c.localFileRepo,
+            prefController: prefController,
+          )(
+            timeRange: dateRange.toLocalTimeRange(),
+            dirWhitelist: prefController.localDirsValue,
+          );
       final data = _toFileMap(files);
       _timelineStreamController.addWithValue(
         (v) => v.copyWith(data: v.data.addedAll(data)),
@@ -218,8 +231,9 @@ class LocalFilesControllerImpl implements LocalFilesController {
       failures.addAll(files);
     }
 
-    final oks =
-        files.where((f) => failures.none((e) => e.compareIdentity(f))).toList();
+    final oks = files
+        .where((f) => failures.none((e) => e.compareIdentity(f)))
+        .toList();
     await _mutex.protect(() async {
       _dataStreamController.addWithValue((value) {
         final result = _mockRemove(
@@ -264,14 +278,30 @@ class LocalFilesControllerImpl implements LocalFilesController {
     final original =
         _summaryStreamController.valueOrNull?.summary ??
         const LocalFilesSummary(items: {});
-    final results = await _c.localFileRepo.getFilesSummary(
-      dirWhitelist: ["DCIM", ...prefController.localDirsValue],
-    );
-    final diff = original.diff(results);
-    _summaryStreamController.add(
-      LocalFilesSummaryStreamEvent(summary: results),
-    );
-    return diff;
+    try {
+      final results = await GetLocalFilesSummary(
+        localFileRepo: _c.localFileRepo,
+        prefController: prefController,
+      )(dirWhitelist: prefController.localDirsValue);
+      // _log.info("[_reloadSummary] GetLocalFilesSummary: ${results.items}");
+      final diff = original.diff(results);
+      _summaryStreamController.add(
+        LocalFilesSummaryStreamEvent(summary: results),
+      );
+      return diff;
+    } catch (e, stackTrace) {
+      _log.severe(
+        "[_reloadSummary] Failed while GetLocalFilesSummary",
+        e,
+        stackTrace,
+      );
+      _summaryErrorStreamController.add(ExceptionEvent(e, stackTrace));
+      return const _LocalFilesSummaryDiff(
+        onlyInOther: {},
+        onlyInThis: {},
+        updated: {},
+      );
+    }
   }
 
   void _initObserver() {
@@ -288,12 +318,16 @@ class LocalFilesControllerImpl implements LocalFilesController {
     _log.info("[_reload] File changed, refreshing");
     // Take the ids of loaded files
     final ids = _dataStreamController.value.data.map((e) => e.id).toList();
-    final newFiles = await FindLocalFile(_c)(
-      ids,
-      onFileNotFound: (_) {
-        // file removed, can be ignored
-      },
-    );
+    final newFiles =
+        await FindLocalFile(
+          localFileRepo: _c.localFileRepo,
+          prefController: prefController,
+        )(
+          ids,
+          onFileNotFound: (_) {
+            // file removed, can be ignored
+          },
+        );
     _dataStreamController.add(
       _LocalFilesStreamEvent(files: _toFileMap(newFiles)),
     );
@@ -322,10 +356,9 @@ class LocalFilesControllerImpl implements LocalFilesController {
 
   void _addTimelineDateRange(DateRange dateRange) {
     // merge and sort the ranges
-    final sorted =
-        List.of(_timelineQueriedRanges)
-          ..add(dateRange)
-          ..sort((a, b) => b.to!.compareTo(a.to!));
+    final sorted = List.of(_timelineQueriedRanges)
+      ..add(dateRange)
+      ..sort((a, b) => b.to!.compareTo(a.to!));
     final results = <DateRange>[];
     for (final d in sorted) {
       if (results.isEmpty) {

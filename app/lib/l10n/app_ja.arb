@@ -1,10 +1,10 @@
 {
-	"appTitle": "画像",
-	"translator": "yoking",
+	"appTitle": "写真",
+	"translator": "yoking\nnkming2",
 	"@translator": {
 		"description": "Name of the translator(s) for this language"
 	},
-	"photosTabLabel": "画像",
+	"photosTabLabel": "写真",
 	"@photosTabLabel": {
 		"description": "Label of the tab that lists user photos"
 	},
@@ -15,10 +15,6 @@
 	"zoomTooltip": "拡大",
 	"@zoomTooltip": {
 		"description": "Tooltip of the zoom button"
-	},
-	"refreshMenuLabel": "リフレッシュ",
-	"@refreshMenuLabel": {
-		"description": "Label of the refresh entry in menu"
 	},
 	"settingsMenuLabel": "設定",
 	"@settingsMenuLabel": {
@@ -55,24 +51,15 @@
 			}
 		}
 	},
-	"archiveTooltip": "アーカイブ",
+	"archiveTooltip": "アーカイブに移動",
 	"@archiveTooltip": {
 		"description": "Archive selected items"
 	},
-	"archiveSelectedProcessingNotification": "{count, plural, one{1個のアイテムをアーカイブ中} other{{count}個のアイテムをアーカイブ中}}",
-	"@archiveSelectedProcessingNotification": {
-		"description": "Archiving the selected items",
-		"placeholders": {
-			"count": {
-				"example": "1"
-			}
-		}
-	},
-	"archiveSelectedSuccessNotification": "全てのアイテムをアーカイブしました",
+	"archiveSelectedSuccessNotification": "全てのファイルをアーカイブに移動しました",
 	"@archiveSelectedSuccessNotification": {
 		"description": "Archived all selected items successfully"
 	},
-	"archiveSelectedFailureNotification": "{count, plural, one{1個のアイテムのアーカイブに失敗しました} other{{count}個のアイテムのアーカイブに失敗しました}}",
+	"archiveSelectedFailureNotification": "{count, plural, one{1個のファイルをアーカイブに移動できませんでした} other{{count}個のファイルをアーカイブに移動できませんでした}}",
 	"@archiveSelectedFailureNotification": {
 		"description": "Cannot archive some of the selected items",
 		"placeholders": {
@@ -85,20 +72,11 @@
 	"@unarchiveTooltip": {
 		"description": "Unarchive selected items"
 	},
-	"unarchiveSelectedProcessingNotification": "{count, plural, one{1個のアイテムのアーカイブを解除中} other{{count}個のアイテムのアーカイブを解除中}}",
-	"@unarchiveSelectedProcessingNotification": {
-		"description": "Unarchiving selected items",
-		"placeholders": {
-			"count": {
-				"example": "1"
-			}
-		}
-	},
-	"unarchiveSelectedSuccessNotification": "全てのアイテムのアーカイブを解除しました",
+	"unarchiveSelectedSuccessNotification": "全てのファイルのアーカイブを解除しました",
 	"@unarchiveSelectedSuccessNotification": {
 		"description": "Unarchived all selected items successfully"
 	},
-	"unarchiveSelectedFailureNotification": "{count, plural, one{1個のアイテムのアーカイブ解除に失敗しました} other{{count}個のアイテムのアーカイブ解除に失敗しました}}",
+	"unarchiveSelectedFailureNotification": "{count, plural, one{1個のファイルのアーカイブ解除に失敗しました} other{{count}個のファイルのアーカイブ解除に失敗しました}}",
 	"@unarchiveSelectedFailureNotification": {
 		"description": "Cannot unarchive some of the selected items",
 		"placeholders": {
@@ -111,15 +89,11 @@
 	"@deleteTooltip": {
 		"description": "Delete selected items"
 	},
-	"deleteProcessingNotification": "アイテムを削除中...",
-	"@deleteProcessingNotification": {
-		"description": "Inform user that the item is being deleted"
-	},
-	"deleteSuccessNotification": "アイテムを削除しました",
+	"deleteSuccessNotification": "ファイルを削除しました",
 	"@deleteSuccessNotification": {
 		"description": "Inform user that the item is deleted successfully"
 	},
-	"deleteFailureNotification": "アイテムを削除できませんでした",
+	"deleteFailureNotification": "ファイルを削除できませんでした",
 	"@deleteFailureNotification": {
 		"description": "Inform user that the item cannot be deleted"
 	},
@@ -186,7 +160,7 @@
 	"@skipButtonLabel": {
 		"description": "Label of the skip button"
 	},
-	"confirmButtonLabel": "確認する",
+	"confirmButtonLabel": "確認",
 	"@confirmButtonLabel": {
 		"description": "Label of the confirm button"
 	},
@@ -246,7 +220,7 @@
 	"@rootPickerListEmptyNotification": {
 		"description": "Error when user pressing confirm without picking any folders"
 	},
-	"setupWidgetTitle": "初める",
+	"setupWidgetTitle": "始める",
 	"@setupWidgetTitle": {
 		"description": "Title of the introductory widget"
 	},
@@ -274,7 +248,7 @@
 	"@settingsExifSupportTrueSubtitle": {
 		"description": "Subtitle of the EXIF support setting when the value is true. The goal is to warn user about the possible side effects of enabling this setting"
 	},
-	"settingsExifWifiOnlyTitle": "Wifi使用時のみEFIXを処理する",
+	"settingsExifWifiOnlyTitle": "Wifi使用時のみEXIFを処理する",
 	"@settingsExifWifiOnlyTitle": {
 		"description": "Whether to only process EXIF data when connected to a Wi-Fi network"
 	},
@@ -282,7 +256,18 @@
 	"@settingsExifWifiOnlyFalseSubtitle": {
 		"description": "Shown when users allow processing exif data over any network"
 	},
-	"settingsMemoriesTitle": "思い出",
+	"settingsFallbackClientExifTitle": "サーバー側の処理が失敗した場合にアプリで処理する",
+	"@settingsFallbackClientExifTitle": {
+		"description": "Fallback to client side EXIF parser"
+	},
+	"settingsFallbackClientExifTrueText": "サーバー側の処理が失敗した場合にアプリでEXIFデータを読み込みます",
+	"settingsFallbackClientExifFalseText": "サーバー側の処理が失敗した場合でもアプリでEXIFデータを読み込みません",
+	"settingsFallbackClientExifConfirmDialogTitle": "サーバー側の処理が失敗した場合にアプリで処理しますか？",
+	"settingsFallbackClientExifConfirmDialogText": "通常、サーバー側は自動的に写真を処理し、EXIFデータを保存します。しかし、設定の問題やサーバーのバグにより、処理が失敗することがあります。有効にすると、これらのファイルをアプリで処理します。",
+	"settingsBackupOnRemoteExifEditTitle": "写真のEXIFデータを上書きする前にバックアップを作成する（サーバーにアップロードしたファイルのみ）",
+	"@settingsBackupOnRemoteExifEditTitle": {
+		"description": "Create a backup copy of the original file before editing metadata on server"
+	},	"settingsMemoriesTitle": "思い出",
 	"@settingsMemoriesTitle": {
 		"description": "Memory albums contain photos taken in a specific time range in the past"
 	},
@@ -291,16 +276,16 @@
 		"description": "Memory albums contain photos taken in a specific time range in the past"
 	},
 	"settingsAccountTitle": "アカウント",
-	"settingsAccountLabelTitle": "ラベル",
+	"settingsAccountLabelTitle": "あだ名",
 	"@settingsAccountLabelTitle": {
 		"description": "An account label is used to replace the server URL in the app bar, could be useful for privacy reason"
 	},
-	"settingsAccountLabelDescription": "サーバーURLの代わりに表示されるラベルを設定する",
+	"settingsAccountLabelDescription": "サーバーURLの代わりに表示されるあだ名を設定する",
 	"settingsIncludedFoldersTitle": "含まれるフォルダ",
 	"@settingsIncludedFoldersTitle": {
 		"description": "Change the included folders of an account"
 	},
-	"settingsShareFolderTitle": "フォルダを共有する",
+	"settingsShareFolderTitle": "共有フォルダのパス",
 	"@settingsShareFolderTitle": {
 		"description": "Set the share folder such that it matches the parameter in config.php"
 	},
@@ -316,7 +301,7 @@
 	"@settingsShareFolderPickerDescription": {
 		"description": "Set the share folder such that it matches the parameter in config.php"
 	},
-	"settingsServerAppSectionTitle": "サーバーアプリのサポート",
+	"settingsServerAppSectionTitle": "サーバーアプリとの連携",
 	"@settingsServerAppSectionTitle": {
 		"description": "Enable/disable various server apps"
 	},
@@ -337,13 +322,21 @@
 			}
 		}
 	},
+	"settingsDeviceMediaTitle": "デバイスの写真を表示する",
+	"@settingsDeviceMediaTitle": {
+		"description": "Control which device folders to be included in the timeline"
+	},
+	"settingsDeviceMediaDescription": "選択したフォルダ内の写真がタイムラインに表示されます",
+	"@settingsDeviceMediaDescription": {
+		"description": "Control which device folders to be included in the timeline"
+	},
 	"settingsViewerTitle": "ビューア",
 	"settingsViewerDescription": "画像/動画ビューアをカスタマイズする",
 	"settingsScreenBrightnessTitle": "画面の明るさ",
 	"settingsScreenBrightnessDescription": "システムの明るさレベルを上書きする",
 	"settingsForceRotationTitle": "回転ロックを無視する",
 	"settingsForceRotationDescription": "自動回転が無効になっている場合でも画面を回転する",
-	"settingsMapProviderTitle": "地図プロバイダー",
+	"settingsMapProviderTitle": "地図の提供元",
 	"settingsShowDateInAlbumTitle": "日付別に写真をグループ化",
 	"settingsShowDateInAlbumDescription": "アルバムが時間順に並べ替えられている場合にのみ適用されます。",
 	"settingsImageEditTitle": "エディタ",
@@ -361,15 +354,15 @@
 	"settingsImageEditSaveResultsToServerFalseDescription": "結果はこのデバイスに保存されます。",
 	"settingsThemeTitle": "テーマ",
 	"settingsThemeDescription": "アプリの外観をカスタマイズする",
-	"settingsFollowSystemThemeTitle": "システムテーマを使用する",
+	"settingsFollowSystemThemeTitle": "システムのデフォルトテーマを使用する",
 	"@settingsFollowSystemThemeTitle": {
 		"description": "Respect the system dark mode settings introduced on Android 10"
 	},
-	"settingsSeedColorTitle": "テーマカラー",
+	"settingsSeedColorTitle": "配色",
 	"@settingsSeedColorTitle": {
 		"description": "Customize the colors used in app"
 	},
-	"settingsSeedColorDescription": "アプリで使用されるすべての色を導出するために使用されます",
+	"settingsSeedColorDescription": "選んだ色を元にアプリ全体の配色が生成されます",
 	"@settingsSeedColorDescription": {
 		"description": "Customize the colors used in app"
 	},
@@ -377,20 +370,20 @@
 	"@settingsSeedColorPickerTitle": {
 		"description": "Dialog to customize the colors used in app"
 	},
-	"settingsUseBlackInDarkThemeTitle": "よりダークなテーマ",
+	"settingsUseBlackInDarkThemeTitle": "ダークテーマをより黒くする",
 	"@settingsUseBlackInDarkThemeTitle": {
 		"description": "Make the dark theme darker"
 	},
-	"settingsUseBlackInDarkThemeTrueDescription": "ダークテーマでは黒を使用する",
+	"settingsUseBlackInDarkThemeTrueDescription": "ダークテーマの背景を黒にします",
 	"@settingsUseBlackInDarkThemeTrueDescription": {
 		"description": "When black in dark theme is set to true"
 	},
-	"settingsUseBlackInDarkThemeFalseDescription": "ダークテーマではダークグレーを使用する",
+	"settingsUseBlackInDarkThemeFalseDescription": "ダークテーマの背景を暗いグレーにします",
 	"@settingsUseBlackInDarkThemeFalseDescription": {
 		"description": "When black in dark theme is set to false"
 	},
 	"settingsMiscellaneousTitle": "その他",
-	"settingsDoubleTapExitTitle": "終了するにはダブルタップ",
+	"settingsDoubleTapExitTitle": "終了前に確認する",
 	"@settingsDoubleTapExitTitle": {
 		"description": "If enabled, users need to tap the back button twice to exit app"
 	},
@@ -400,15 +393,15 @@
 	},
 	"settingsExperimentalTitle": "実験的",
 	"settingsExperimentalDescription": "通常用途には適さない機能です。",
-	"settingsExpertTitle": "アドバンスド",
+	"settingsExpertTitle": "上級者向け設定",
 	"@settingsExpertTitle": {
 		"description": "Settings that must be tweaked with caution"
 	},
 	"settingsExpertWarningText": "続行する前に、各設定の機能を十分に理解してください。",
 	"settingsClearCacheDatabaseTitle": "ファイルデータベースをクリア",
-	"settingsClearCacheDatabaseDescription": "キャッシュされたファイル情報をクリアして、サーバーと再同期を行います。",
+	"settingsClearCacheDatabaseDescription": "キャッシュされたファイル情報をクリアして、サーバーと再同期を行います",
 	"settingsClearCacheDatabaseSuccessNotification": "データベースが正常にクリアされました。アプリを再起動してください。",
-	"settingsAboutSectionTitle": "このアプリについて",
+	"settingsAboutSectionTitle": "アプリ情報",
 	"@settingsAboutSectionTitle": {
 		"description": "Title of the about section in settings widget"
 	},
@@ -424,15 +417,15 @@
 	"@settingsSourceCodeTitle": {
 		"description": "Title of the source code item"
 	},
-	"settingsBugReportTitle": "問題を報告",
+	"settingsBugReportTitle": "不具合を報告",
 	"@settingsBugReportTitle": {
 		"description": "Report issue"
 	},
-	"settingsCaptureLogsTitle": "ログをキャプチャする",
+	"settingsCaptureLogsTitle": "ログを記録",
 	"@settingsCaptureLogsTitle": {
 		"description": "Capture app logs for bug report"
 	},
-	"settingsCaptureLogsDescription": "開発者のバグ修正を助けます。",
+	"settingsCaptureLogsDescription": "記録したログを開発者と共有すると、不具合の特定や修正に役立ちます",
 	"settingsTranslatorTitle": "翻訳者",
 	"@settingsTranslatorTitle": {
 		"description": "Title of the translator item"
@@ -445,10 +438,7 @@
 	"@enableButtonLabel": {
 		"description": "Label of the enable button"
 	},
-	"exifSupportDetails": "EXIFサポートを有効にすると、撮影日やカメラモデルなどの様々なメタデータが利用可能になります。これらのメタデータを読み取るには、元のフルサイズ画像をダウンロードするために追加のネットワーク使用が必要になります。アプリはWi-Fiネットワークに接続している場合にのみダウンロードを開始します。",
-	"@exifSupportDetails": {
-		"description": "Detailed description of the exif support feature"
-	},
+	"enableButtonLabel2": "有効にする",
 	"captureLogDetails": "バグレポート用のログを取得するには：\n1. この設定を有効にする\n2. 問題を発生させる\n3. この設定を無効にする\n4. ダウンロードフォルダでnc-photos.logを探す\n\n※問題によってアプリがクラッシュした場合は、ログを取得できません。その場合は、開発者に連絡して詳細な手順をご確認ください。",
 	"@captureLogDetails": {
 		"description": "Detailed description on capturing logs"
@@ -482,7 +472,7 @@
 			}
 		}
 	},
-	"secondCountSymbol": "{count}個",
+	"secondCountSymbol": "{count}秒",
 	"@secondCountSymbol": {
 		"description": "Number of seconds",
 		"placeholders": {
@@ -508,7 +498,7 @@
 	"@downloadTooltip": {
 		"description": "Tooltip of the download button"
 	},
-	"downloadProcessingNotification": "ファイルをダウンロードしています",
+	"downloadProcessingNotification": "ファイルをダウンロード中...",
 	"@downloadProcessingNotification": {
 		"description": "Inform user that the file is being downloaded"
 	},
@@ -541,13 +531,14 @@
 		"description": "Dialog to modify the date & time of a file"
 	},
 	"dateSubtitle": "日付",
-	"timeSubtitle": "時間",
+	"timeSubtitle": "時刻",
+	"timeZoneOffsetSubtitle": "タイムゾーン",
 	"dateYearInputHint": "年",
 	"dateMonthInputHint": "月",
 	"dateDayInputHint": "日",
 	"timeHourInputHint": "時間",
 	"timeMinuteInputHint": "分",
-	"timeSecondInputHint": "2番",
+	"timeSecondInputHint": "秒",
 	"dateTimeInputInvalid": "無効な値です",
 	"@dateTimeInputInvalid": {
 		"description": "Invalid date/time input (e.g., non-numeric characters)"
@@ -564,7 +555,7 @@
 	"@albumDirPickerSubHeaderText": {
 		"description": "Pick the folders for a folder based album"
 	},
-	"albumDirPickerListEmptyNotification": "\n少なくとも1つのフォルダを選択してください",
+	"albumDirPickerListEmptyNotification": "少なくとも1つのフォルダを選択してください",
 	"@albumDirPickerListEmptyNotification": {
 		"description": "Error when user pressing confirm without picking any folders"
 	},
@@ -661,7 +652,7 @@
 	"@listEmptyText": {
 		"description": "When there's nothing in a list"
 	},
-	"albumTrashLabel": "削除",
+	"albumTrashLabel": "ゴミ箱",
 	"@albumTrashLabel": {
 		"description": "Deleted photos"
 	},
@@ -719,16 +710,12 @@
 	"@albumSharedLabel": {
 		"description": "A small label placed next to a shared album"
 	},
-	"metadataTaskProcessingNotification": "バックグラウンドで画像のメタデータを処理",
+	"metadataTaskProcessingNotification": "画像のメタデータを処理しています",
 	"@metadataTaskProcessingNotification": {
 		"description": "Shown when the app is reading image metadata"
 	},
-	"metadataTaskPauseNoWiFiNotification": "WiFiを待っています",
-	"@metadataTaskPauseNoWiFiNotification": {
-		"description": "Shown when the app has paused reading image metadata"
-	},
 	"configButtonLabel": "設定",
-	"useAsAlbumCoverTooltip": "アイテムカバーとして使用",
+	"useAsAlbumCoverTooltip": "アルバムカバーとして使用",
 	"helpTooltip": "ヘルプ",
 	"helpButtonLabel": "ヘルプ",
 	"removeFromAlbumTooltip": "アルバムから削除",
@@ -799,7 +786,7 @@
 	"@unmuteTooltip": {
 		"description": "Unmute the video player"
 	},
-	"collectionPeopleLabel": "人々",
+	"collectionPeopleLabel": "人物",
 	"@collectionPeopleLabel": {
 		"description": "Browse photos grouped by person"
 	},
@@ -811,7 +798,7 @@
 	"@slideshowSetupDialogTitle": {
 		"description": "Setup slideshow before starting"
 	},
-	"slideshowSetupDialogDurationTitle": "画像の長さ (MM:SS",
+	"slideshowSetupDialogDurationTitle": "表示時間 (MM:SS)",
 	"@slideshowSetupDialogDurationTitle": {
 		"description": "Set the duration of each image in MM:SS format. This setting is ignored for videos"
 	},
@@ -819,11 +806,11 @@
 	"@slideshowSetupDialogShuffleTitle": {
 		"description": "Whether to shuffle the collection"
 	},
-	"slideshowSetupDialogRepeatTitle": "繰り返す",
+	"slideshowSetupDialogRepeatTitle": "繰り返し再生",
 	"@slideshowSetupDialogRepeatTitle": {
 		"description": "Whether to restart the slideshow from the beginning after the last slide"
 	},
-	"slideshowSetupDialogReverseTitle": "反転する",
+	"slideshowSetupDialogReverseTitle": "逆再生",
 	"@slideshowSetupDialogReverseTitle": {
 		"description": "Whether to play the slideshow in reverse order"
 	},
@@ -839,7 +826,7 @@
 	"@shareMethodPreviewTitle": {
 		"description": "Share the preview of a file"
 	},
-	"shareMethodPreviewDescription": "低品質のプレビューを他のアプリと共有する (画像のみ)",
+	"shareMethodPreviewDescription": "圧縮された画像を他のアプリと共有する (画像のみ)",
 	"shareMethodOriginalFileTitle": "元のファイル",
 	"@shareMethodOriginalFileTitle": {
 		"description": "Share the original file"
@@ -1190,6 +1177,9 @@
 	"@saveTooltip": {
 		"description": "Save the current content"
 	},
+	"imageEditDownloadDialogTitle": "サーバーから写真をダウンロード中...",
+	"imageEditProcessDialogTitle": "写真を処理中...",
+	"imageEditSaveDialogTitle": "処理した写真を保存中...",
 	"imageEditColorBrightness": "明るさ",
 	"@imageEditColorBrightness": {
 		"description": "Adjust the brightness of an image"
@@ -1245,6 +1235,45 @@
 	"imageEditTransformCrop": "切り抜き",
 	"@imageEditTransformCrop": {
 		"description": "Crop the image"
+	},
+	"imageEditToolbarEffectLabel": "エフェクト",
+	"imageEditEffectHalftone": "網点",
+	"imageEditEffectPixelation": "ピクセル化",
+	"imageEditEffectPosterization": "ポスタリゼーション",
+	"imageEditEffectSketch": "スケッチ化",
+	"imageEditEffectToon": "漫画化",
+	"imageEditEffectFace": "顔",
+	"imageEditEffectParamEdge": "エッジ",
+	"imageEditEffectParamColor": "色",
+	"imageEditEffectParamHatching": "ハッチング",
+	"@imageEditEffectParamHatching": {
+		"description": "Hatching is an artistic technique used to create shading and tonal effects by drawing closely spaced parallel lines"
+	},
+	"imageEditEffectParamJawline": "あごの輪郭",
+	"@imageEditEffectParamJawline": {
+		"description": "Adjust face jawline"
+	},
+	"imageEditEffectParamEyeSize": "目の大きさ",
+	"@imageEditEffectParamEyeSize": {
+		"description": "Adjust size of the eye"
+	},
+	"imageEditFaceDetectionRunningMessage": "顔を検出中...",
+	"imageEditNoFaceDetected": "顔が検出されませんでした",
+	"imageEditFaceNotSelected": "検出された顔を1つ以上選択してエフェクトを適用してください",
+	"@imageEditFaceNotSelected": {
+		"description": "Shown when there are one or more detected faces but none of them is selected"
+	},
+	"imageEditResetSelectedFaceMessage": "画像の変形設定を調整した後、選択した顔はクリアされます。お手数ですが、もう一度選択してください",
+	"@imageEditResetSelectedFaceMessage": {
+		"description": "Changing the image transformation will affect the result of face detection. This message is used to notify user to select the faces again afterwards"
+	},
+	"imageEditOpenErrorMessage": "写真を読み込むことができません",
+	"@imageEditOpenErrorMessage": {
+		"description": "Shown when app failed to open the image for editing"
+	},
+	"imageEditSaveErrorMessage": "写真を保存できません",
+	"@imageEditSaveErrorMessage": {
+		"description": "Shown when app failed to save the edited image"
 	},
 	"categoriesLabel": "カテゴリ",
 	"searchLandingCategoryVideosLabel": "動画",
@@ -1311,7 +1340,7 @@
 	"@showAllButtonLabel": {
 		"description": "A button to show all items of a certain item group (e.g., show all recognized faces)"
 	},
-	"gpsPlaceText": "{place} 付近",
+	"gpsPlaceText": "{place}付近",
 	"@gpsPlaceText": {
 		"description": "The estimated place where a photo was taken at. The place could be a town, a city, an administrative region, or a country.",
 		"placeholders": {
@@ -1408,11 +1437,11 @@
 	"@errorNoStoragePermission": {
 		"description": "Missing permission on Android"
 	},
-	"settingsMetadataTitle": "ファイルメタデータ",
+	"settingsMetadataTitle": "メタデータ",
 	"@settingsMetadataTitle": {
 		"description": "Metadata (e.g., date, resolution, GPS, etc)"
 	},
-	"settingsPersonProviderTitle": "人物プロバイダー",
+	"settingsPersonProviderTitle": "フェイスグループ機能の提供元",
 	"@settingsPersonProviderTitle": {
 		"description": "Select the server app for face recognition"
 	},
@@ -1424,13 +1453,13 @@
 	"@settingsSeedColorPickerSystemColorButtonLabel": {
 		"description": "Use color provided by the OS, i.e., Material You"
 	},
-	"searchLandingPeopleListEmptyText2": "設定を押してプロバイダーを切り替えるか、ヘルプを押して詳細を確認してください",
+	"searchLandingPeopleListEmptyText2": "設定を押してフェイスグループ機能の提供元を切り替えるか、ヘルプを押して詳細を確認してください",
 	"@searchLandingPeopleListEmptyText2": {
 		"description": "Shown in the search landing page under the People section when there are no people"
 	},
 	"accountSettingsTooltip": "アカウント設定",
 	"contributorsTooltip": "貢献者",
-	"setAsTooltip": "設定",
+	"setAsTooltip": "他で使う",
 	"@setAsTooltip": {
 		"description": "e.g., set as wallpaper"
 	},
@@ -1443,8 +1472,8 @@
 			}
 		}
 	},
-	"settingsThemePrimaryColor": "プライマリ",
-	"settingsThemeSecondaryColor": "セカンダリ",
+	"settingsThemePrimaryColor": "メインカラー",
+	"settingsThemeSecondaryColor": "アクセントカラー",
 	"settingsThemePresets": "プリセット",
 	"settingsAppLock": "アプリロック",
 	"@settingsAppLock": {
@@ -1468,6 +1497,7 @@
 	"settingsAppLockConfirmPinDialogTitle": "同じPINをもう一度入力してください",
 	"settingsAppLockSetupPasswordDialogTitle": "アプリのロックを解除するためのパスワードを設定してください",
 	"settingsAppLockConfirmPasswordDialogTitle": "同じパスワードをもう一度入力してください",
+	"settingsViewerUseOriginalImageTitle": "ビュアーでやや画質が下げた画像よりオリジナル画像を使用",
 	"appLockUnlockHint": "アプリのロックを解除",
 	"@appLockUnlockHint": {
 		"description": "Unlock app via selected means (e.g., password) in case app lock is enabled by user"
@@ -1512,18 +1542,18 @@
 	"homeTabMapBrowser": "地図",
 	"mapBrowserSetDefaultDateRangeButton": "デフォルトとして設定",
 	"todayText": "今日",
-	"settingsExifSupportTitle2": "クライアント側EXIFサポート",
+	"settingsExifSupportTitle2": "内蔵EXIFリーダーを使う",
 	"@settingsExifSupportTitle2": {
 		"description": "Title of the EXIF support setting"
 	},
 	"settingsViewerCustomizeAppBarTitle": "アプリバーをカスタマイズ",
 	"settingsViewerCustomizeBottomAppBarTitle": "下部アプリバーをカスタマイズ",
 	"settingsCollectionsCustomizeNavigationBarTitle": "ナビゲーションバーをカスタマイズ",
-	"exifSupportNextcloud28Notes": "クライアント側のサポートはサーバーを補完します。アプリはNextcloudでサポートされていないファイルと属性を処理します",
+	"exifSupportNextcloud28Notes": "有効にすると、Nextcloudでサポートされていない画像や動画をアプリ側で処理します",
 	"@exifSupportNextcloud28Notes": {
 		"description": "Extra notes for Nextcloud 28+"
 	},
-	"exifSupportConfirmationDialogTitle2": "クライアント側のEXIFサポートを有効にしますか？",
+	"exifSupportConfirmationDialogTitle2": "アプリ内蔵のEXIFリーダーを有効にしますか？",
 	"@exifSupportConfirmationDialogTitle2": {
 		"description": "Title of the dialog to confirm enabling exif support"
 	},
@@ -1540,11 +1570,7 @@
 		"description": "Server-side albums that are available in Nextcloud 25+"
 	},
 	"createCollectionDialogNextcloudAlbumDescription2": "サーバー上にアルバムを作成し、どのアプリからでもアクセス可能",
-	"alternativeSignIn": "代わりにユーザー名とパスワードでサインイン",
-	"@alternativeSignIn": {
-		"description": "Sign in using username and password instead of the recommended Nextcloud login flow"
-	},
-	"livePhotoTooltip": "ライブフォト",
+	"livePhotoTooltip": "Live Photos",
 	"dragAndDropRearrangeButtons": "ドラッグ＆ドロップでボタンを並べ替え",
 	"@dragAndDropRearrangeButtons": {
 		"description": "Instruction to customize buttons layout"
@@ -1562,5 +1588,114 @@
 	"@albumAddMapTooltip": {
 		"description": "Add a map that display between photos to an album"
 	},
-	"fileNotFound": "ファイルが見つかりません"
+	"fileNotFound": "ファイルが見つかりません",
+	"signInViaNextcloudLoginFlowV2": "NextcloudのLogin Flow v2でサインイン",
+	"signInViaUsernamePassword": "ユーザー名とパスワードでサインイン",
+	"fileOnDevice": "デバイス内",
+	"@fileOnDevice": {
+		"description": "Local files on your device"
+	},
+	"fileOnCloud": "アップロード済み",
+	"@fileOnCloud": {
+		"description": "Filed uploaded to your Nextcloud server"
+	},
+	"uploadTooltip": "アップロード",
+	"@uploadTooltip": {
+		"description": "Upload files to your Nextcloud server"
+	},
+	"uploadFolderPickerTitle": "アップロード先を選択します",
+	"@uploadFolderPickerTitle": {
+		"description": "Pick a folder on your server where the files will be uploaded to"
+	},
+	"opOnlySupportRemoteFiles": "この機能はバックアップ済みの写真のみをサポートします。バックアップされていない写真は無視されます",
+	"@opOnlySupportRemoteFiles": {
+		"description": "While it's possible to select both remote and local files in timeline, some features only work with one kind of them. We'll show this warning when user selected a mixture of files and tried to perform a remote only action"
+	},
+	"opOnlySupportLocalFiles": "この機能はデバイス内の写真のみをサポートします。サーバー上の写真は無視されます",
+	"@opOnlySupportLocalFiles": {
+		"description": "While it's possible to select both remote and local files in timeline, some features only work with one kind of them. We'll show this warning when user selected a mixture of files and tried to perform a local only action"
+	},
+	"uploadDialogPath": "アップロード先",
+	"@uploadDialogPath": {
+		"description": "Upload path"
+	},
+	"uploadDialogBatchConvert": "一括変換",
+	"@uploadDialogBatchConvert": {
+		"description": "Batch convert files"
+	},
+	"uploadBatchConvertWarningText1": "写真は圧縮または変換したのちアップロードされます。",
+	"uploadBatchConvertWarningText2": "Live Photosおよびモーションフォトはサポートされておらず、静止画像としてアップロードされます。",
+	"uploadBatchConvertWarningText3": "一部のメタデータは変更または削除される場合があります。",
+	"uploadBatchConvertWarningText4": "サポートされている画像ファイル形式はJPEG、PNG、WEBP、BMPおよびHEICのみ。",
+	"uploadBatchConvertSettings": "変換設定",
+	"uploadBatchConvertSettingsFormat": "ファイル形式",
+	"@uploadBatchConvertSettingsFormat": {
+		"description": "Image format"
+	},
+	"uploadBatchConvertSettingsQuality": "画質",
+	"uploadBatchConvertSettingsDownscaling": "縮小",
+	"viewerLastPageText": "最後の写真です",
+	"deleteMergedFileDialogServerOnlyButton": "サーバー上のみ",
+	"@deleteMergedFileDialogServerOnlyButton": {
+		"description": "Remove the file from server but keep the device copy"
+	},
+	"deleteMergedFileDialogLocalOnlyButton": "デバイス内のみ",
+	"@deleteMergedFileDialogLocalOnlyButton": {
+		"description": "Remove the file from device but keep the server copy"
+	},
+	"deleteMergedFileDialogBothButton": "両方",
+	"@deleteMergedFileDialogBothButton": {
+		"description": "Remove the file from device and server"
+	},
+	"deleteMergedFileDialogContent": "一部の写真はサーバーとデバイスの両方にあります。これらの写真をどこから削除しますか？",
+	"deleteSingleMergedFileDialogContent": "この写真はサーバーとデバイスの両方にあります。この写真をどこから削除しますか？",
+	"collectionAddItemTitle": "どこに入れますか？",
+	"@collectionAddItemTitle": {
+		"description": "When adding an item to a collection, ask the user where should we insert it to"
+	},
+	"greetingsMorning": "{user}さん、おはよう",
+	"@greetingsMorning": {
+		"placeholders": {
+			"user": {
+				"example": "alice"
+			}
+		}
+	},
+	"greetingsAfternoon": "{user}さん、こんにちは",
+	"@greetingsAfternoon": {
+		"placeholders": {
+			"user": {
+				"example": "alice"
+			}
+		}
+	},
+	"greetingsNight": "{user}さん、こんばんは",
+	"@greetingsNight": {
+		"placeholders": {
+			"user": {
+				"example": "alice"
+			}
+		}
+	},
+	"errorServerNoCert": "サーバー証明書が正しく設定されていません。暗号化されていないHTTPで接続しますか？",
+	"@errorServerNoCert": {
+		"description": "No cert to establish HTTPS connection"
+	},
+	"recognizeInstructionDialogTitle": "Recognize連携の設定",
+	"recognizeInstructionDialogContent": "Nextcloud 33以降でRecognizeアプリと連携するには、サーバーアプリをインストール必要があります。",
+	"recognizeInstructionDialogButton": "手順へ",
+	"editMetadataWriteProgressTitle": "ファイルをアップロード中...",
+	"@editMetadataWriteProgressTitle": {
+		"description": "Title of the progress dialog when uploading the file after editing its metadata"
+	},
+	"addLocationTitle": "位置情報を追加",
+	"metadataEditBackupNotification": "バックアップファイル{backup}が作成されました",
+	"@metadataEditBackupNotification": {
+		"description": "Original file is backed up before editing its metadata",
+		"placeholders": {
+			"backup": {
+				"example": "IMG_123456789.jpg_original"
+			}
+		}
+	}
 }

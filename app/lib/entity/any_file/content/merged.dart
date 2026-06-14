@@ -1,0 +1,183 @@
+import 'dart:async';
+import 'dart:io' as io;
+import 'dart:typed_data';
+
+import 'package:nc_photos/account.dart';
+import 'package:nc_photos/di_container.dart';
+import 'package:nc_photos/entity/any_file/any_file.dart';
+import 'package:nc_photos/entity/any_file/content/factory.dart';
+import 'package:nc_photos/entity/any_file/content/local.dart';
+import 'package:nc_photos/entity/any_file/content/nextcloud.dart';
+import 'package:nc_photos/entity/image_location/image_location.dart';
+import 'package:np_common/size.dart';
+import 'package:np_gps_map/np_gps_map.dart';
+import 'package:np_platform_raw_image/np_platform_raw_image.dart';
+
+class AnyFileMergedUriGetter implements AnyFileUriGetter {
+  AnyFileMergedUriGetter(AnyFile file)
+    : _delegate = AnyFileLocalUriGetter(
+        (file.provider as AnyFileMergedProvider).asLocalFile(),
+      );
+
+  @override
+  Future<Uri> get() => _delegate.get();
+
+  final AnyFileUriGetter _delegate;
+}
+
+class AnyFileMergedLargePreviewUriGetter
+    implements AnyFileLargePreviewUriGetter {
+  AnyFileMergedLargePreviewUriGetter(AnyFile file)
+    : _delegate = AnyFileLocalLargePreviewUriGetter(
+        (file.provider as AnyFileMergedProvider).asLocalFile(),
+      );
+
+  @override
+  Future<Uri> get() => _delegate.get();
+
+  final AnyFileLargePreviewUriGetter _delegate;
+}
+
+class AnyFileMergedLocalFileUriGetter implements AnyFileLocalFileUriGetter {
+  AnyFileMergedLocalFileUriGetter(AnyFile file)
+    : _delegate = AnyFileLocalUriGetter(
+        (file.provider as AnyFileMergedProvider).asLocalFile(),
+      );
+
+  @override
+  Future<Uri> get() => _delegate.get();
+
+  final AnyFileUriGetter _delegate;
+}
+
+class AnyFileMergedLocalPreviewUriGetter
+    implements AnyFileLocalPreviewUriGetter {
+  AnyFileMergedLocalPreviewUriGetter(AnyFile file)
+    : _delegate = AnyFileLocalUriGetter(
+        (file.provider as AnyFileMergedProvider).asLocalFile(),
+      );
+
+  @override
+  Future<Uri> get() => _delegate.get();
+
+  final AnyFileUriGetter _delegate;
+}
+
+class AnyFileMergedMetadataGetter implements AnyFileMetadataGetter {
+  AnyFileMergedMetadataGetter(
+    AnyFile file, {
+    required DiContainer c,
+    required Account account,
+  }) : _delegate = AnyFileNextcloudMetadataGetter(
+         (file.provider as AnyFileMergedProvider).asRemoteFile(),
+         c: c,
+         account: account,
+       );
+
+  @override
+  Future<bool?> get isOwned => _delegate.isOwned;
+
+  @override
+  Future<String?> get owner => _delegate.owner;
+
+  @override
+  Future<SizeInt?> get size => _delegate.size;
+
+  @override
+  Future<int?> get byteSize => _delegate.byteSize;
+
+  @override
+  Future<String?> get make => _delegate.make;
+
+  @override
+  Future<String?> get model => _delegate.model;
+
+  @override
+  Future<AnyFileMetadataRational?> get fNumber => _delegate.fNumber;
+
+  @override
+  Future<AnyFileMetadataRational?> get exposureTime => _delegate.exposureTime;
+
+  @override
+  Future<AnyFileMetadataRational?> get focalLength => _delegate.focalLength;
+
+  @override
+  Future<int?> get isoSpeedRatings => _delegate.isoSpeedRatings;
+
+  @override
+  Future<MapCoord?> get gpsCoord => _delegate.gpsCoord;
+
+  @override
+  Future<ImageLocation?> get location => _delegate.location;
+
+  @override
+  Future<Duration?> get offsetTime => _delegate.offsetTime;
+
+  @override
+  Future<double?> get fps => _delegate.fps;
+
+  @override
+  Future<Duration?> get duration => _delegate.duration;
+
+  final AnyFileMetadataGetter _delegate;
+}
+
+class AnyFileMergedTagGetter implements AnyFileTagGetter {
+  AnyFileMergedTagGetter(
+    AnyFile file, {
+    required DiContainer c,
+    required Account account,
+  }) : _delegate = AnyFileNextcloudTagGetter(
+         (file.provider as AnyFileMergedProvider).asRemoteFile(),
+         c: c,
+         account: account,
+       );
+
+  @override
+  Future<List<AnyFileTag>?> get() => _delegate.get();
+
+  final AnyFileTagGetter _delegate;
+}
+
+class AnyFileMergedBinaryBitmapGetter implements AnyFileBinaryBitmapGetter {
+  AnyFileMergedBinaryBitmapGetter(AnyFile file)
+    : _delegate = AnyFileLocalBinaryBitmapGetter(
+        (file.provider as AnyFileMergedProvider).asLocalFile(),
+      );
+
+  @override
+  Future<({Uint8List bytes, Rgba8Image bitmap})> get({
+    required int maxWidth,
+    required int maxHeight,
+    bool shouldFixOrientation = false,
+    void Function(double progress)? onProgress,
+  }) => _delegate.get(
+    maxWidth: maxWidth,
+    maxHeight: maxHeight,
+    shouldFixOrientation: shouldFixOrientation,
+  );
+
+  final AnyFileBinaryBitmapGetter _delegate;
+}
+
+class AnyFileMergedPrivateFileCopyGetter
+    implements AnyFilePrivateFileCopyGetter {
+  AnyFileMergedPrivateFileCopyGetter(
+    AnyFile file, {
+    required Account account,
+    required bool isPreferRemote,
+  }) : _delegate = isPreferRemote
+           ? AnyFileNextcloudPrivateFileCopyGetter(
+               (file.provider as AnyFileMergedProvider).asRemoteFile(),
+               account: account,
+             )
+           : AnyFileLocalPrivateFileCopyGetter(
+               (file.provider as AnyFileMergedProvider).asLocalFile(),
+             );
+
+  @override
+  Future<io.File> get({void Function(double progress)? onProgress}) =>
+      _delegate.get(onProgress: onProgress);
+
+  final AnyFilePrivateFileCopyGetter _delegate;
+}

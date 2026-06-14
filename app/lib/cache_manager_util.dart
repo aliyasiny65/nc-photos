@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import 'package:nc_photos/np_api_util.dart';
 import 'package:np_common/size.dart';
 import 'package:np_http/np_http.dart';
 import 'package:np_log/np_log.dart';
+import 'package:np_platform_image_format_jxl/np_platform_image_format_jxl.dart';
 
 part 'cache_manager_util.g.dart';
 
@@ -79,6 +82,18 @@ class LargeImageCacheManager {
   );
 }
 
+class OriginalImageCacheManager {
+  static const key = "originalImageCache";
+  static CacheManager inst = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 30),
+      maxNrOfCacheObjects: 1000,
+      fileService: HttpFileService(httpClient: getHttpClient()),
+    ),
+  );
+}
+
 /// Cache manager for covers
 ///
 /// Covers are larger than thumbnails but smaller than full sized photos. They
@@ -95,22 +110,43 @@ class CoverCacheManager {
   );
 }
 
-/// Cache manager for original files to support extra image formats
-///
-/// Currently used for jxl files
-class ExtraFormatCacheManager {
+/// Cache manager for original jxl files
+class JxlCacheManager {
   static const key = "extraFormatCache";
   static CacheManager inst = CacheManager(
     Config(
       key,
       stalePeriod: const Duration(days: 30),
-      maxNrOfCacheObjects: 8000,
+      maxNrOfCacheObjects: 1000,
       fileService: HttpFileService(httpClient: getHttpClient()),
     ),
   );
 }
 
-enum CachedNetworkImageType { thumbnail, largeImage, cover }
+/// Cache manager for jxl thumbnail files
+class JxlThumbnailCacheManager {
+  static const key = "jxlThumbnailCache";
+  static CacheManager inst = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 90),
+      maxNrOfCacheObjects: 75000,
+      fileService: HttpFileService(httpClient: getHttpClient()),
+      cacheFileTransformer: (url, key, cacheFile) async {
+        await _replaceWithJpegThumbnail(cacheFile);
+      },
+    ),
+  );
+
+  static Future<void> _replaceWithJpegThumbnail(File cacheFile) {
+    return ImageFormatJxl().convertJpeg(
+      cacheFile,
+      resize: _boundingBoxFor(CachedNetworkImageType.thumbnail),
+    );
+  }
+}
+
+enum CachedNetworkImageType { thumbnail, largeImage, originalImage, cover }
 
 @npLog
 class CachedNetworkImageBuilder {
@@ -124,7 +160,7 @@ class CachedNetworkImageBuilder {
     this.errorWidget,
   });
 
-  CachedNetworkImage build() {
+  Widget build() {
     // _log.finer("[build] $mime, $imageUrl");
     return CachedNetworkImage(
       fit: fit,
@@ -138,23 +174,17 @@ class CachedNetworkImageBuilder {
       imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
       imageBuilder: imageBuilder,
       errorWidget: errorWidget,
-      customDecoder: (raw, decoder) {
-        if (isJxl(raw)) {
-          _log.fine("[build] Using experimental jxl codec: $imageUrl");
-          return jxlImageCodec(raw, resize: _boundingBox);
-        } else {
-          return decoder(raw);
-        }
-      },
+      customDecoder:
+          mime == "image/jxl" && type != CachedNetworkImageType.thumbnail
+          ? (file, decoder) {
+              _log.fine("[build] Using experimental jxl codec: $imageUrl");
+              // return decoder(raw);
+              return jxlImageCodecFromFile(file, resize: _boundingBoxFor(type));
+            }
+          : null,
       compareKey: type.name,
     );
   }
-
-  SizeInt get _boundingBox => switch (type) {
-    CachedNetworkImageType.thumbnail => SizeInt.square(k.photoThumbSize),
-    CachedNetworkImageType.largeImage => SizeInt.square(k.photoLargeSize),
-    CachedNetworkImageType.cover => SizeInt.square(k.coverSize),
-  };
 
   final CachedNetworkImageType type;
   final String imageUrl;
@@ -167,11 +197,17 @@ class CachedNetworkImageBuilder {
 
 CacheManager getCacheManager(CachedNetworkImageType type, String? mime) {
   if (mime == "image/jxl") {
-    return ExtraFormatCacheManager.inst;
+    return switch (type) {
+      CachedNetworkImageType.thumbnail => JxlThumbnailCacheManager.inst,
+      CachedNetworkImageType.largeImage ||
+      CachedNetworkImageType.originalImage => JxlCacheManager.inst,
+      CachedNetworkImageType.cover => JxlCacheManager.inst,
+    };
   } else {
     return switch (type) {
       CachedNetworkImageType.thumbnail => ThumbnailCacheManager.inst,
       CachedNetworkImageType.largeImage => LargeImageCacheManager.inst,
+      CachedNetworkImageType.originalImage => OriginalImageCacheManager.inst,
       CachedNetworkImageType.cover => CoverCacheManager.inst,
     };
   }
@@ -185,3 +221,10 @@ Future<FileInfo?> getFileFromCache(
   final cacheManager = getCacheManager(CachedNetworkImageType.largeImage, mime);
   return await cacheManager.getFileFromCache(imageUrl);
 }
+
+SizeInt _boundingBoxFor(CachedNetworkImageType type) => switch (type) {
+  CachedNetworkImageType.thumbnail => SizeInt.square(k.photoThumbSize),
+  CachedNetworkImageType.largeImage ||
+  CachedNetworkImageType.originalImage => SizeInt.square(k.photoLargeSize),
+  CachedNetworkImageType.cover => SizeInt.square(k.coverSize),
+};

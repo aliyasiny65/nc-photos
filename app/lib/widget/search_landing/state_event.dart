@@ -1,4 +1,4 @@
-part of '../search_landing.dart';
+part of 'search_landing.dart';
 
 @genCopyWith
 @toString
@@ -74,4 +74,15 @@ class _TransformPlaceItems implements _Event {
   String toString() => _$toString();
 
   final LocationGroupResult places;
+}
+
+@toString
+class _SetError implements _Event {
+  const _SetError(this.error, [this.stackTrace]);
+
+  @override
+  String toString() => _$toString();
+
+  final Object error;
+  final StackTrace? stackTrace;
 }

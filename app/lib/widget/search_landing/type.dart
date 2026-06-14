@@ -1,4 +1,4 @@
-part of '../search_landing.dart';
+part of 'search_landing.dart';
 
 @npLog
 class _PersonItem {
@@ -61,7 +61,7 @@ class _PlaceItem {
     }
   }
 
-  String get name => place.place;
+  LocalizedString get name => place.name;
   String? get coverUrl => _coverUrl;
   String? get coverMime => place.latestFileMime;
 

@@ -1,4 +1,4 @@
-part of '../collection_picker.dart';
+part of 'collection_picker.dart';
 
 @npLog
 class _Bloc extends Bloc<_Event, _State>
@@ -34,11 +34,10 @@ class _Bloc extends Bloc<_Event, _State>
       forEach(
         emit,
         controller.stream,
-        onData:
-            (data) => state.copyWith(
-              collections: data.data.map((e) => e.collection).toList(),
-              isLoading: data.hasNext,
-            ),
+        onData: (data) => state.copyWith(
+          collections: data.data.map((e) => e.collection).toList(),
+          isLoading: data.hasNext,
+        ),
       ),
       forEach(
         emit,
@@ -67,7 +66,7 @@ class _Bloc extends Bloc<_Event, _State>
   List<_Item> _transformCollections(List<Collection> collections) {
     final sorted = collections
         .where(
-          (c) => CollectionAdapter.of(
+          (c) => CollectionWorkerFactory.isPermitted(
             KiwiContainer().resolve<DiContainer>(),
             account,
             c,

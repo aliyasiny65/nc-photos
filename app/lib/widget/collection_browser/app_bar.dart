@@ -1,4 +1,4 @@
-part of '../collection_browser.dart';
+part of 'collection_browser.dart';
 
 class _AppBar extends StatelessWidget {
   const _AppBar();
@@ -7,62 +7,87 @@ class _AppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = KiwiContainer().resolve<DiContainer>();
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.items != current.items ||
-              previous.collection != current.collection,
+      buildWhen: (previous, current) =>
+          previous.items != current.items ||
+          previous.collection != current.collection,
       builder: (context, state) {
-        final adapter = CollectionAdapter.of(
+        final permittedWorker = CollectionWorkerFactory.isPermitted(
           c,
           context.bloc.account,
           state.collection,
         );
-        final canRename = adapter.isPermitted(CollectionCapability.rename);
-        final canManualCover = adapter.isPermitted(
+        final canRename = permittedWorker.isPermitted(
+          CollectionCapability.rename,
+        );
+        final canManualCover = permittedWorker.isPermitted(
           CollectionCapability.manualCover,
         );
-        final canShare = adapter.isPermitted(CollectionCapability.share);
-
-        return SliverAppBar(
-          floating: true,
-          expandedHeight: 160,
-          flexibleSpace: FlexibleSpaceBar(
-            background: const _AppBarCover(),
-            centerTitle: false,
-            title: Text(
-              state.collection.name,
-              style: TextStyle(
-                color: Theme.of(context).appBarTheme.foregroundColor,
-              ),
-            ),
-          ),
-          actions: [
-            if (canShare)
-              IconButton(
-                onPressed: () => _onSharePressed(context),
-                icon: const Icon(Icons.share_outlined),
-                tooltip: L10n.global().shareTooltip,
-              ),
-            if (state.collection.isPendingSharedAlbum)
-              IconButton(
-                onPressed: () => _onAddToCollectionsViewPressed(context),
-                icon: const AssetIcon(asset.icAddCollectionsOutlined24),
-                tooltip: L10n.global().addToCollectionsViewTooltip,
-              ),
-            if (state.items.isNotEmpty || canRename)
-              PopupMenuButton<_MenuOption>(
-                tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
-                itemBuilder:
-                    (_) => [
+        final canShare = permittedWorker.isPermitted(
+          CollectionCapability.share,
+        );
+        final manualCoverWorker = CollectionWorkerFactory.isManualCover(
+          c,
+          context.bloc.account,
+          state.collection,
+        );
+        return SafeArea(
+          child: Container(
+            height: kToolbarHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                BackButton(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainer,
+                  ),
+                ),
+                const Spacer(),
+                if (state.items.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.slideshow_outlined),
+                    tooltip: L10n.global().slideshowTooltip,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainer,
+                    ),
+                    onPressed: () {
+                      context.addEvent(const _StartSlideshow());
+                    },
+                  ),
+                if (state.collection.isPendingSharedAlbum)
+                  IconButton(
+                    onPressed: () => _onAddToCollectionsViewPressed(context),
+                    icon: const AssetIcon(asset.icAddCollectionsOutlined24),
+                    tooltip: L10n.global().addToCollectionsViewTooltip,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainer,
+                    ),
+                  ),
+                if (state.items.isNotEmpty || canRename || canShare)
+                  PopupMenuButton<_MenuOption>(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).moreButtonTooltip,
+                    itemBuilder: (_) => [
                       if (canRename)
                         PopupMenuItem(
                           value: _MenuOption.edit,
                           child: Text(L10n.global().editTooltip),
                         ),
-                      if (canManualCover && adapter.isManualCover())
+                      if (canManualCover && manualCoverWorker.isManualCover())
                         PopupMenuItem(
                           value: _MenuOption.unsetCover,
                           child: Text(L10n.global().unsetAlbumCoverTooltip),
+                        ),
+                      if (canShare)
+                        PopupMenuItem(
+                          value: _MenuOption.share,
+                          child: Text(L10n.global().shareTooltip),
                         ),
                       if (state.items.isNotEmpty) ...[
                         PopupMenuItem(
@@ -76,21 +101,26 @@ class _AppBar extends StatelessWidget {
                       ],
                       if (state.collection.contentProvider
                               is CollectionAlbumProvider &&
-                          CollectionAdapter.of(
-                            c,
-                            context.bloc.account,
-                            state.collection,
-                          ).isPermitted(CollectionCapability.share))
+                          permittedWorker.isPermitted(
+                            CollectionCapability.share,
+                          ))
                         PopupMenuItem(
                           value: _MenuOption.albumFixShare,
                           child: Text(L10n.global().fixSharesTooltip),
                         ),
                     ],
-                onSelected: (option) {
-                  _onMenuSelected(context, option);
-                },
-              ),
-          ],
+                    onSelected: (option) {
+                      _onMenuSelected(context, option);
+                    },
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainer,
+                    ),
+                  ),
+              ].separated((_) => const SizedBox(width: 4)).toList(),
+            ),
+          ),
         );
       },
     );
@@ -113,6 +143,9 @@ class _AppBar extends StatelessWidget {
       case _MenuOption.albumFixShare:
         _onAlbumFixShareSelected(context);
         break;
+      case _MenuOption.share:
+        _onSharePressed(context);
+        break;
     }
   }
 
@@ -120,12 +153,11 @@ class _AppBar extends StatelessWidget {
     final bloc = context.read<_Bloc>();
     final result = await showDialog<Collection>(
       context: context,
-      builder:
-          (_) => ExportCollectionDialog(
-            account: bloc.account,
-            collection: bloc.state.collection,
-            items: bloc.state.items,
-          ),
+      builder: (_) => ExportCollectionDialog(
+        account: bloc.account,
+        collection: bloc.state.collection,
+        items: bloc.state.items,
+      ),
     );
     if (result != null) {
       Navigator.of(context).pop();
@@ -146,11 +178,10 @@ class _AppBar extends StatelessWidget {
     final bloc = context.read<_Bloc>();
     await showDialog(
       context: context,
-      builder:
-          (_) => ShareCollectionDialog(
-            account: bloc.account,
-            collection: bloc.state.collection,
-          ),
+      builder: (_) => ShareCollectionDialog(
+        account: bloc.account,
+        collection: bloc.state.collection,
+      ),
     );
   }
 
@@ -159,32 +190,111 @@ class _AppBar extends StatelessWidget {
   }
 }
 
-class _AppBarCover extends StatelessWidget {
-  const _AppBarCover();
+class _CoverView extends StatefulWidget {
+  const _CoverView();
+
+  @override
+  State<StatefulWidget> createState() => _CoverViewState();
+}
+
+class _CoverViewState extends State<_CoverView> with TickerProviderStateMixin {
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List.generate(
+      2,
+      (_) => AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 30),
+      ),
+    );
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
+    _controllers[_activeIndex].addListener(_transitionHandler);
+    _controllers[_activeIndex].forward();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen: (previous, current) => previous.cover != current.cover,
+      buildWhen: (previous, current) =>
+          previous.cover != current.cover ||
+          previous.collection != current.collection,
       builder: (context, state) {
         if (state.cover?.url != null) {
-          return Opacity(
-            opacity:
-                Theme.of(context).brightness == Brightness.light ? 0.25 : 0.35,
-            child: FittedBox(
-              clipBehavior: Clip.hardEdge,
-              fit: BoxFit.cover,
-              child:
-                  CachedNetworkImageBuilder(
-                    type: CachedNetworkImageType.cover,
-                    imageUrl: state.cover!.url,
-                    mime: state.cover!.mime,
-                    account: context.bloc.account,
-                    errorWidget: (context, url, error) {
-                      // just leave it empty
-                      return Container();
-                    },
-                  ).build(),
+          return SizedBox(
+            height: MediaQuery.sizeOf(context).height / 1.5,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final currController = _controllers[_activeIndex];
+                    final nextController = _controllers[1 - _activeIndex];
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildImage(
+                          context,
+                          currController,
+                          constraints,
+                          state.cover!,
+                        ),
+                        if (_isFading)
+                          AnimatedBuilder(
+                            animation: _fadeController,
+                            builder: (context, child) => Opacity(
+                              opacity: _fadeController.value,
+                              child: _buildImage(
+                                context,
+                                nextController,
+                                constraints,
+                                state.cover!,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.transparent, Colors.black45],
+                      begin: Alignment(0, -.5),
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: Text(
+                    state.collection.name,
+                    style: Theme.of(context).textStyleColored(
+                      (textTheme) => textTheme.displayLarge?.copyWith(
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: -2,
+                        height: .92,
+                      ),
+                      (colorScheme) => colorScheme.onDarkSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           );
         } else {
@@ -193,6 +303,127 @@ class _AppBarCover extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildImage(
+    BuildContext context,
+    AnimationController controller,
+    BoxConstraints constraints,
+    CollectionCoverResult cover,
+  ) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final t = controller.value * 2 - 1;
+        final (dx, dy) = (_isLandscape ?? true)
+            ? (-t * constraints.maxWidth * .25, .0)
+            : (.0, -t * constraints.maxHeight * .25);
+        return ClipRect(
+          child: Transform.translate(
+            offset: Offset(dx, dy),
+            child: Transform.scale(
+              scale: 1.5,
+              child: AnimatedOpacity(
+                opacity: _isLandscape == null ? 0 : 1,
+                duration: k.animationDurationLong,
+                child: child,
+              ),
+            ),
+          ),
+        );
+      },
+      child: FittedBox(
+        clipBehavior: Clip.hardEdge,
+        fit: BoxFit.cover,
+        child: CachedNetworkImageBuilder(
+          type: CachedNetworkImageType.largeImage,
+          imageUrl: cover.url,
+          mime: cover.mime,
+          account: context.bloc.account,
+          imageBuilder: (ctx, child, imageProvider) {
+            _onImageLoaded(imageProvider, cover.url);
+            return child;
+          },
+          errorWidget: (context, url, error) {
+            // just leave it empty
+            return Container();
+          },
+        ).build(),
+      ),
+    );
+  }
+
+  void _onImageLoaded(ImageProvider imageProvider, String url) {
+    if (_coverUrl == url) {
+      return;
+    }
+    _coverUrl = url;
+    unawaited(_loadColorScheme(imageProvider, url));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _coverUrl != url) {
+        return;
+      }
+      final stream = imageProvider.resolve(ImageConfiguration.empty);
+      late ImageStreamListener listener;
+      listener = ImageStreamListener((info, _) {
+        stream.removeListener(listener);
+        if (!mounted || _coverUrl != url) {
+          return;
+        }
+        setState(() {
+          _isLandscape = info.image.width >= info.image.height;
+        });
+      });
+      stream.addListener(listener);
+    });
+  }
+
+  void _transitionHandler() {
+    final currController = _controllers[_activeIndex];
+    if (_isFading ||
+        currController.value <
+            (_controllers[0].duration!.inMilliseconds -
+                    _fadeController.duration!.inMilliseconds) /
+                _controllers[0].duration!.inMilliseconds) {
+      return;
+    }
+    final nextI = 1 - _activeIndex;
+    final nextController = _controllers[nextI];
+    nextController.value = 0;
+    nextController.forward();
+    setState(() {
+      _isFading = true;
+    });
+    _fadeController.forward(from: 0).then((_) {
+      if (!mounted) {
+        return;
+      }
+      currController.stop();
+      currController.removeListener(_transitionHandler);
+      setState(() {
+        _activeIndex = nextI;
+        _isFading = false;
+      });
+      _fadeController.value = 0;
+      _controllers[_activeIndex].addListener(_transitionHandler);
+    });
+  }
+
+  Future<void> _loadColorScheme(ImageProvider imageProvider, String url) async {
+    final colorScheme = await ColorScheme.fromImageProvider(
+      provider: imageProvider,
+    );
+    if (!mounted || _coverUrl != url) {
+      return;
+    }
+    context.addEvent(_SetCoverColorScheme(colorScheme));
+  }
+
+  String? _coverUrl;
+  late List<AnimationController> _controllers;
+  late AnimationController _fadeController;
+  var _activeIndex = 0;
+  var _isFading = false;
+  bool? _isLandscape;
 }
 
 @npLog
@@ -202,69 +433,64 @@ class _SelectionAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.selectedItems != current.selectedItems,
-      builder:
-          (context, state) => SelectionAppBar(
-            count: state.selectedItems.length,
-            onClosePressed: () {
-              context.read<_Bloc>().add(const _SetSelectedItems(items: {}));
+      buildWhen: (previous, current) =>
+          previous.selectedItems != current.selectedItems,
+      builder: (context, state) => BoxSelectionAppBar(
+        count: state.selectedItems.length,
+        onClosePressed: () {
+          context.read<_Bloc>().add(const _SetSelectedItems(items: {}));
+        },
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: L10n.global().shareTooltip,
+            onPressed: () {
+              _onSelectionSharePressed(context);
             },
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share_outlined),
-                tooltip: L10n.global().shareTooltip,
-                onPressed: () {
-                  _onSelectionSharePressed(context);
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_outlined),
-                tooltip: L10n.global().addItemToCollectionTooltip,
-                onPressed: () {
-                  _onSelectionAddPressed(context);
-                },
-              ),
-              PopupMenuButton<_SelectionMenuOption>(
-                tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
-                itemBuilder:
-                    (context) => [
-                      if (context.read<_Bloc>().isCollectionCapabilityPermitted(
-                            CollectionCapability.manualItem,
-                          ) &&
-                          state.isSelectionRemovable)
-                        PopupMenuItem(
-                          value: _SelectionMenuOption.removeFromAlbum,
-                          child: Text(L10n.global().removeFromAlbumTooltip),
-                        ),
-                      PopupMenuItem(
-                        value: _SelectionMenuOption.download,
-                        child: Text(L10n.global().downloadTooltip),
-                      ),
-                      if (state.isSelectionManageableFile) ...[
-                        PopupMenuItem(
-                          value: _SelectionMenuOption.archive,
-                          child: Text(L10n.global().archiveTooltip),
-                        ),
-                        if (context
-                                .read<_Bloc>()
-                                .isCollectionCapabilityPermitted(
-                                  CollectionCapability.deleteItem,
-                                ) &&
-                            state.isSelectionDeletable)
-                          PopupMenuItem(
-                            value: _SelectionMenuOption.delete,
-                            child: Text(L10n.global().deleteTooltip),
-                          ),
-                      ],
-                    ],
-                onSelected: (option) {
-                  _onSelectionMenuSelected(context, option);
-                },
-              ),
-            ],
           ),
+          IconButton(
+            icon: const Icon(Icons.add_outlined),
+            tooltip: L10n.global().addItemToCollectionTooltip,
+            onPressed: () {
+              _onSelectionAddPressed(context);
+            },
+          ),
+          PopupMenuButton<_SelectionMenuOption>(
+            tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
+            itemBuilder: (context) => [
+              if (context.read<_Bloc>().isCollectionCapabilityPermitted(
+                    CollectionCapability.manualItem,
+                  ) &&
+                  state.isSelectionRemovable)
+                PopupMenuItem(
+                  value: _SelectionMenuOption.removeFromAlbum,
+                  child: Text(L10n.global().removeFromAlbumTooltip),
+                ),
+              PopupMenuItem(
+                value: _SelectionMenuOption.download,
+                child: Text(L10n.global().downloadTooltip),
+              ),
+              if (state.isSelectionManageableFile) ...[
+                PopupMenuItem(
+                  value: _SelectionMenuOption.archive,
+                  child: Text(L10n.global().archiveTooltip),
+                ),
+                if (context.read<_Bloc>().isCollectionCapabilityPermitted(
+                      CollectionCapability.deleteItem,
+                    ) &&
+                    state.isSelectionDeletable)
+                  PopupMenuItem(
+                    value: _SelectionMenuOption.delete,
+                    child: Text(L10n.global().deleteTooltip),
+                  ),
+              ],
+            ],
+            onSelected: (option) {
+              _onSelectionMenuSelected(context, option);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -289,29 +515,7 @@ class _SelectionAppBar extends StatelessWidget {
   }
 
   Future<void> _onSelectionSharePressed(BuildContext context) async {
-    final bloc = context.read<_Bloc>();
-    final selected =
-        bloc.state.selectedItems
-            .whereType<_FileItem>()
-            .map((e) => e.file)
-            .toList();
-    if (selected.isEmpty) {
-      SnackBarManager().showSnackBar(
-        SnackBar(
-          content: Text(L10n.global().shareSelectedEmptyNotification),
-          duration: k.snackBarDurationNormal,
-        ),
-      );
-      return;
-    }
-    final result = await showDialog(
-      context: context,
-      builder:
-          (context) => FileSharerDialog(account: bloc.account, files: selected),
-    );
-    if (result ?? false) {
-      bloc.add(const _SetSelectedItems(items: {}));
-    }
+    context.addEvent(const _ShareSelectedItems());
   }
 
   Future<void> _onSelectionAddPressed(BuildContext context) async {
@@ -325,40 +529,51 @@ class _SelectionAppBar extends StatelessWidget {
   }
 }
 
+class _EditPickerAppBar extends StatelessWidget {
+  const _EditPickerAppBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+        onPressed: () {
+          context.addEvent(const _CancelEditPickerMode());
+        },
+      ),
+      title: Text(L10n.global().collectionAddItemTitle),
+    );
+  }
+}
+
 class _EditAppBar extends StatelessWidget {
   const _EditAppBar();
 
   @override
   Widget build(BuildContext context) {
-    final capabilitiesAdapter = CollectionAdapter.of(
+    final permittedWorker = CollectionWorkerFactory.isPermitted(
       KiwiContainer().resolve<DiContainer>(),
       context.read<_Bloc>().account,
       context.read<_Bloc>().state.collection,
     );
-    return SliverAppBar(
-      floating: true,
-      expandedHeight: 160,
-      flexibleSpace: FlexibleSpaceBar(
-        background: const _AppBarCover(),
-        title: TextFormField(
-          initialValue: context.read<_Bloc>().state.currentEditName,
-          decoration: InputDecoration(hintText: L10n.global().nameInputHint),
-          validator: (_) {
-            // use text in state here because the value might be wrong if user
-            // scrolled the app bar off screen
-            if (context.read<_Bloc>().state.currentEditName.isNotEmpty) {
-              return null;
-            } else {
-              return L10n.global().nameInputInvalidEmpty;
-            }
-          },
-          onChanged: (value) {
-            context.read<_Bloc>().add(_EditName(value));
-          },
-          style: TextStyle(
-            color: Theme.of(context).appBarTheme.foregroundColor,
-          ),
-        ),
+    return AppBar(
+      title: TextFormField(
+        initialValue: context.read<_Bloc>().state.currentEditName,
+        decoration: InputDecoration(hintText: L10n.global().nameInputHint),
+        validator: (_) {
+          // use text in state here because the value might be wrong if user
+          // scrolled the app bar off screen
+          if (context.read<_Bloc>().state.currentEditName.isNotEmpty) {
+            return null;
+          } else {
+            return L10n.global().nameInputInvalidEmpty;
+          }
+        },
+        onChanged: (value) {
+          context.read<_Bloc>().add(_EditName(value));
+        },
+        style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
       ),
       leading: IconButton(
         icon: const Icon(Icons.check_outlined),
@@ -369,31 +584,31 @@ class _EditAppBar extends StatelessWidget {
         },
       ),
       actions: [
-        if (capabilitiesAdapter.isPermitted(CollectionCapability.labelItem))
+        if (permittedWorker.isPermitted(CollectionCapability.labelItem))
           IconButton(
             icon: const Icon(Icons.text_fields_outlined),
             tooltip: L10n.global().albumAddTextTooltip,
-            onPressed: () => _onAddTextPressed(context),
+            onPressed: () {
+              context.addEvent(const _RequestAddLabel());
+            },
           ),
-        if (capabilitiesAdapter.isPermitted(CollectionCapability.mapItem))
+        if (permittedWorker.isPermitted(CollectionCapability.mapItem))
           _BlocSelector(
             selector: (state) => state.isAddMapBusy,
-            builder:
-                (context, isAddMapBusy) =>
-                    isAddMapBusy
-                        ? const IconButton(
-                          icon: AppBarProgressIndicator(),
-                          onPressed: null,
-                        )
-                        : IconButton(
-                          icon: const Icon(Icons.map_outlined),
-                          tooltip: L10n.global().albumAddMapTooltip,
-                          onPressed: () {
-                            context.addEvent(const _RequestAddMap());
-                          },
-                        ),
+            builder: (context, isAddMapBusy) => isAddMapBusy
+                ? const IconButton(
+                    icon: AppBarProgressIndicator(),
+                    onPressed: null,
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.map_outlined),
+                    tooltip: L10n.global().albumAddMapTooltip,
+                    onPressed: () {
+                      context.addEvent(const _RequestAddMap());
+                    },
+                  ),
           ),
-        if (capabilitiesAdapter.isPermitted(CollectionCapability.sort))
+        if (permittedWorker.isPermitted(CollectionCapability.sort))
           IconButton(
             icon: const Icon(Icons.sort_by_alpha_outlined),
             tooltip: L10n.global().sortTooltip,
@@ -403,64 +618,49 @@ class _EditAppBar extends StatelessWidget {
     );
   }
 
-  Future<void> _onAddTextPressed(BuildContext context) async {
-    final result = await showDialog<String>(
-      context: context,
-      builder:
-          (context) => SimpleInputDialog(
-            buttonText: MaterialLocalizations.of(context).saveButtonLabel,
-          ),
-    );
-    if (result == null) {
-      return;
-    }
-    context.read<_Bloc>().add(_AddLabelToCollection(result));
-  }
-
   Future<void> _onSortPressed(BuildContext context) async {
     final current = context.read<_Bloc>().state.run(
       (s) => s.editSort ?? s.collection.itemSort,
     );
     final result = await showDialog<CollectionItemSort>(
       context: context,
-      builder:
-          (context) => FancyOptionPicker(
-            title: Text(L10n.global().sortOptionDialogTitle),
-            items:
-                [
-                      _SortDialogParams(
-                        L10n.global().sortOptionTimeDescendingLabel,
-                        CollectionItemSort.dateDescending,
-                      ),
-                      _SortDialogParams(
-                        L10n.global().sortOptionTimeAscendingLabel,
-                        CollectionItemSort.dateAscending,
-                      ),
-                      _SortDialogParams(
-                        L10n.global().sortOptionFilenameAscendingLabel,
-                        CollectionItemSort.nameAscending,
-                      ),
-                      _SortDialogParams(
-                        L10n.global().sortOptionFilenameDescendingLabel,
-                        CollectionItemSort.nameDescending,
-                      ),
-                      if (current == CollectionItemSort.manual)
-                        _SortDialogParams(
-                          L10n.global().sortOptionManualLabel,
-                          CollectionItemSort.manual,
-                        ),
-                    ]
-                    .map(
-                      (e) => FancyOptionPickerItem(
-                        label: e.label,
-                        isSelected: current == e.value,
-                        onSelect: () {
-                          Navigator.of(context).pop(e.value);
-                        },
-                      ),
-                    )
-                    .toList(),
-          ),
+      builder: (context) => FancyOptionPicker(
+        title: Text(L10n.global().sortOptionDialogTitle),
+        items:
+            [
+                  _SortDialogParams(
+                    L10n.global().sortOptionTimeDescendingLabel,
+                    CollectionItemSort.dateDescending,
+                  ),
+                  _SortDialogParams(
+                    L10n.global().sortOptionTimeAscendingLabel,
+                    CollectionItemSort.dateAscending,
+                  ),
+                  _SortDialogParams(
+                    L10n.global().sortOptionFilenameAscendingLabel,
+                    CollectionItemSort.nameAscending,
+                  ),
+                  _SortDialogParams(
+                    L10n.global().sortOptionFilenameDescendingLabel,
+                    CollectionItemSort.nameDescending,
+                  ),
+                  if (current == CollectionItemSort.manual)
+                    _SortDialogParams(
+                      L10n.global().sortOptionManualLabel,
+                      CollectionItemSort.manual,
+                    ),
+                ]
+                .map(
+                  (e) => FancyOptionPickerItem(
+                    label: e.label,
+                    isSelected: current == e.value,
+                    onSelect: () {
+                      Navigator.of(context).pop(e.value);
+                    },
+                  ),
+                )
+                .toList(),
+      ),
     );
     if (result == null) {
       return;
@@ -469,7 +669,7 @@ class _EditAppBar extends StatelessWidget {
   }
 }
 
-enum _MenuOption { edit, unsetCover, download, export, albumFixShare }
+enum _MenuOption { edit, unsetCover, download, export, albumFixShare, share }
 
 enum _SelectionMenuOption { download, removeFromAlbum, archive, delete }
 

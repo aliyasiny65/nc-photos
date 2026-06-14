@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' as io;
+import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
 import 'package:nc_photos/account.dart';
@@ -6,16 +8,24 @@ import 'package:nc_photos/cache_manager_util.dart';
 import 'package:nc_photos/di_container.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/content/factory.dart';
-import 'package:nc_photos/entity/exif_util.dart';
 import 'package:nc_photos/entity/file.dart';
 import 'package:nc_photos/entity/file_util.dart' as file_util;
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/file_view_util.dart';
+import 'package:nc_photos/use_case/download_file.dart';
+import 'package:nc_photos/use_case/download_file2.dart';
+import 'package:nc_photos/use_case/download_preview.dart';
 import 'package:nc_photos/use_case/inflate_file_descriptor.dart';
 import 'package:nc_photos/use_case/list_file_tag.dart';
+import 'package:nc_photos/widget/handler/permission_handler.dart';
+import 'package:nc_photos_plugin/nc_photos_plugin.dart';
+import 'package:np_common/exception.dart';
 import 'package:np_common/size.dart';
 import 'package:np_exiv2/np_exiv2.dart';
 import 'package:np_gps_map/np_gps_map.dart';
 import 'package:np_log/np_log.dart';
+import 'package:np_platform_raw_image/np_platform_raw_image.dart';
+import 'package:np_platform_util/np_platform_util.dart';
 
 part 'nextcloud.g.dart';
 
@@ -45,7 +55,65 @@ class AnyFileNextcloudLargePreviewUriGetter
       getViewerUrlForImageFile(account, _provider.file),
       _provider.file.fdMime,
     );
-    return Uri.parse("file://${fileInfo!.file.path}");
+    if (fileInfo == null) {
+      throw const FileNotFoundException();
+    }
+    return Uri.parse("file://${fileInfo.file.path}");
+  }
+
+  final Account account;
+
+  final AnyFileNextcloudProvider _provider;
+}
+
+class AnyFileNextcloudLocalFileUriGetter implements AnyFileLocalFileUriGetter {
+  AnyFileNextcloudLocalFileUriGetter(
+    AnyFile file, {
+    required this.isPublic,
+    required this.account,
+  }) : _provider = file.provider as AnyFileNextcloudProvider;
+
+  @override
+  Future<Uri> get() async {
+    if (isPublic) {
+      await const PermissionHandler().ensureStorageWritePermission();
+    }
+    return Uri.parse(
+      await DownloadFile()(
+        account,
+        _provider.file,
+        isPublic: isPublic,
+        shouldNotify: false,
+      ),
+    );
+  }
+
+  final bool isPublic;
+  final Account account;
+
+  final AnyFileNextcloudProvider _provider;
+}
+
+class AnyFileNextcloudLocalPreviewUriGetter
+    implements AnyFileLocalPreviewUriGetter {
+  AnyFileNextcloudLocalPreviewUriGetter(AnyFile file, {required this.account})
+    : _provider = file.provider as AnyFileNextcloudProvider;
+
+  @override
+  Future<Uri> get() async {
+    if (file_util.isSupportedImageFormat(_provider.file) &&
+        _provider.file.fdMime != "image/gif") {
+      return Uri.parse(await DownloadPreview()(account, _provider.file));
+    } else {
+      return Uri.parse(
+        await DownloadFile()(
+          account,
+          _provider.file,
+          isPublic: false,
+          shouldNotify: false,
+        ),
+      );
+    }
   }
 
   final Account account;
@@ -92,13 +160,13 @@ class AnyFileNextcloudMetadataGetter implements AnyFileMetadataGetter {
   @override
   Future<String?> get make async {
     final file = await _ensureFile();
-    return file?.metadata?.exif?.make;
+    return file?.metadata?.make;
   }
 
   @override
   Future<String?> get model async {
     final file = await _ensureFile();
-    return file?.metadata?.exif?.model;
+    return file?.metadata?.model;
   }
 
   @override
@@ -128,10 +196,9 @@ class AnyFileNextcloudMetadataGetter implements AnyFileMetadataGetter {
   @override
   Future<MapCoord?> get gpsCoord async {
     final file = await _ensureFile();
-    final lat = file?.metadata?.exif?.gpsLatitudeDeg;
-    final lng = file?.metadata?.exif?.gpsLongitudeDeg;
-    if (lat != null && lng != null) {
-      return MapCoord(lat, lng);
+    final gps = file?.metadata?.gpsCoord;
+    if (gps != null) {
+      return MapCoord(gps.lat, gps.lng);
     } else {
       return null;
     }
@@ -141,6 +208,24 @@ class AnyFileNextcloudMetadataGetter implements AnyFileMetadataGetter {
   Future<ImageLocation?> get location async {
     final file = await _ensureFile();
     return file?.location;
+  }
+
+  @override
+  Future<Duration?> get offsetTime async {
+    final file = await _ensureFile();
+    return file?.metadata?.exif?.offsetTimeOriginal;
+  }
+
+  @override
+  Future<double?> get fps async {
+    final file = await _ensureFile();
+    return file?.metadata?.xmp?.fps;
+  }
+
+  @override
+  Future<Duration?> get duration async {
+    final file = await _ensureFile();
+    return file?.metadata?.xmp?.duration;
   }
 
   Future<File?> _ensureFile() async {
@@ -200,6 +285,67 @@ class AnyFileNextcloudTagGetter implements AnyFileTagGetter {
 
   final AnyFileNextcloudProvider _provider;
   Completer<List<AnyFileTag>?>? _initCompleter;
+}
+
+class AnyFileNextcloudBinaryBitmapGetter implements AnyFileBinaryBitmapGetter {
+  AnyFileNextcloudBinaryBitmapGetter(AnyFile file, {required this.account})
+    : _provider = file.provider as AnyFileNextcloudProvider;
+
+  @override
+  Future<({Uint8List bytes, Rgba8Image bitmap})> get({
+    required int maxWidth,
+    required int maxHeight,
+    bool shouldFixOrientation = false,
+    void Function(double progress)? onProgress,
+  }) async {
+    final filePath = await DownloadInternalTempFile()(
+      account,
+      _provider.file,
+      onProgress: onProgress,
+    );
+    final bytes = await io.File(filePath).readAsBytes();
+    if (getRawPlatform() == NpPlatform.android) {
+      final uri = await ContentUri.getUriForFile(filePath);
+      return (
+        bytes: bytes,
+        bitmap: await ImageLoader.loadUri(
+          Uri.parse(uri),
+          maxWidth,
+          maxHeight,
+          ImageLoaderResizeMethod.fit,
+          isAllowSwapSide: true,
+          shouldUpscale: false,
+          shouldFixOrientation: shouldFixOrientation,
+        ),
+      );
+    } else {
+      throw UnimplementedError();
+    }
+  }
+
+  final Account account;
+
+  final AnyFileNextcloudProvider _provider;
+}
+
+class AnyFileNextcloudPrivateFileCopyGetter
+    implements AnyFilePrivateFileCopyGetter {
+  AnyFileNextcloudPrivateFileCopyGetter(AnyFile file, {required this.account})
+    : _provider = file.provider as AnyFileNextcloudProvider;
+
+  @override
+  Future<io.File> get({void Function(double progress)? onProgress}) async {
+    final filePath = await DownloadInternalTempFile()(
+      account,
+      _provider.file,
+      onProgress: onProgress,
+    );
+    return io.File(filePath);
+  }
+
+  final Account account;
+
+  final AnyFileNextcloudProvider _provider;
 }
 
 extension on Rational {

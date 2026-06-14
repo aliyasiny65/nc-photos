@@ -13,6 +13,7 @@ import 'package:nc_photos/entity/file/file_cache_manager.dart';
 import 'package:nc_photos/entity/file/repo.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/file_util.dart' as file_util;
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/exception.dart';
 import 'package:nc_photos/np_api_util.dart';
 import 'package:nc_photos/use_case/compat/v32.dart';
@@ -20,7 +21,6 @@ import 'package:np_api/np_api.dart' as api;
 import 'package:np_collection/np_collection.dart';
 import 'package:np_common/object_util.dart';
 import 'package:np_common/or_null.dart';
-import 'package:np_datetime/np_datetime.dart';
 import 'package:np_db/np_db.dart';
 import 'package:np_log/np_log.dart';
 import 'package:path/path.dart' as path_lib;
@@ -101,11 +101,11 @@ class FileWebdavDataSource implements FileDataSource {
   }
 
   @override
-  getBinary(Account account, File f) async {
-    _log.info("[getBinary] ${f.path}");
+  Future<Uint8List> getBinary(Account account, FileDescriptor f) async {
+    _log.info("[getBinary] ${f.fdPath}");
     final response = await ApiUtil.fromAccount(
       account,
-    ).files().get(path: f.path);
+    ).files().get(path: f.fdPath);
     if (!response.isGood) {
       _log.severe("[getBinary] Failed requesting server: $response");
       throw ApiException(
@@ -117,11 +117,16 @@ class FileWebdavDataSource implements FileDataSource {
   }
 
   @override
-  putBinary(Account account, String path, Uint8List content) async {
+  Future<void> putBinary(
+    Account account,
+    String path,
+    Uint8List content, {
+    void Function(double progress)? onProgress,
+  }) async {
     _log.info("[putBinary] $path");
     final response = await ApiUtil.fromAccount(
       account,
-    ).files().put(path: path, content: content);
+    ).files().put(path: path, content: content, onProgress: onProgress);
     if (!response.isGood) {
       _log.severe("[putBinary] Failed requesting server: $response");
       throw ApiException(
@@ -152,8 +157,9 @@ class FileWebdavDataSource implements FileDataSource {
         "app:metadata": jsonEncode(metadata!.obj!.toJson()),
       if (isArchived?.obj != null) "app:is-archived": isArchived!.obj,
       if (overrideDateTime?.obj != null)
-        "app:override-date-time":
-            overrideDateTime!.obj!.toUtc().toIso8601String(),
+        "app:override-date-time": overrideDateTime!.obj!
+            .toUtc()
+            .toIso8601String(),
       if (favorite != null) "oc:favorite": favorite ? 1 : 0,
       if (location?.obj != null)
         "app:location": jsonEncode(location!.obj!.toJson()),
@@ -183,15 +189,15 @@ class FileWebdavDataSource implements FileDataSource {
   }
 
   @override
-  copy(
+  Future<void> copy(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) async {
-    _log.info("[copy] ${f.path} to $destination");
+    _log.info("[copy] ${f.fdPath} to $destination");
     final response = await ApiUtil.fromAccount(account).files().copy(
-      path: f.path,
+      path: f.fdPath,
       destinationUrl: "${account.url}/$destination",
       overwrite: shouldOverwrite,
     );
@@ -211,15 +217,15 @@ class FileWebdavDataSource implements FileDataSource {
   }
 
   @override
-  move(
+  Future<void> move(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) async {
-    _log.info("[move] ${f.path} to $destination");
+    _log.info("[move] ${f.fdPath} to $destination");
     final response = await ApiUtil.fromAccount(account).files().move(
-      path: f.path,
+      path: f.fdPath,
       destinationUrl: "${account.url}/$destination",
       overwrite: shouldOverwrite,
     );
@@ -321,24 +327,23 @@ class FileWebdavDataSource implements FileDataSource {
     final apiFiles = await api.FileParser().parse(response.body);
     // _log.fine("[list] Parsed files: [$files]");
     bool hasNoMediaMarker = false;
-    final files =
-        apiFiles
-            .map(ApiFileConverter.fromApi)
-            .forEachLazy((f) {
-              if (file_util.isNoMediaMarker(f)) {
-                hasNoMediaMarker = true;
-              }
-            })
-            .where((f) => _validateFile(f))
-            .map((e) {
-              if (e.metadata == null || e.metadata!.fileEtag == e.etag) {
-                return e;
-              } else {
-                _log.info("[list] Ignore outdated metadata for ${e.path}");
-                return e.copyWith(metadata: const OrNull(null));
-              }
-            })
-            .toList();
+    final files = apiFiles
+        .map(ApiFileConverter.fromApi)
+        .forEachLazy((f) {
+          if (file_util.isNoMediaMarker(f)) {
+            hasNoMediaMarker = true;
+          }
+        })
+        .where((f) => _validateFile(f))
+        .map((e) {
+          if (e.metadata == null || e.metadata!.fileEtag == e.etag) {
+            return e;
+          } else {
+            _log.info("[list] Ignore outdated metadata for ${e.path}");
+            return e.copyWith(metadata: const OrNull(null));
+          }
+        })
+        .toList();
 
     await _compatUpgrade(account, files);
 
@@ -384,11 +389,10 @@ class FileSqliteDbDataSource implements FileDataSource {
     } on DbNotFoundException catch (_) {
       throw CacheNotFoundException("No entry: ${dir.path}");
     }
-    final results =
-        dbFiles
-            .map((f) => DbFileConverter.fromDb(account.userId.toString(), f))
-            .where((f) => _validateFile(f))
-            .toList();
+    final results = dbFiles
+        .map((f) => DbFileConverter.fromDb(account.userId.toString(), f))
+        .where((f) => _validateFile(f))
+        .toList();
     _log.fine("[list] Queried ${results.length} files");
     if (results.isEmpty) {
       // each dir will at least contain its own entry, so an empty list here
@@ -407,27 +411,6 @@ class FileSqliteDbDataSource implements FileDataSource {
   @override
   listMinimal(Account account, File dir) => list(account, dir);
 
-  /// List files with date between [fromEpochMs] (inclusive) and [toEpochMs]
-  /// (exclusive)
-  Future<List<File>> listByDate(
-    Account account,
-    int fromEpochMs,
-    int toEpochMs,
-  ) async {
-    _log.info("[listByDate] [$fromEpochMs, $toEpochMs]");
-    final results = await _c.npDb.getFilesByTimeRange(
-      account: account.toDb(),
-      dirRoots: account.roots,
-      range: TimeRange(
-        from: DateTime.fromMillisecondsSinceEpoch(fromEpochMs),
-        to: DateTime.fromMillisecondsSinceEpoch(toEpochMs),
-      ),
-    );
-    return results
-        .map((e) => DbFileConverter.fromDb(account.userId.toString(), e))
-        .toList();
-  }
-
   @override
   Future<void> remove(Account account, FileDescriptor f) {
     _log.info("[remove] ${f.fdPath}");
@@ -435,13 +418,18 @@ class FileSqliteDbDataSource implements FileDataSource {
   }
 
   @override
-  getBinary(Account account, File f) {
-    _log.severe("[getBinary] ${f.path}");
+  Future<Uint8List> getBinary(Account account, FileDescriptor f) {
+    _log.severe("[getBinary] ${f.fdPath}");
     throw UnimplementedError();
   }
 
   @override
-  putBinary(Account account, String path, Uint8List content) async {
+  Future<void> putBinary(
+    Account account,
+    String path,
+    Uint8List content, {
+    void Function(double progress)? onProgress,
+  }) async {
     _log.info("[putBinary] $path");
     // do nothing, we currently don't store file contents locally
   }
@@ -463,29 +451,26 @@ class FileSqliteDbDataSource implements FileDataSource {
       isFavorite: favorite?.let(OrNull.new),
       isArchived: isArchived,
       overrideDateTime: overrideDateTime,
-      bestDateTime:
-          overrideDateTime == null && metadata == null
-              ? null
-              : file_util.getBestDateTime(
-                overrideDateTime:
-                    overrideDateTime == null
-                        ? f.overrideDateTime
-                        : overrideDateTime.obj,
-                dateTimeOriginal:
-                    metadata == null
-                        ? f.metadata?.exif?.dateTimeOriginal
-                        : metadata.obj?.exif?.dateTimeOriginal,
-                lastModified: f.lastModified,
-              ),
+      bestDateTime: overrideDateTime == null && metadata == null
+          ? null
+          : file_util.getBestDateTime(
+              overrideDateTime: overrideDateTime == null
+                  ? f.overrideDateTime
+                  : overrideDateTime.obj,
+              metadataDateTime: metadata == null
+                  ? f.metadata?.dateTime
+                  : metadata.obj?.dateTime,
+              lastModified: f.lastModified,
+            ),
       imageData: metadata?.let((e) => OrNull(e.obj?.toDb())),
       location: location?.let((e) => OrNull(e.obj?.toDb())),
     );
   }
 
   @override
-  copy(
+  Future<void> copy(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) async {
@@ -495,14 +480,14 @@ class FileSqliteDbDataSource implements FileDataSource {
   @override
   Future<void> move(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) {
-    _log.info("[move] ${f.path} to $destination");
+    _log.info("[move] ${f.fdPath} to $destination");
     return _c.npDb.updateFileByFileId(
       account: account.toDb(),
-      fileId: f.fileId!,
+      fileId: f.fdId,
       relativePath: File(path: destination).strippedPathWithEmpty,
     );
   }
@@ -694,13 +679,18 @@ class FileCachedDataSource implements FileDataSource {
   }
 
   @override
-  getBinary(Account account, File f) {
+  Future<Uint8List> getBinary(Account account, FileDescriptor f) {
     return _remoteSrc.getBinary(account, f);
   }
 
   @override
-  putBinary(Account account, String path, Uint8List content) async {
-    await _remoteSrc.putBinary(account, path, content);
+  Future<void> putBinary(
+    Account account,
+    String path,
+    Uint8List content, {
+    void Function(double progress)? onProgress,
+  }) async {
+    await _remoteSrc.putBinary(account, path, content, onProgress: onProgress);
   }
 
   @override
@@ -738,9 +728,9 @@ class FileCachedDataSource implements FileDataSource {
   }
 
   @override
-  copy(
+  Future<void> copy(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) async {
@@ -755,7 +745,7 @@ class FileCachedDataSource implements FileDataSource {
   @override
   Future<void> move(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) async {

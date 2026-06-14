@@ -6,12 +6,13 @@ import 'package:np_http/np_http.dart';
 
 class DownloadBuilder extends itf.DownloadBuilder {
   @override
-  build({
+  itf.Download build({
     required String url,
     Map<String, String>? headers,
     String? mimeType,
     required String filename,
     String? parentDir,
+    required bool isPublic,
     bool? shouldNotify,
   }) {
     return _WebDownload(url: url, headers: headers, filename: filename);
@@ -22,7 +23,7 @@ class _WebDownload extends itf.Download {
   _WebDownload({required this.url, this.headers, required this.filename});
 
   @override
-  call() async {
+  Future<String> call() async {
     final uri = Uri.parse(url);
     final req = http.Request("GET", uri)..headers.addAll(headers ?? {});
     final response = await http.Response.fromStream(
@@ -35,6 +36,7 @@ class _WebDownload extends itf.Download {
     }
     final saver = FileSaver();
     await saver.saveFile(filename, response.bodyBytes);
+    return "";
   }
 
   @override

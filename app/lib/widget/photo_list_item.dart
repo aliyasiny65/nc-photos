@@ -4,11 +4,12 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/app_localizations.dart';
+import 'package:nc_photos/cache_manager_util.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/local_file.dart';
 import 'package:nc_photos/flutter_util.dart' as flutter_util;
 import 'package:nc_photos/k.dart' as k;
-import 'package:nc_photos/mobile/android/content_uri_image_provider.dart';
+import 'package:nc_photos/mobile/local_media_image.dart';
 import 'package:nc_photos/theme.dart';
 import 'package:nc_photos/widget/network_thumbnail.dart';
 import 'package:nc_photos/widget/selectable_item_stream_list_mixin.dart';
@@ -137,18 +138,21 @@ class PhotoListLocalImageItem extends PhotoListLocalFileItem {
   });
 
   @override
-  Widget buildWidget(BuildContext context) => PhotoListLocalImage(file: file);
+  Widget buildWidget(BuildContext context) => PhotoListLocalImage(
+    file: file,
+    backupStatus: PhotoListLocalFileBackupStatus.none,
+  );
 }
 
-class PhotoListImage extends StatelessWidget {
-  const PhotoListImage({
+class PhotoListImageOnly extends StatelessWidget {
+  const PhotoListImageOnly({
     super.key,
     required this.account,
     required this.previewUrl,
     required this.mime,
-    this.padding = const EdgeInsets.all(2),
-    this.isFavorite = false,
+    this.cacheType = CachedNetworkImageType.thumbnail,
     this.heroKey,
+    this.onDominantColor,
   });
 
   @override
@@ -168,22 +172,60 @@ class PhotoListImage extends StatelessWidget {
         account: account,
         imageUrl: previewUrl!,
         mime: mime,
+        cacheType: cacheType,
         errorBuilder: (_) => buildPlaceholder(),
+        onDominantColor: onDominantColor,
       );
       if (heroKey != null) {
         child = Hero(tag: heroKey!, child: child);
       }
     }
 
+    return Container(
+      color: Theme.of(context).listPlaceholderBackgroundColor,
+      child: child,
+    );
+  }
+
+  final Account account;
+  final String? previewUrl;
+  final String? mime;
+  final CachedNetworkImageType cacheType;
+  // if not null, the image will be contained by a Hero widget
+  final Object? heroKey;
+  final ValueChanged<ColorScheme>? onDominantColor;
+}
+
+class PhotoListImage extends StatelessWidget {
+  const PhotoListImage({
+    super.key,
+    required this.account,
+    required this.previewUrl,
+    required this.mime,
+    this.padding = const EdgeInsets.all(2),
+    this.isFavorite = false,
+    this.heroKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return IconTheme(
       data: const IconThemeData(color: Colors.white),
       child: Padding(
         padding: padding,
         child: Stack(
           children: [
+            PhotoListImageOnly(
+              account: account,
+              previewUrl: previewUrl,
+              mime: mime,
+              heroKey: heroKey,
+            ),
+            const _BottomGradientOverlay(),
             Container(
-              color: Theme.of(context).listPlaceholderBackgroundColor,
-              child: child,
+              alignment: AlignmentDirectional.bottomEnd,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: const Icon(Icons.cloud_done_outlined, size: 16),
             ),
             if (mime == "image/gif")
               Container(
@@ -194,7 +236,7 @@ class PhotoListImage extends StatelessWidget {
             if (isFavorite)
               Container(
                 alignment: AlignmentDirectional.bottomStart,
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(4),
                 child: const Icon(Icons.star, size: 15),
               ),
           ],
@@ -248,10 +290,16 @@ class PhotoListVideo extends StatelessWidget {
                 },
               ),
             ),
+            const _BottomGradientOverlay(),
+            Container(
+              alignment: AlignmentDirectional.bottomEnd,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: const Icon(Icons.cloud_done_outlined, size: 16),
+            ),
             Positioned.directional(
               textDirection: Directionality.of(context),
-              top: 6,
-              end: 6,
+              top: 5,
+              end: 5,
               child: const Icon(Icons.play_circle_outlined, size: 17),
             ),
             if (isFavorite)
@@ -334,18 +382,17 @@ class PhotoListDate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pattern =
-        isMonthOnly ? DateFormat.YEAR_MONTH : DateFormat.YEAR_MONTH_DAY;
+    final pattern = isMonthOnly
+        ? DateFormat.YEAR_MONTH
+        : DateFormat.YEAR_MONTH_DAY;
     final subtitle = DateFormat(
       pattern,
       Localizations.localeOf(context).languageCode,
     ).format(date.toUtcDateTime());
-    return Align(
+    return Container(
       alignment: AlignmentDirectional.centerStart,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Text(subtitle, style: Theme.of(context).textTheme.labelMedium),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
     );
   }
 
@@ -353,81 +400,97 @@ class PhotoListDate extends StatelessWidget {
   final bool isMonthOnly;
 }
 
+enum PhotoListLocalFileBackupStatus { none, uploading, backedUp }
+
 class PhotoListLocalImage extends StatelessWidget {
-  const PhotoListLocalImage({super.key, required this.file});
+  const PhotoListLocalImage({
+    super.key,
+    required this.file,
+    required this.backupStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final ImageProvider provider;
-    if (file is LocalUriFile) {
-      provider = ContentUriImage(
-        (file as LocalUriFile).uri,
-        thumbnailSizeHint: SizeInt.square(k.photoThumbSize),
-      );
-    } else {
-      throw ArgumentError("Invalid file");
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(2),
-      child: FittedBox(
-        clipBehavior: Clip.hardEdge,
-        fit: BoxFit.cover,
-        child: Stack(
-          children: [
-            Container(
-              // arbitrary size here
-              constraints: BoxConstraints.tight(const Size(128, 128)),
-              color: Theme.of(context).listPlaceholderBackgroundColor,
-              child: Hero(
-                tag: flutter_util.HeroTag.fromLocalFile(file),
-                child: Image(
-                  image: provider,
-                  filterQuality: FilterQuality.high,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, e, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.image_not_supported,
-                        size: 64,
-                        color: Theme.of(context).listPlaceholderForegroundColor,
-                      ),
-                    );
-                  },
+    final provider = LocalMediaImage(
+      file.platformIdentifier,
+      thumbnailSizeHint: SizeInt.square(k.photoThumbSize),
+    );
+    return IconTheme(
+      data: const IconThemeData(color: Colors.white),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: FittedBox(
+          clipBehavior: Clip.hardEdge,
+          fit: BoxFit.cover,
+          child: Stack(
+            children: [
+              Container(
+                // arbitrary size here
+                constraints: BoxConstraints.tight(const Size(128, 128)),
+                color: Theme.of(context).listPlaceholderBackgroundColor,
+                child: Hero(
+                  tag: flutter_util.HeroTag.fromLocalFile(file),
+                  child: Image(
+                    image: provider,
+                    filterQuality: FilterQuality.high,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, e, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 64,
+                          color: Theme.of(
+                            context,
+                          ).listPlaceholderForegroundColor,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            Container(
-              // arbitrary size here
-              constraints: BoxConstraints.tight(const Size(128, 128)),
-              alignment: AlignmentDirectional.bottomEnd,
-              padding: const EdgeInsets.all(8),
-              child: const Icon(Icons.cloud_off, size: 20, color: Colors.white),
-            ),
-          ],
+              if (backupStatus != PhotoListLocalFileBackupStatus.none) ...[
+                ConstrainedBox(
+                  constraints: BoxConstraints.tight(const Size(128, 128)),
+                  child: const _BottomGradientOverlay(),
+                ),
+                Container(
+                  // arbitrary size here
+                  constraints: BoxConstraints.tight(const Size(128, 128)),
+                  alignment: AlignmentDirectional.bottomEnd,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child:
+                      backupStatus == PhotoListLocalFileBackupStatus.uploading
+                      ? const Icon(Icons.file_upload_outlined, size: 20)
+                      : const Icon(Icons.cloud_done_outlined, size: 20),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   final LocalFile file;
+  final PhotoListLocalFileBackupStatus backupStatus;
 }
 
 class PhotoListLocalVideo extends StatelessWidget {
-  const PhotoListLocalVideo({super.key, required this.file});
+  const PhotoListLocalVideo({
+    super.key,
+    required this.file,
+    required this.backupStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final ImageProvider provider;
-    if (file is LocalUriFile) {
-      provider = ContentUriImage(
-        (file as LocalUriFile).uri,
-        thumbnailSizeHint: SizeInt.square(k.photoThumbSize),
-      );
-    } else {
-      throw ArgumentError("Invalid file");
-    }
-
+    final provider = LocalMediaImage(
+      file.platformIdentifier,
+      thumbnailSizeHint: SizeInt.square(k.photoThumbSize),
+    );
     return IconTheme(
       data: const IconThemeData(color: Colors.white),
       child: Padding(
@@ -456,26 +519,39 @@ class PhotoListLocalVideo extends StatelessWidget {
                         child: Icon(
                           Icons.image_not_supported,
                           size: 64,
-                          color:
-                              Theme.of(context).listPlaceholderForegroundColor,
+                          color: Theme.of(
+                            context,
+                          ).listPlaceholderForegroundColor,
                         ),
                       );
                     },
                   ),
                 ),
               ),
-              Container(
-                // arbitrary size here
-                constraints: BoxConstraints.tight(const Size(128, 128)),
-                alignment: AlignmentDirectional.bottomEnd,
-                padding: const EdgeInsets.all(8),
-                child: const Icon(Icons.cloud_off, size: 20),
-              ),
+              if (backupStatus != PhotoListLocalFileBackupStatus.none) ...[
+                ConstrainedBox(
+                  constraints: BoxConstraints.tight(const Size(128, 128)),
+                  child: const _BottomGradientOverlay(),
+                ),
+                Container(
+                  // arbitrary size here
+                  constraints: BoxConstraints.tight(const Size(128, 128)),
+                  alignment: AlignmentDirectional.bottomEnd,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child:
+                      backupStatus == PhotoListLocalFileBackupStatus.uploading
+                      ? const Icon(Icons.file_upload_outlined, size: 20)
+                      : const Icon(Icons.cloud_done_outlined, size: 20),
+                ),
+              ],
               Container(
                 // arbitrary size here
                 constraints: BoxConstraints.tight(const Size(128, 128)),
                 alignment: AlignmentDirectional.topEnd,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 child: const Icon(Icons.play_circle_outlined, size: 22),
               ),
             ],
@@ -486,4 +562,23 @@ class PhotoListLocalVideo extends StatelessWidget {
   }
 
   final LocalFile file;
+  final PhotoListLocalFileBackupStatus backupStatus;
+}
+
+class _BottomGradientOverlay extends StatelessWidget {
+  const _BottomGradientOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: AlignmentDirectional.bottomCenter,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.black12, Colors.transparent],
+          begin: Alignment(0, .75),
+          end: Alignment(0, .5),
+        ),
+      ),
+    );
+  }
 }

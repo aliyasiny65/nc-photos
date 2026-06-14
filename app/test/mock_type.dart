@@ -15,6 +15,7 @@ import 'package:nc_photos/entity/file/data_source.dart';
 import 'package:nc_photos/entity/file/repo.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/file_util.dart' as file_util;
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/entity/share.dart';
 import 'package:nc_photos/entity/sharee.dart';
 import 'package:nc_photos/entity/tag.dart';
@@ -22,6 +23,7 @@ import 'package:nc_photos/exception_event.dart';
 import 'package:np_async/np_async.dart';
 import 'package:np_common/or_null.dart';
 import 'package:np_datetime/np_datetime.dart';
+import 'package:np_db/np_db.dart';
 import 'package:np_string/np_string.dart';
 import 'package:path/path.dart' as path_lib;
 
@@ -148,7 +150,7 @@ class MockFileDataSource implements FileDataSource {
   }
 
   @override
-  Future<Uint8List> getBinary(Account account, File f) {
+  Future<Uint8List> getBinary(Account account, FileDescriptor f) {
     throw UnimplementedError();
   }
 
@@ -170,7 +172,7 @@ class MockFileDataSource implements FileDataSource {
   @override
   Future<void> move(
     Account account,
-    File f,
+    FileDescriptor f,
     String destination, {
     bool? shouldOverwrite,
   }) {
@@ -178,7 +180,12 @@ class MockFileDataSource implements FileDataSource {
   }
 
   @override
-  Future<void> putBinary(Account account, String path, Uint8List content) {
+  Future<void> putBinary(
+    Account account,
+    String path,
+    Uint8List content, {
+    void Function(double progress)? onProgress,
+  }) {
     throw UnimplementedError();
   }
 
@@ -254,7 +261,8 @@ class MockFileWebdavDataSource implements FileWebdavDataSource {
   createDir(Account account, String path) => src.createDir(account, path);
 
   @override
-  getBinary(Account account, File f) => src.getBinary(account, f);
+  Future<Uint8List> getBinary(Account account, FileDescriptor f) =>
+      src.getBinary(account, f);
 
   @override
   list(Account account, File dir, {int? depth}) async {
@@ -273,12 +281,21 @@ class MockFileWebdavDataSource implements FileWebdavDataSource {
   listSingle(Account account, File f) => src.listSingle(account, f);
 
   @override
-  move(Account account, File f, String destination, {bool? shouldOverwrite}) =>
-      src.move(account, f, destination, shouldOverwrite: shouldOverwrite);
+  Future<void> move(
+    Account account,
+    FileDescriptor f,
+    String destination, {
+    bool? shouldOverwrite,
+  }) => src.move(account, f, destination, shouldOverwrite: shouldOverwrite);
 
   @override
-  putBinary(Account account, String path, Uint8List content) =>
-      src.putBinary(account, path, content);
+  putBinary(
+    Account account,
+    String path,
+    Uint8List content, {
+    void Function(double progress)? onProgress,
+  }) =>
+      src.putBinary(account, path, content, onProgress: onProgress);
 
   @override
   remove(Account account, FileDescriptor f) => src.remove(account, f);
@@ -320,6 +337,7 @@ class MockFileDataSource2 implements FileDataSource2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    @Deprecated("not implemented") DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -365,6 +383,7 @@ class MockFileMemoryDataSource2 extends MockFileDataSource2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    @Deprecated("not implemented") DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -418,6 +437,7 @@ class MockFileMemoryDataSource2 extends MockFileDataSource2 {
           (e) => FileIdWithTimestamp(
             fileId: e.fdId,
             timestamp: e.fdDateTime.millisecondsSinceEpoch,
+            filename: e.filename,
           ),
         )
         .toList();
@@ -449,7 +469,11 @@ class MockShareRepo implements ShareRepo {
   }
 
   @override
-  Future<Share> createLink(Account account, File file, {String? password}) {
+  Future<Share> createLink(
+    Account account,
+    String relativePath, {
+    String? password,
+  }) {
     throw UnimplementedError();
   }
 

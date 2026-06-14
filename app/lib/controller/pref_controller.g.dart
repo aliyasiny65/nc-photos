@@ -63,15 +63,6 @@ extension $PrefControllerNpSubjectAccessor on PrefController {
   Stream<bool> get isEnableClientExifChange =>
       isEnableClientExif.distinct().skip(1);
   bool get isEnableClientExifValue => _isEnableClientExifController.value;
-  // _shouldProcessExifWifiOnlyController
-  ValueStream<bool> get shouldProcessExifWifiOnly =>
-      _shouldProcessExifWifiOnlyController.stream;
-  Stream<bool> get shouldProcessExifWifiOnlyNew =>
-      shouldProcessExifWifiOnly.skip(1);
-  Stream<bool> get shouldProcessExifWifiOnlyChange =>
-      shouldProcessExifWifiOnly.distinct().skip(1);
-  bool get shouldProcessExifWifiOnlyValue =>
-      _shouldProcessExifWifiOnlyController.value;
   // _memoriesRangeController
   ValueStream<int> get memoriesRange => _memoriesRangeController.stream;
   Stream<int> get memoriesRangeNew => memoriesRange.skip(1);
@@ -291,6 +282,72 @@ extension $PrefControllerNpSubjectAccessor on PrefController {
   Stream<List<String>> get localDirsNew => localDirs.skip(1);
   Stream<List<String>> get localDirsChange => localDirs.distinct().skip(1);
   List<String> get localDirsValue => _localDirsController.value;
+  // _isEnableUploadConvertController
+  ValueStream<bool> get isEnableUploadConvert =>
+      _isEnableUploadConvertController.stream;
+  Stream<bool> get isEnableUploadConvertNew => isEnableUploadConvert.skip(1);
+  Stream<bool> get isEnableUploadConvertChange =>
+      isEnableUploadConvert.distinct().skip(1);
+  bool get isEnableUploadConvertValue => _isEnableUploadConvertController.value;
+  // _uploadConvertFormatController
+  ValueStream<ConvertFormat> get uploadConvertFormat =>
+      _uploadConvertFormatController.stream;
+  Stream<ConvertFormat> get uploadConvertFormatNew =>
+      uploadConvertFormat.skip(1);
+  Stream<ConvertFormat> get uploadConvertFormatChange =>
+      uploadConvertFormat.distinct().skip(1);
+  ConvertFormat get uploadConvertFormatValue =>
+      _uploadConvertFormatController.value;
+  // _uploadConvertQualityController
+  ValueStream<int> get uploadConvertQuality =>
+      _uploadConvertQualityController.stream;
+  Stream<int> get uploadConvertQualityNew => uploadConvertQuality.skip(1);
+  Stream<int> get uploadConvertQualityChange =>
+      uploadConvertQuality.distinct().skip(1);
+  int get uploadConvertQualityValue => _uploadConvertQualityController.value;
+  // _uploadConvertDownsizeMpController
+  ValueStream<double?> get uploadConvertDownsizeMp =>
+      _uploadConvertDownsizeMpController.stream;
+  Stream<double?> get uploadConvertDownsizeMpNew =>
+      uploadConvertDownsizeMp.skip(1);
+  Stream<double?> get uploadConvertDownsizeMpChange =>
+      uploadConvertDownsizeMp.distinct().skip(1);
+  double? get uploadConvertDownsizeMpValue =>
+      _uploadConvertDownsizeMpController.value;
+  // _isShowUploadConvertWarningController
+  ValueStream<bool> get isShowUploadConvertWarning =>
+      _isShowUploadConvertWarningController.stream;
+  Stream<bool> get isShowUploadConvertWarningNew =>
+      isShowUploadConvertWarning.skip(1);
+  Stream<bool> get isShowUploadConvertWarningChange =>
+      isShowUploadConvertWarning.distinct().skip(1);
+  bool get isShowUploadConvertWarningValue =>
+      _isShowUploadConvertWarningController.value;
+  // _isEnableLocalFileController
+  ValueStream<bool> get isEnableLocalFile =>
+      _isEnableLocalFileController.stream;
+  Stream<bool> get isEnableLocalFileNew => isEnableLocalFile.skip(1);
+  Stream<bool> get isEnableLocalFileChange =>
+      isEnableLocalFile.distinct().skip(1);
+  bool get isEnableLocalFileValue => _isEnableLocalFileController.value;
+  // _isViewerUseOriginalImageController
+  ValueStream<bool> get isViewerUseOriginalImage =>
+      _isViewerUseOriginalImageController.stream;
+  Stream<bool> get isViewerUseOriginalImageNew =>
+      isViewerUseOriginalImage.skip(1);
+  Stream<bool> get isViewerUseOriginalImageChange =>
+      isViewerUseOriginalImage.distinct().skip(1);
+  bool get isViewerUseOriginalImageValue =>
+      _isViewerUseOriginalImageController.value;
+  // _isBackupOnRemoteExifEditController
+  ValueStream<bool> get isBackupOnRemoteExifEdit =>
+      _isBackupOnRemoteExifEditController.stream;
+  Stream<bool> get isBackupOnRemoteExifEditNew =>
+      isBackupOnRemoteExifEdit.skip(1);
+  Stream<bool> get isBackupOnRemoteExifEditChange =>
+      isBackupOnRemoteExifEdit.distinct().skip(1);
+  bool get isBackupOnRemoteExifEditValue =>
+      _isBackupOnRemoteExifEditController.value;
 }
 
 extension $SecurePrefControllerNpSubjectAccessor on SecurePrefController {

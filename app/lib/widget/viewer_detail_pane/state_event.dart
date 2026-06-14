@@ -4,6 +4,7 @@ part of 'viewer_detail_pane.dart';
 @toString
 final class _State {
   const _State({
+    required this.file,
     this.isOwned,
     this.owner,
     this.size,
@@ -16,27 +17,36 @@ final class _State {
     this.gps,
     this.location,
     this.tags,
+    this.offsetTime,
+    this.fps,
+    this.duration,
     required this.canRemoveFromAlbum,
     required this.canSetCover,
     required this.canAddToCollection,
     required this.canSetAs,
     required this.canArchive,
     required this.canDelete,
+    this.editMetadataProgress,
+    this.editBackupFilename,
+    required this.isLoading,
     this.error,
   });
 
-  factory _State.init() => const _State(
+  factory _State.init({required AnyFile file}) => _State(
+    file: file,
     canRemoveFromAlbum: false,
     canSetCover: false,
     canAddToCollection: false,
     canSetAs: false,
     canArchive: false,
     canDelete: false,
+    isLoading: false,
   );
 
   @override
   String toString() => _$toString();
 
+  final AnyFile file;
   final bool? isOwned;
   final String? owner;
   final SizeInt? size;
@@ -49,6 +59,9 @@ final class _State {
   final MapCoord? gps;
   final ImageLocation? location;
   final List<AnyFileTag>? tags;
+  final Duration? offsetTime;
+  final double? fps;
+  final Duration? duration;
 
   final bool canRemoveFromAlbum;
   final bool canSetCover;
@@ -56,6 +69,10 @@ final class _State {
   final bool canSetAs;
   final bool canArchive;
   final bool canDelete;
+
+  final _EditMetadataProgress? editMetadataProgress;
+  final Unique<String>? editBackupFilename;
+  final bool isLoading;
 
   final ExceptionEvent? error;
 }
@@ -76,4 +93,42 @@ class _SetAlbumCover implements _Event {
 
   @override
   String toString() => _$toString();
+}
+
+@toString
+class _SetFile implements _Event {
+  const _SetFile(this.file);
+
+  @override
+  String toString() => _$toString();
+
+  final AnyFile file;
+}
+
+@toString
+class _FileUpdated implements _Event {
+  const _FileUpdated();
+
+  @override
+  String toString() => _$toString();
+}
+
+@toString
+class _EditDateTime implements _Event {
+  const _EditDateTime(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final ZonedDateTime value;
+}
+
+@toString
+class _EditGps implements _Event {
+  const _EditGps(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final MapCoord? value;
 }

@@ -1,0 +1,305 @@
+#include <cstdio>
+#include <cstring>
+#include <exception>
+#include <exiv2/exiv2.hpp>
+#include <map>
+#include <string>
+
+#include "log.h"
+#include "np_exiv2.h"
+#include "reader.h"
+
+using namespace std;
+
+#define TAG "Exiv2ReadResult"
+
+namespace {
+
+void convertCppType(Exiv2Metadatum *that,
+                    const np_exiv2::reader::Metadatum &obj);
+
+void convertCppType(Exiv2ReadResult *that, const np_exiv2::reader::Result &obj);
+
+void exiv2MetadatumFree(const Exiv2Metadatum *that);
+
+} // namespace
+
+const Exiv2ReadResult *exiv2ReadFile(const char *path, const int is_read_xmp) {
+  np_exiv2::reader::Reader reader(is_read_xmp);
+  try {
+    auto result = reader.readFile(path);
+    if (result) {
+      LOGI(TAG, "Converting result");
+      auto cresult = (Exiv2ReadResult *)malloc(sizeof(Exiv2ReadResult));
+      memset(cresult, 0, sizeof(Exiv2ReadResult));
+      convertCppType(cresult, *result);
+      LOGI(TAG, "Done");
+      return cresult;
+    }
+  } catch (const exception &e) {
+    LOGE(TAG, "Exception reading file: %s", e.what());
+  } catch (...) {
+    LOGE(TAG, "Exception reading file");
+  }
+  return nullptr;
+}
+
+const Exiv2ReadResult *exiv2ReadBuffer(const uint8_t *buffer, const size_t size,
+                                       const int is_read_xmp) {
+  np_exiv2::reader::Reader reader(is_read_xmp);
+  try {
+    auto result = reader.readBuffer(buffer, size);
+    if (result) {
+      LOGI(TAG, "Converting result");
+      auto cresult = (Exiv2ReadResult *)malloc(sizeof(Exiv2ReadResult));
+      memset(cresult, 0, sizeof(Exiv2ReadResult));
+      convertCppType(cresult, *result);
+      LOGI(TAG, "Done");
+      return cresult;
+    }
+  } catch (const exception &e) {
+    LOGE(TAG, "Exception reading file: %s", e.what());
+  } catch (...) {
+    LOGE(TAG, "Exception reading file");
+  }
+  return nullptr;
+}
+
+const Exiv2ReadResult *exiv2ReadHttp(const char *url, const char **header_keys,
+                                     const char **header_values,
+                                     const unsigned header_size,
+                                     const int is_read_xmp) {
+  np_exiv2::reader::Reader reader(is_read_xmp);
+  map<string, string> headers;
+  for (unsigned i = 0; i < header_size; ++i) {
+    headers[header_keys[i]] = header_values[i];
+  }
+  try {
+    auto result = reader.readHttp(url, headers);
+    if (result) {
+      LOGI(TAG, "Converting result");
+      auto cresult = (Exiv2ReadResult *)malloc(sizeof(Exiv2ReadResult));
+      memset(cresult, 0, sizeof(Exiv2ReadResult));
+      convertCppType(cresult, *result);
+      LOGI(TAG, "Done");
+      return cresult;
+    }
+  } catch (const exception &e) {
+    LOGE(TAG, "Exception reading file: %s", e.what());
+  } catch (...) {
+    LOGE(TAG, "Exception reading file");
+  }
+  return nullptr;
+}
+
+int exiv2CopyMetadataFromBuffer(const uint8_t *from_buffer,
+                                const size_t from_size, const char *to,
+                                const int should_copy_orientation) {
+  try {
+    auto src = Exiv2::ImageFactory::open(from_buffer, from_size);
+    auto dst = Exiv2::ImageFactory::open(to);
+    src->readMetadata();
+    dst->setMetadata(*src);
+    if (!should_copy_orientation) {
+      try {
+        auto &exif_data = dst->exifData();
+        auto it = exif_data.findKey(Exiv2::ExifKey("Exif.Image.Orientation"));
+        if (it != exif_data.end() && it->value().toUint32() != 1) {
+          // set orientation to 1 = Horizontal (normal)
+          const auto val = Exiv2::ValueType<uint16_t>(1);
+          it->setValue(&val);
+        }
+      } catch (const exception &e) {
+        LOGE(TAG, "Exception setting exif orientation: %s", e.what());
+      } catch (...) {
+        LOGE(TAG, "Exception setting exif orientation");
+      }
+    }
+    dst->writeMetadata();
+    return true;
+  } catch (const exception &e) {
+    LOGE(TAG, "Exception copying metadata: %s", e.what());
+    return false;
+  } catch (...) {
+    LOGE(TAG, "Exception copying metadata");
+    return false;
+  }
+}
+
+void exiv2ResultFree(const Exiv2ReadResult *that) {
+  if (that->iptc_data) {
+    for (auto it = that->iptc_data; it != that->iptc_data + that->iptc_count;
+         ++it) {
+      exiv2MetadatumFree(it);
+    }
+    free((void *)that->iptc_data);
+  }
+  if (that->exif_data) {
+    for (auto it = that->exif_data; it != that->exif_data + that->exif_count;
+         ++it) {
+      exiv2MetadatumFree(it);
+    }
+    free((void *)that->exif_data);
+  }
+  if (that->xmp_data) {
+    for (auto it = that->xmp_data; it != that->xmp_data + that->xmp_count;
+         ++it) {
+      exiv2MetadatumFree(it);
+    }
+    free((void *)that->xmp_data);
+  }
+}
+
+int exiv2WriteFileDateTimeOriginal(const char *path, const char *dateTime,
+                                   const char *offsetTime) {
+  try {
+    auto image = Exiv2::ImageFactory::open(path, false);
+    if (!image || !image->good()) {
+      LOGE(TAG, "Failed to open image file: %s", path);
+      return false;
+    }
+    image->readMetadata();
+    auto &exifData = image->exifData();
+    const Exiv2::ExifKey dateTimeKey("Exif.Photo.DateTimeOriginal");
+    const Exiv2::ExifKey offsetKey("Exif.Photo.OffsetTimeOriginal");
+    if (dateTime) {
+      exifData[dateTimeKey.key()] = dateTime;
+      if (offsetTime) {
+        exifData[offsetKey.key()] = offsetTime;
+      } else {
+        auto it = exifData.findKey(offsetKey);
+        if (it != exifData.end()) {
+          exifData.erase(it);
+        }
+      }
+    } else {
+      auto it = exifData.findKey(dateTimeKey);
+      if (it != exifData.end()) {
+        exifData.erase(it);
+      }
+      it = exifData.findKey(offsetKey);
+      if (it != exifData.end()) {
+        exifData.erase(it);
+      }
+    }
+    image->writeMetadata();
+    return true;
+  } catch (const exception &e) {
+    LOGE(TAG, "Exception writing DateTimeOriginal: %s", e.what());
+    return false;
+  } catch (...) {
+    LOGE(TAG, "Exception writing DateTimeOriginal");
+    return false;
+  }
+}
+
+int exiv2WriteFileGps(const char *path, const char *latitudeRef,
+                      const uint32_t *latitude, const char *longitudeRef,
+                      const uint32_t *longitude) {
+  try {
+    auto image = Exiv2::ImageFactory::open(path, false);
+    if (!image || !image->good()) {
+      LOGE(TAG, "Failed to open image file: %s", path);
+      return false;
+    }
+    image->readMetadata();
+    auto &exifData = image->exifData();
+    const Exiv2::ExifKey gpsLatRefKey("Exif.GPSInfo.GPSLatitudeRef");
+    const Exiv2::ExifKey gpsLatKey("Exif.GPSInfo.GPSLatitude");
+    const Exiv2::ExifKey gpsLngRefKey("Exif.GPSInfo.GPSLongitudeRef");
+    const Exiv2::ExifKey gpsLngKey("Exif.GPSInfo.GPSLongitude");
+
+    if (latitudeRef && latitude && longitudeRef && longitude) {
+      exifData[gpsLatRefKey.key()] = latitudeRef;
+      Exiv2::URationalValue latVal;
+      for (int i = 0; i < 3; ++i) {
+        latVal.value_.push_back({latitude[i * 2], latitude[i * 2 + 1]});
+      }
+      exifData[gpsLatKey.key()].setValue(&latVal);
+
+      exifData[gpsLngRefKey.key()] = longitudeRef;
+      Exiv2::URationalValue lngVal;
+      for (int i = 0; i < 3; ++i) {
+        lngVal.value_.push_back({longitude[i * 2], longitude[i * 2 + 1]});
+      }
+      exifData[gpsLngKey.key()].setValue(&lngVal);
+    } else {
+      for (const auto &key :
+           {gpsLatRefKey, gpsLatKey, gpsLngRefKey, gpsLngKey}) {
+        auto it = exifData.findKey(key);
+        if (it != exifData.end()) {
+          exifData.erase(it);
+        }
+      }
+    }
+    image->writeMetadata();
+    return true;
+  } catch (const exception &e) {
+    LOGE(TAG, "Exception writing GPS: %s", e.what());
+    return false;
+  } catch (...) {
+    LOGE(TAG, "Exception writing GPS");
+    return false;
+  }
+}
+
+namespace {
+
+void convertCppType(Exiv2Metadatum *that,
+                    const np_exiv2::reader::Metadatum &obj) {
+  auto tag_key = (char *)malloc(obj.tag_key.length() + 1);
+  strcpy(tag_key, obj.tag_key.c_str());
+  that->tag_key = tag_key;
+  that->type_id = (Exiv2TypeId)obj.type_id;
+  auto data = (uint8_t *)malloc(obj.data.size());
+  memcpy(data, obj.data.data(), obj.data.size());
+  that->data = data;
+  that->size = obj.data.size();
+  that->count = obj.count;
+}
+
+void convertCppType(Exiv2ReadResult *that,
+                    const np_exiv2::reader::Result &obj) {
+  that->width = obj.width;
+  that->height = obj.height;
+
+  LOGI(TAG, "Converting IPTC data");
+  auto iptc_data =
+      (Exiv2Metadatum *)malloc(obj.iptc_data.size() * sizeof(Exiv2Metadatum));
+  auto dst_it = iptc_data;
+  for (auto it = obj.iptc_data.begin(); it != obj.iptc_data.end(); ++it) {
+    LOGD(TAG, "- Convert %s", it->tag_key.c_str());
+    convertCppType(dst_it++, *it);
+  }
+  that->iptc_data = iptc_data;
+  that->iptc_count = obj.iptc_data.size();
+
+  LOGI(TAG, "Converting EXIF data");
+  auto exif_data =
+      (Exiv2Metadatum *)malloc(obj.exif_data.size() * sizeof(Exiv2Metadatum));
+  dst_it = exif_data;
+  for (auto it = obj.exif_data.begin(); it != obj.exif_data.end(); ++it) {
+    LOGD(TAG, "- Convert %s", it->tag_key.c_str());
+    convertCppType(dst_it++, *it);
+  }
+  that->exif_data = exif_data;
+  that->exif_count = obj.exif_data.size();
+
+  LOGI(TAG, "Converting XMP data");
+  auto xmp_data =
+      (Exiv2Metadatum *)malloc(obj.xmp_data.size() * sizeof(Exiv2Metadatum));
+  dst_it = xmp_data;
+  for (auto it = obj.xmp_data.begin(); it != obj.xmp_data.end(); ++it) {
+    LOGD(TAG, "- Convert %s", it->tag_key.c_str());
+    convertCppType(dst_it++, *it);
+  }
+  that->xmp_data = xmp_data;
+  that->xmp_count = obj.xmp_data.size();
+}
+
+void exiv2MetadatumFree(const Exiv2Metadatum *that) {
+  free((void *)that->tag_key);
+  free((void *)that->data);
+}
+
+} // namespace

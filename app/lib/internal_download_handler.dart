@@ -15,8 +15,8 @@ import 'package:nc_photos/stream_util.dart';
 import 'package:nc_photos/use_case/download_file.dart';
 import 'package:nc_photos/use_case/download_preview.dart';
 import 'package:nc_photos/widget/download_progress_dialog.dart';
-import 'package:nc_photos_plugin/nc_photos_plugin.dart';
 import 'package:np_collection/np_collection.dart';
+import 'package:np_common/exception.dart';
 import 'package:np_log/np_log.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -42,21 +42,19 @@ class InternalDownloadHandler {
     unawaited(
       showDialog(
         context: context,
-        builder:
-            (context) => ValueStreamBuilder<_DownloadProgress>(
-              stream: controller.stream,
-              builder:
-                  (_, snapshot) => DownloadProgressDialog(
-                    max: files.length,
-                    current: snapshot.requireData.current,
-                    progress: snapshot.requireData.progress,
-                    label: files[snapshot.requireData.current].filename,
-                    onCancel: () {
-                      download?.cancel();
-                      shouldRun = false;
-                    },
-                  ),
-            ),
+        builder: (context) => ValueStreamBuilder<_DownloadProgress>(
+          stream: controller.stream,
+          builder: (_, snapshot) => DownloadProgressDialog(
+            max: files.length,
+            current: snapshot.requireData.current,
+            progress: snapshot.requireData.progress,
+            label: files[snapshot.requireData.current].filename,
+            onCancel: () {
+              download?.cancel();
+              shouldRun = false;
+            },
+          ),
+        ),
       ),
     );
     try {
@@ -72,6 +70,7 @@ class InternalDownloadHandler {
             download = DownloadFile().build(
               account,
               f,
+              isPublic: false,
               shouldNotify: false,
               onProgress: (progress) {
                 controller.add(
@@ -116,21 +115,19 @@ class InternalDownloadHandler {
     unawaited(
       showDialog(
         context: context,
-        builder:
-            (context) => ValueStreamBuilder<_DownloadProgress>(
-              stream: controller.stream,
-              builder:
-                  (_, snapshot) => DownloadProgressDialog(
-                    max: files.length,
-                    current: snapshot.requireData.current,
-                    progress: snapshot.requireData.progress,
-                    label: files[snapshot.requireData.current].filename,
-                    onCancel: () {
-                      download?.cancel();
-                      shouldRun = false;
-                    },
-                  ),
-            ),
+        builder: (context) => ValueStreamBuilder<_DownloadProgress>(
+          stream: controller.stream,
+          builder: (_, snapshot) => DownloadProgressDialog(
+            max: files.length,
+            current: snapshot.requireData.current,
+            progress: snapshot.requireData.progress,
+            label: files[snapshot.requireData.current].filename,
+            onCancel: () {
+              download?.cancel();
+              shouldRun = false;
+            },
+          ),
+        ),
       ),
     );
     try {
@@ -141,6 +138,7 @@ class InternalDownloadHandler {
           download = DownloadFile().build(
             account,
             f,
+            isPublic: false,
             shouldNotify: false,
             onProgress: (progress) {
               controller.add(_DownloadProgress(current: i, progress: progress));

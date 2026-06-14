@@ -19,7 +19,8 @@ import 'package:nc_photos/mobile/platform.dart'
 import 'package:nc_photos/snack_bar_manager.dart';
 import 'package:nc_photos/use_case/download_file.dart';
 import 'package:nc_photos/use_case/inflate_file_descriptor.dart';
-import 'package:nc_photos_plugin/nc_photos_plugin.dart';
+import 'package:nc_photos/widget/handler/permission_handler.dart';
+import 'package:np_common/exception.dart';
 import 'package:np_log/np_log.dart';
 import 'package:np_platform_util/np_platform_util.dart';
 
@@ -61,8 +62,13 @@ abstract class _DownloadHandlerBase {
 @npLog
 class _DownlaodHandlerAndroid extends _DownloadHandlerBase {
   @override
-  downloadFiles(Account account, List<File> files, {String? parentDir}) async {
+  Future<void> downloadFiles(
+    Account account,
+    List<File> files, {
+    String? parentDir,
+  }) async {
     _log.info("[downloadFiles] Downloading ${files.length} file");
+    await const PermissionHandler().ensureStorageWritePermission();
     final nm = platform.NotificationManager();
     final notif = AndroidDownloadProgressNotification(
       0,
@@ -101,6 +107,7 @@ class _DownlaodHandlerAndroid extends _DownloadHandlerBase {
             account,
             f,
             parentDir: parentDir,
+            isPublic: true,
             shouldNotify: false,
           );
           itemSubscription = DownloadEvent.downloadCancelStream().listen((
@@ -177,7 +184,11 @@ class _DownlaodHandlerAndroid extends _DownloadHandlerBase {
 @npLog
 class _DownloadHandlerWeb extends _DownloadHandlerBase {
   @override
-  downloadFiles(Account account, List<File> files, {String? parentDir}) async {
+  Future<void> downloadFiles(
+    Account account,
+    List<File> files, {
+    String? parentDir,
+  }) async {
     _log.info("[downloadFiles] Downloading ${files.length} file");
     SnackBarManager().showSnackBar(
       SnackBar(
@@ -189,7 +200,7 @@ class _DownloadHandlerWeb extends _DownloadHandlerBase {
     int successCount = 0;
     for (final f in files) {
       try {
-        await DownloadFile()(account, f, parentDir: parentDir);
+        await DownloadFile()(account, f, parentDir: parentDir, isPublic: true);
         ++successCount;
       } on PermissionException catch (_) {
         _log.warning("[downloadFiles] Permission not granted");

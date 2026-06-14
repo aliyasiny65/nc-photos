@@ -1,4 +1,4 @@
-part of '../map_browser.dart';
+part of 'map_browser.dart';
 
 class _DataPoint extends DataPoint {
   const _DataPoint({
@@ -246,11 +246,10 @@ class _GoogleMarkerBitmapBuilder {
   }
 
   void _drawBorder(Canvas canvas) {
-    final outlinePaint =
-        Paint()
-          ..color = Color.alphaBlend(Colors.white.withValues(alpha: .75), color)
-          ..strokeWidth = size * .04
-          ..style = PaintingStyle.stroke;
+    final outlinePaint = Paint()
+      ..color = Color.alphaBlend(Colors.white.withValues(alpha: .75), color)
+      ..strokeWidth = size * .04
+      ..style = PaintingStyle.stroke;
     canvas.drawCircle(
       Offset(size / 2 - _shadowPaddingHalf, size / 2 - _shadowPaddingHalf),
       size / 2 - _shadowPaddingHalf - (size * .04 / 2),

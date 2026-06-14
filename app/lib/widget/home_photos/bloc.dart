@@ -1,4 +1,4 @@
-part of '../home_photos2.dart';
+part of 'home_photos.dart';
 
 @npLog
 class _Bloc extends Bloc<_Event, _State>
@@ -15,9 +15,9 @@ class _Bloc extends Bloc<_Event, _State>
     required this.personsController,
     required this.metadataController,
     required this.serverController,
-    required this.localFilesController,
     required this.bottomAppBarHeight,
     required this.draggableThumbSize,
+    required this.dateHeight,
   }) : super(
          _State.init(
            zoom: prefController.homePhotosZoomLevelValue,
@@ -31,12 +31,19 @@ class _Bloc extends Bloc<_Event, _State>
     on<_OnItemTransformed>(_onOnItemTransformed);
 
     on<_SetSelectedItems>(_onSetSelectedItems);
+    on<_SelectSection>(_onSelectSection);
+    on<_UnselectSection>(_onUnselectSection);
+    on<_SelectedItemsUpdated>(_onSelectedItemsUpdated);
+    on<_SelectionModeUpdated>(_onSelectionModeUpdated);
     on<_AddSelectedItemsToCollection>(_onAddSelectedItemsToCollection);
     on<_ArchiveSelectedItems>(_onArchiveSelectedItems);
     on<_DeleteSelectedItems>(_onDeleteSelectedItems);
+    on<_DeleteItemsWithHint>(_onDeleteItemsWithHint);
     on<_DownloadSelectedItems>(_onDownloadSelectedItems);
     on<_ShareSelectedItems>(_onShareSelectedItems);
     on<_UploadSelectedItems>(_onUploadSelectedItems);
+    on<_UploadRequestResult>(_onUploadRequestResult);
+    on<_SetFileUploadResult>(_onSetFileUploadResult);
 
     on<_AddVisibleDate>(_onAddVisibleDate);
     on<_RemoveVisibleDate>(_onRemoveVisibleDate);
@@ -50,9 +57,15 @@ class _Bloc extends Bloc<_Event, _State>
 
     on<_StartScrolling>(_onStartScrolling);
     on<_EndScrolling>(_onEndScrolling);
+    on<_SetIsDragging>((ev, emit) {
+      emit(state.copyWith(isDragging: ev.value));
+    });
     on<_SetLayoutConstraint>(_onSetLayoutConstraint);
     on<_TransformMinimap>(_onTransformMinimap);
-    on<_UpdateScrollDate>(_onUpdateScrollDate);
+    on<_UpdateDateBar>(_onUpdateDateBar);
+    on<_SetAppBarPosition>((ev, emit) {
+      emit(state.copyWith(appBarPosition: ev.value));
+    });
 
     on<_SetEnableMemoryCollection>(_onSetEnableMemoryCollection);
     on<_UpdateZoom>(_onUpdateZoom);
@@ -78,11 +91,11 @@ class _Bloc extends Bloc<_Event, _State>
       stream
           .distinct(
             (previous, next) =>
-                previous.filesSummary == next.filesSummary &&
-                previous.localFilesSummary == next.localFilesSummary &&
+                previous.anyFilesSummary == next.anyFilesSummary &&
                 previous.viewHeight == next.viewHeight &&
                 previous.itemPerRow == next.itemPerRow &&
-                previous.itemSize == next.itemSize,
+                previous.itemSize == next.itemSize &&
+                mapEquals(previous.mergedCounts, next.mergedCounts),
           )
           .listen((event) {
             add(const _TransformMinimap());
@@ -92,30 +105,25 @@ class _Bloc extends Bloc<_Event, _State>
       stream
           .distinct(
             (previous, next) =>
-                previous.filesSummary == next.filesSummary &&
-                previous.files == next.files &&
-                previous.localFilesSummary == next.localFilesSummary &&
-                previous.localFiles == next.localFiles,
+                previous.anyFilesSummary == next.anyFilesSummary &&
+                previous.anyFiles == next.anyFiles,
           )
           .listen((event) {
             add(
               _TransformItems(
-                event.files,
-                event.filesSummary,
-                event.localFiles,
-                event.localFilesSummary,
+                event.anyFiles,
+                event.mergedCounts,
+                event.anyFilesSummary,
               ),
             );
           }),
     );
     _subscriptions.add(
-      localFilesController.summaryErrorStream.listen((event) {
-        add(_SetError(event.error, event.stackTrace));
-      }),
-    );
-    _subscriptions.add(
       stream
-          .distinctBy((e) => e.visibleDates.map((d) => d.date).sortedBySelf())
+          .distinct(
+            (previous, next) =>
+                setEquals(previous.visibleDates, next.visibleDates),
+          )
           .listen((event) {
             _onVisibleDatesUpdated();
           }),
@@ -124,17 +132,18 @@ class _Bloc extends Bloc<_Event, _State>
       stream
           .distinct(
             (previous, next) =>
-                previous.visibleDates == next.visibleDates &&
-                previous.itemPerRow == next.itemPerRow,
+                setEquals(previous.visibleDates, next.visibleDates) &&
+                previous.isDragging == next.isDragging,
           )
           .listen((event) {
-            add(const _UpdateScrollDate());
+            add(const _UpdateDateBar());
           }),
     );
     _subscriptions.add(
       stream
           .distinct(
-            (previous, next) => previous.filesSummary == next.filesSummary,
+            (previous, next) =>
+                previous.anyFilesSummary == next.anyFilesSummary,
           )
           .listen((_) {
             add(const _UpdateMemories());
@@ -144,6 +153,25 @@ class _Bloc extends Bloc<_Event, _State>
       prefController.memoriesRangeChange.listen((_) {
         add(const _UpdateMemories());
       }),
+    );
+    _subscriptions.add(
+      stream
+          .distinct(
+            (previous, next) => previous.selectedItems == next.selectedItems,
+          )
+          .listen((event) {
+            add(const _SelectedItemsUpdated());
+          }),
+    );
+    _subscriptions.add(
+      stream
+          .distinct(
+            (previous, next) =>
+                previous.selectedItems.isEmpty == next.selectedItems.isEmpty,
+          )
+          .listen((event) {
+            add(const _SelectionModeUpdated());
+          }),
     );
   }
 
@@ -164,9 +192,11 @@ class _Bloc extends Bloc<_Event, _State>
     currentState = currentState as _State;
     nextState = nextState as _State;
     return currentState.scale == nextState.scale &&
-        currentState.visibleDates == nextState.visibleDates &&
+        currentState.visibleDateItems == nextState.visibleDateItems &&
         currentState.syncProgress == nextState.syncProgress &&
-        currentState.scrollDate == nextState.scrollDate;
+        currentState.dateBarContent == nextState.dateBarContent &&
+        currentState.appBarPosition == nextState.appBarPosition &&
+        !identical(currentState, nextState);
   };
 
   @override
@@ -187,14 +217,17 @@ class _Bloc extends Bloc<_Event, _State>
     await Future.wait([
       forEach(
         emit,
-        filesController.summaryStream,
+        anyFilesController.summaryStream2,
         onData: (data) {
-          if (data.summary.items.isEmpty && _isInitialLoad) {
-            // no data, initial sync
+          if (data.hasRemoteData == false && _isInitialLoad) {
+            // no data, first run?
             _isInitialLoad = false;
             _syncRemote();
           }
-          return state.copyWith(filesSummary: data.summary);
+          return state.copyWith(
+            anyFilesSummary: data.summary,
+            hasRemoteData: state.hasRemoteData || (data.hasRemoteData ?? false),
+          );
         },
         onError: (e, stackTrace) {
           _log.severe("[_onLoad] Uncaught exception", e, stackTrace);
@@ -203,37 +236,35 @@ class _Bloc extends Bloc<_Event, _State>
       ),
       forEach(
         emit,
-        filesController.timelineStream,
+        anyFilesController.timelineStream,
         onData: (data) {
-          if (!data.isDummy && _isInitialLoad) {
+          if (!data.isRemoteDummy && _isInitialLoad) {
             _isInitialLoad = false;
             _syncRemote();
           }
-          return state.copyWith(files: data.data.values.toList());
+          return state.copyWith(
+            anyFiles: data.data.values.toList(),
+            mergedCounts: data.mergedCounts,
+          );
         },
         onError: (e, stackTrace) {
           _log.severe("[_onLoad] Uncaught exception", e, stackTrace);
           return state.copyWith(error: ExceptionEvent(e, stackTrace));
         },
-      ),
-      forEach(
-        emit,
-        filesController.errorStream,
-        onData: (data) => state.copyWith(error: data),
-      ),
-      forEach(
-        emit,
-        localFilesController.summaryStream2,
-        onData: (data) => state.copyWith(localFilesSummary: data.summary),
-      ),
-      forEach(
-        emit,
-        localFilesController.timelineStream,
-        onData: (data) => state.copyWith(localFiles: data.data.values.toList()),
       ),
       forEach(
         emit,
         anyFilesController.errorStream,
+        onData: (data) => state.copyWith(error: data),
+      ),
+      forEach(
+        emit,
+        anyFilesController.timelineErrorStream,
+        onData: (data) => state.copyWith(error: data),
+      ),
+      forEach(
+        emit,
+        anyFilesController.summaryErrorStream,
         onData: (data) => state.copyWith(error: data),
       ),
     ]);
@@ -248,7 +279,7 @@ class _Bloc extends Bloc<_Event, _State>
 
   void _onTransformItems(_TransformItems ev, Emitter<_State> emit) {
     _log.info(ev);
-    _transformItems(ev.files, ev.summary, ev.localFiles, ev.localSummary);
+    _transformItems(ev.anyFiles, ev.mergedCounts, ev.summary);
     emit(state.copyWith(isLoading: true));
   }
 
@@ -267,32 +298,75 @@ class _Bloc extends Bloc<_Event, _State>
 
   void _onSetSelectedItems(_SetSelectedItems ev, Emitter<_State> emit) {
     _log.info(ev);
-    final canArchive = ev.items.whereType<_FileItem>().any(
+    emit(state.copyWith(selectedItems: ev.items));
+  }
+
+  void _onSelectSection(_SelectSection ev, _Emitter emit) {
+    _log.info(ev);
+    final section = state.transformedItems.firstWhereOrNull(
+      (e) => e.firstOrNull?.as<_SectionHeaderItem>()?.date == ev.value,
+    );
+    if (section == null) {
+      _log.severe("[_onSelectSection] Section not found: ${ev.value}");
+      return;
+    }
+    emit(
+      state.copyWith(
+        selectedItems: state.selectedItems.addedAll(
+          section.whereType<_FileItem>(),
+        ),
+      ),
+    );
+  }
+
+  void _onUnselectSection(_UnselectSection ev, _Emitter emit) {
+    _log.info(ev);
+    final section = state.transformedItems.firstWhereOrNull(
+      (e) => e.firstOrNull?.as<_SectionHeaderItem>()?.date == ev.value,
+    );
+    if (section == null) {
+      _log.severe("[_onUnselectSection] Section not found: ${ev.value}");
+      return;
+    }
+    emit(
+      state.copyWith(
+        selectedItems: state.selectedItems.removedAll(
+          section.whereType<_FileItem>(),
+        ),
+      ),
+    );
+  }
+
+  void _onSelectedItemsUpdated(_SelectedItemsUpdated ev, _Emitter emit) {
+    _log.info(ev);
+    final canArchive = state.selectedItems.whereType<_FileItem>().any(
       (e) => AnyFileWorkerFactory.capability(
         e.file,
       ).isPermitted(AnyFileCapability.archive),
     );
-    final canDownload = ev.items.whereType<_FileItem>().any(
+    final canDownload = state.selectedItems.whereType<_FileItem>().any(
       (e) => AnyFileWorkerFactory.capability(
         e.file,
       ).isPermitted(AnyFileCapability.download),
     );
-    final canDelete = ev.items.whereType<_FileItem>().any(
+    final canDelete = state.selectedItems.whereType<_FileItem>().any(
       (e) => AnyFileWorkerFactory.capability(
         e.file,
       ).isPermitted(AnyFileCapability.delete),
     );
     // TODO let collection to make this decision
-    final canAddToCollection =
-        ev.items.whereType<_NextcloudFileItem>().isNotEmpty;
-    final canUpload = ev.items.whereType<_FileItem>().any(
+    final canAddToCollection = state.selectedItems.whereType<_FileItem>().any(
+      (e) => AnyFileWorkerFactory.capability(
+        e.file,
+      ).isPermitted(AnyFileCapability.collection),
+    );
+    final canUpload = state.selectedItems.whereType<_FileItem>().any(
       (e) => AnyFileWorkerFactory.capability(
         e.file,
       ).isPermitted(AnyFileCapability.upload),
     );
     emit(
       state.copyWith(
-        selectedItems: ev.items,
         selectedCanArchive: canArchive,
         selectedCanDownload: canDownload,
         selectedCanDelete: canDelete,
@@ -302,6 +376,11 @@ class _Bloc extends Bloc<_Event, _State>
     );
   }
 
+  void _onSelectionModeUpdated(_SelectionModeUpdated ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(appBarPositionUpdateRequest: Unique(true)));
+  }
+
   void _onAddSelectedItemsToCollection(
     _AddSelectedItemsToCollection ev,
     Emitter<_State> emit,
@@ -309,18 +388,33 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected
-            .whereType<_NextcloudFileItem>()
-            .map((e) => e.remoteFile)
-            .toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .where((f) {
+          final capability = AnyFileWorkerFactory.capability(f);
+          return capability.isPermitted(AnyFileCapability.collection);
+        })
+        .toList();
     if (selectedFiles.length != selected.length) {
       add(const _ShowRemoteOnlyWarning());
     }
     if (selectedFiles.isNotEmpty) {
+      // TODO move this away
+      final remoteFiles = selectedFiles
+          .map((e) {
+            final provider = e.provider;
+            return switch (provider) {
+              AnyFileNextcloudProvider _ => provider.file,
+              AnyFileMergedProvider _ => provider.remote.file,
+              AnyFileLocalProvider _ => null,
+            };
+          })
+          .nonNulls
+          .toList();
       final targetController = collectionsController.stream.value
           .itemsControllerByCollection(ev.collection);
-      targetController.addFiles(selectedFiles).onError((e, stackTrace) {
+      targetController.addFiles(remoteFiles).onError((e, stackTrace) {
         if (e != null) {
           add(_SetError(e, stackTrace));
         }
@@ -332,35 +426,48 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected
-            .whereType<_NextcloudFileItem>()
-            .map((e) => e.remoteFile)
-            .toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .where((f) {
+          final capability = AnyFileWorkerFactory.capability(f);
+          return capability.isPermitted(AnyFileCapability.archive);
+        })
+        .toList();
     if (selectedFiles.length != selected.length) {
       add(const _ShowRemoteOnlyWarning());
     }
-    if (selectedFiles.isNotEmpty) {
-      filesController.updateProperty(
-        selectedFiles,
-        isArchived: const OrNull(true),
-        errorBuilder: (fileIds) => _ArchiveFailedError(fileIds.length),
-      );
-    }
+    anyFilesController.archive(selectedFiles, isArchived: true);
   }
 
   void _onDeleteSelectedItems(_DeleteSelectedItems ev, Emitter<_State> emit) {
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected.whereType<_FileItem>().map((e) => e.file).toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .toList();
     if (selectedFiles.isNotEmpty) {
-      anyFilesController.remove(
-        selectedFiles,
-        errorBuilder: (fileIds) => _RemoveFailedError(fileIds.length),
-      );
+      if (selectedFiles.any((e) => e.provider is AnyFileMergedProvider)) {
+        final req = _DeleteRequest(files: selectedFiles);
+        emit(state.copyWith(deleteRequest: Unique(req)));
+      } else {
+        anyFilesController.remove(
+          selectedFiles,
+          errorBuilder: (fileIds) => _RemoveFailedError(fileIds.length),
+        );
+      }
     }
+  }
+
+  void _onDeleteItemsWithHint(_DeleteItemsWithHint ev, Emitter<_State> emit) {
+    _log.info(ev);
+    anyFilesController.remove(
+      ev.files,
+      hint: ev.hint,
+      errorBuilder: (fileIds) => _RemoveFailedError(fileIds.length),
+    );
   }
 
   void _onDownloadSelectedItems(
@@ -370,16 +477,19 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected
-            .whereType<_NextcloudFileItem>()
-            .map((e) => e.remoteFile)
-            .toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .where((f) {
+          final capability = AnyFileWorkerFactory.capability(f);
+          return capability.isPermitted(AnyFileCapability.download);
+        })
+        .toList();
     if (selectedFiles.length != selected.length) {
       add(const _ShowRemoteOnlyWarning());
     }
     if (selectedFiles.isNotEmpty) {
-      unawaited(DownloadHandler(_c).downloadFiles(account, selectedFiles));
+      unawaited(DownloadAnyFile(_c, account: account)(selectedFiles));
     }
   }
 
@@ -387,23 +497,16 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected.whereType<_FileItem>().map((e) => e.file).toList();
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .toList();
     if (selectedFiles.isNotEmpty) {
-      final isRemoteShareOnly = selectedFiles.every((f) {
-        final capability = AnyFileWorkerFactory.capability(f);
-        return capability.isPermitted(AnyFileCapability.remoteShare);
-      });
-      final isLocalShareOnly = selectedFiles.every((f) {
-        final capability = AnyFileWorkerFactory.capability(f);
-        return !capability.isPermitted(AnyFileCapability.remoteShare);
-      });
-      final req = _ShareRequest(
-        files: selectedFiles,
-        isRemoteShareOnly: isRemoteShareOnly,
-        isLocalShareOnly: isLocalShareOnly,
+      emit(
+        state.copyWith(
+          shareRequest: Unique(_ShareRequest(files: selectedFiles)),
+        ),
       );
-      emit(state.copyWith(shareRequest: Unique(req)));
     }
   }
 
@@ -411,11 +514,14 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info(ev);
     final selected = state.selectedItems;
     _clearSelection(emit);
-    final selectedFiles =
-        selected.whereType<_FileItem>().map((e) => e.file).where((f) {
+    final selectedFiles = selected
+        .whereType<_FileItem>()
+        .map((e) => e.file)
+        .where((f) {
           final capability = AnyFileWorkerFactory.capability(f);
           return capability.isPermitted(AnyFileCapability.upload);
-        }).toList();
+        })
+        .toList();
     if (selectedFiles.length != selected.length) {
       add(const _ShowLocalOnlyWarning());
     }
@@ -425,20 +531,56 @@ class _Bloc extends Bloc<_Event, _State>
     }
   }
 
+  void _onUploadRequestResult(_UploadRequestResult ev, _Emitter emit) {
+    _log.info(ev);
+    final newUploadingFiles = state.uploadingFiles.addedAll(ev.request.files);
+    emit(
+      state.copyWith(uploadRequest: null, uploadingFiles: newUploadingFiles),
+    );
+    UploadAnyFile(account: account)(
+      ev.request.files,
+      relativePath: ev.config.relativePath,
+      convertConfig: ev.config.convertConfig,
+      onResult: (file, isSuccess) {
+        if (!isClosed) {
+          add(_SetFileUploadResult(file, isSuccess));
+        }
+      },
+    );
+  }
+
+  void _onSetFileUploadResult(_SetFileUploadResult ev, _Emitter emit) {
+    _log.info(ev);
+    final newUploadingFiles = state.uploadingFiles.removedFirstWhere(
+      (e) => e.compareIdentity(ev.file),
+    );
+    emit(state.copyWith(uploadingFiles: newUploadingFiles));
+  }
+
   void _onAddVisibleDate(_AddVisibleDate ev, Emitter<_State> emit) {
     // _log.info(ev);
-    if (state.visibleDates.contains(ev.date)) {
+    if (state.visibleDateItems.contains(ev.date)) {
       return;
     }
-    emit(state.copyWith(visibleDates: state.visibleDates.added(ev.date)));
+    emit(
+      state.copyWith(
+        visibleDateItems: state.visibleDateItems.added(ev.date),
+        visibleDates: state.visibleDateItems.map((e) => e.date).toSet(),
+      ),
+    );
   }
 
   void _onRemoveVisibleDate(_RemoveVisibleDate ev, Emitter<_State> emit) {
     // _log.info(ev);
-    if (!state.visibleDates.contains(ev.date)) {
+    if (!state.visibleDateItems.contains(ev.date)) {
       return;
     }
-    emit(state.copyWith(visibleDates: state.visibleDates.removed(ev.date)));
+    emit(
+      state.copyWith(
+        visibleDateItems: state.visibleDateItems.removed(ev.date),
+        visibleDates: state.visibleDateItems.map((e) => e.date).toSet(),
+      ),
+    );
   }
 
   void _onSetSyncProgress(_SetSyncProgress ev, Emitter<_State> emit) {
@@ -529,16 +671,15 @@ class _Bloc extends Bloc<_Event, _State>
     }
     // valid content height, this is also the minimap height
     final contentHeight = state.viewHeight! - state.viewOverlayPadding!;
-    final maker =
-        prefController.homePhotosZoomLevelValue >= 0
-            ? _makeMinimapItems
-            : _makeMonthGroupMinimapItems;
+    final maker = prefController.homePhotosZoomLevelValue >= 0
+        ? _makeMinimapItems
+        : _makeMonthGroupMinimapItems;
     final summary = SplayTreeMap<Date, int>((a, b) => b.compareTo(a));
-    for (final e in state.filesSummary.items.entries) {
-      summary[e.key] = e.value.count;
+    for (final e in state.anyFilesSummary.items.entries) {
+      summary[e.key] = e.value;
     }
-    for (final e in state.localFilesSummary.items.entries) {
-      summary[e.key] = (summary[e.key] ?? 0) + e.value;
+    for (final e in state.mergedCounts.entries) {
+      summary[e.key] = max((summary[e.key] ?? 0) - e.value, 0);
     }
     final minimapItems = maker(
       filesSummary: summary,
@@ -559,43 +700,51 @@ class _Bloc extends Bloc<_Event, _State>
     emit(state.copyWith(minimapItems: minimapItems, minimapYRatio: ratio));
   }
 
-  void _onUpdateScrollDate(_UpdateScrollDate ev, Emitter<_State> emit) {
+  void _onUpdateDateBar(_UpdateDateBar ev, _Emitter emit) {
     // _log.info(ev);
     if (state.itemPerRow == null || state.visibleDates.isEmpty) {
-      if (state.scrollDate != null) {
-        emit(state.copyWith(scrollDate: null));
-      }
       return;
     }
-    final dateRows = state.visibleDates
-        .map((e) => e.date)
-        .sortedBySelf()
-        .reversed
-        .groupBy(
-          key: (e) {
-            if (prefController.homePhotosZoomLevelValue >= 0) {
-              return e;
-            } else {
-              // month
-              return Date(e.year, e.month);
-            }
-          },
-        )
-        .map(
-          (key, value) =>
-              MapEntry(key, (value.length / state.itemPerRow!).ceil()),
-        );
-    final totalRows = dateRows.values.sum;
-    final midRow = totalRows / 2;
-    var x = 0;
-    for (final e in dateRows.entries) {
-      x += e.value;
-      if (x >= midRow) {
-        if (state.scrollDate != e.key) {
-          emit(state.copyWith(scrollDate: e.key));
-        }
+    final Map<Date, int> groups;
+    final Date date;
+    var count = 0;
+    var visibleCount = 0;
+    if (prefController.homePhotosZoomLevelValue >= 0) {
+      groups = state.visibleDates.groupFoldBy<Date, int>(
+        (e) => e,
+        (previous, element) => (previous ?? 0) + 1,
+      );
+      final firstDate = groups.keys.sortedBySelf().lastOrNull;
+      if (firstDate == null) {
+        emit(state.copyWith(dateBarContent: null));
         return;
       }
+      count = state.anyFilesSummary.items[firstDate] ?? 0;
+      visibleCount = groups[firstDate] ?? 0;
+      date = firstDate;
+    } else {
+      groups = state.visibleDates.groupFoldBy<Date, int>(
+        (e) => e.copyWith(day: 1),
+        (previous, element) => (previous ?? 0) + 1,
+      );
+      final firstMonth = groups.keys.sortedBySelf().lastOrNull;
+      if (firstMonth == null) {
+        emit(state.copyWith(dateBarContent: null));
+        return;
+      }
+      for (final e in state.anyFilesSummary.items.entries) {
+        if (e.key >= firstMonth && e.key < firstMonth.add(month: 1)) {
+          count += e.value;
+        }
+      }
+      visibleCount = groups[firstMonth] ?? 0;
+      date = firstMonth;
+    }
+    if ((count > state.itemPerRow! * 2 && count > visibleCount) ||
+        state.isDragging) {
+      emit(state.copyWith(dateBarContent: date));
+    } else {
+      emit(state.copyWith(dateBarContent: null));
     }
   }
 
@@ -641,12 +790,7 @@ class _Bloc extends Bloc<_Event, _State>
         ),
       );
     }
-    _transformItems(
-      state.files,
-      state.filesSummary,
-      state.localFiles,
-      state.localFilesSummary,
-    );
+    _transformItems(state.anyFiles, state.mergedCounts, state.anyFilesSummary);
     add(const _TransformMinimap());
   }
 
@@ -660,59 +804,52 @@ class _Bloc extends Bloc<_Event, _State>
       account: account.toDb(),
       at: localToday,
       radius: prefController.memoriesRangeValue,
-      includeRelativeRoots:
-          account.roots
-              .map(
-                (e) =>
-                    File(
-                      path: file_util.unstripPath(account, e),
-                    ).strippedPathWithEmpty,
-              )
-              .toList(),
+      includeRelativeRoots: account.roots
+          .map(
+            (e) => File(
+              path: file_util.unstripPath(account, e),
+            ).strippedPathWithEmpty,
+          )
+          .toList(),
       excludeRelativeRoots: [remote_storage_util.remoteStorageDirRelativePath],
       mimes: file_util.supportedFormatMimes,
     );
     emit(
       state.copyWith(
-        memoryCollections:
-            dbMemories.memories.entries
-                .sorted((a, b) => a.key.compareTo(b.key))
-                .reversed
-                .map((e) {
-                  final center = localToday
-                      .copyWith(year: e.key)
-                      .toLocalDateTime()
-                      .copyWith(hour: 12);
-                  return Collection(
-                    name: L10n.global().memoryAlbumName(
-                      localToday.year - e.key,
-                    ),
-                    contentProvider: CollectionMemoryProvider(
-                      account: account,
-                      year: e.key,
-                      month: localToday.month,
-                      day: localToday.day,
-                      cover: e.value
-                          .map(
-                            (e) => (
-                              comparable: e.bestDateTime.difference(center),
-                              item: e,
-                            ),
-                          )
-                          .sorted(
-                            (a, b) => a.comparable.compareTo(b.comparable),
-                          )
-                          .firstOrNull
-                          ?.let(
-                            (e) => DbFileDescriptorConverter.fromDb(
-                              account.userId.toString(),
-                              e.item,
-                            ),
-                          ),
-                    ),
-                  );
-                })
-                .toList(),
+        memoryCollections: dbMemories.memories.entries
+            .sorted((a, b) => a.key.compareTo(b.key))
+            .reversed
+            .map((e) {
+              final center = localToday
+                  .copyWith(year: e.key)
+                  .toLocalDateTime()
+                  .copyWith(hour: 12);
+              return Collection(
+                name: L10n.global().memoryAlbumName(localToday.year - e.key),
+                contentProvider: CollectionMemoryProvider(
+                  account: account,
+                  year: e.key,
+                  month: localToday.month,
+                  day: localToday.day,
+                  cover: e.value
+                      .map(
+                        (e) => (
+                          comparable: e.bestDateTime.difference(center),
+                          item: e,
+                        ),
+                      )
+                      .sorted((a, b) => a.comparable.compareTo(b.comparable))
+                      .firstOrNull
+                      ?.let(
+                        (e) => DbFileDescriptorConverter.fromDb(
+                          account.userId.toString(),
+                          e.item,
+                        ),
+                      ),
+                ),
+              );
+            })
+            .toList(),
       ),
     );
   }
@@ -733,30 +870,34 @@ class _Bloc extends Bloc<_Event, _State>
   }
 
   void _transformItems(
-    List<FileDescriptor> files,
-    DbFilesSummary summary,
-    List<LocalFile> localFiles,
-    LocalFilesSummary localSummary,
+    List<AnyFile> anyFiles,
+    Map<Date, int> mergedCounts,
+    AnyFilesSummary summary,
   ) {
-    _log.info(
-      "[_transformItems] Queue ${files.length} remote items, ${localFiles.length} local items",
-    );
+    _log.info("[_transformItems] Queue ${anyFiles.length} items");
+    final stopwatch = Stopwatch();
     _itemTransformerQueue.addJob(
       _ItemTransformerArgument(
         account: account,
-        files: files,
+        anyFiles: anyFiles,
         summary: summary,
-        localFiles: localFiles,
-        localSummary: localSummary,
+        mergedCounts: mergedCounts,
         itemPerRow: state.itemPerRow,
         itemSize: state.itemSize,
         isGroupByDay: prefController.homePhotosZoomLevelValue >= 0,
+        dateHeight: dateHeight,
       ),
       _buildItem,
       (result) {
+        _log.info(
+          "[_transformItems] Elapsed ${stopwatch.elapsedMilliseconds}ms for ${anyFiles.length} files",
+        );
         if (!isClosed) {
           add(_OnItemTransformed(result.items, result.dates));
         }
+      },
+      onBeforeCompute: () {
+        stopwatch.start();
       },
     );
   }
@@ -780,6 +921,7 @@ class _Bloc extends Bloc<_Event, _State>
             filesController: filesController,
             personsController: personsController,
             personProvider: accountPrefController.personProviderValue,
+            serverController: serverController,
           );
           metadataController.kickstart();
           _log.info(
@@ -794,7 +936,7 @@ class _Bloc extends Bloc<_Event, _State>
 
   void _onVisibleDatesUpdated() {
     _filesQueryTimer?.cancel();
-    _filesQueryTimer = Timer(const Duration(milliseconds: 500), () {
+    _filesQueryTimer = Timer(const Duration(milliseconds: 250), () {
       if (!_isQueryingFiles) {
         _requestMoreFiles();
       }
@@ -803,16 +945,10 @@ class _Bloc extends Bloc<_Event, _State>
 
   void _requestMoreFiles() {
     final queriedDates = state.queriedDates;
-    final missingDates =
-        state.visibleDates
-            .map((e) => e.date)
-            .whereNot((d) => queriedDates.contains(d))
-            .where(
-              (d) =>
-                  state.filesSummary.items.containsKey(d) ||
-                  state.localFilesSummary.items.containsKey(d),
-            )
-            .toSet();
+    final missingDates = state.visibleDates
+        .whereNot((d) => queriedDates.contains(d))
+        .where(state.anyFilesSummary.items.containsKey)
+        .toSet();
     // remove dates no longer missing
     _queryCount.removeWhere((k, v) => !missingDates.contains(k));
     if (missingDates.isNotEmpty && !_isQueryingFiles) {
@@ -838,12 +974,8 @@ class _Bloc extends Bloc<_Event, _State>
     _log.info("[_requestFilesFrom] $at");
     _isQueryingFiles = true;
     try {
-      final summary = state.filesSummary;
-      final localSummary = state.localFilesSummary;
-      var dates = {
-        ...summary.items.keys,
-        ...localSummary.items.keys,
-      }.sorted((a, b) => b.compareTo(a));
+      final summary = state.anyFilesSummary;
+      var dates = summary.items.keys.sorted((a, b) => b.compareTo(a));
       final i = dates.indexWhere((e) => e.isBeforeOrAt(at));
       if (i == -1) {
         _log.info("[_requestFilesFrom] No more files before $at");
@@ -857,21 +989,16 @@ class _Bloc extends Bloc<_Event, _State>
       final included = <Date>[];
       for (final d in dates) {
         included.add(d);
-        count += (summary.items[d]?.count ?? 0) + (localSummary.items[d] ?? 0);
+        count += summary.items[d]!;
         end = d;
         if (count >= targetFileCount) {
           break;
         }
       }
       _log.info("[_requestFilesFrom] Query $count files until $end");
-      await Future.wait([
-        filesController.queryTimelineByDateRange(
-          DateRange(from: end, to: at.add(day: 1)),
-        ),
-        localFilesController.queryTimelineByDateRange(
-          DateRange(from: end, to: at.add(day: 1)),
-        ),
-      ]);
+      await anyFilesController.queryTimelineByDateRange(
+        DateRange(from: end, to: at.add(day: 1)),
+      );
     } finally {
       _isQueryingFiles = false;
     }
@@ -899,6 +1026,7 @@ class _Bloc extends Bloc<_Event, _State>
             itemCount: currentMonthCount,
             rowHeight: itemSize,
             itemPerRow: itemPerRow,
+            dateHeight: dateHeight,
           );
           results.add(
             _MinimapItem(
@@ -922,6 +1050,7 @@ class _Bloc extends Bloc<_Event, _State>
         itemCount: currentMonthCount,
         rowHeight: itemSize,
         itemPerRow: itemPerRow,
+        dateHeight: dateHeight,
       );
       results.add(
         _MinimapItem(
@@ -954,6 +1083,7 @@ class _Bloc extends Bloc<_Event, _State>
         itemCount: e.value,
         rowHeight: itemSize,
         itemPerRow: itemPerRow,
+        dateHeight: dateHeight,
       );
       if (currentMonth != thisMonth) {
         if (currentMonth != null) {
@@ -997,9 +1127,9 @@ class _Bloc extends Bloc<_Event, _State>
   final PersonsController personsController;
   final MetadataController metadataController;
   final ServerController serverController;
-  final LocalFilesController localFilesController;
   final double bottomAppBarHeight;
   final double draggableThumbSize;
+  final double dateHeight;
 
   final _itemTransformerQueue =
       ComputeQueue<_ItemTransformerArgument, _ItemTransformerResult>();
@@ -1015,28 +1145,23 @@ double _getLogicalHeightByItemCount({
   required int itemCount,
   required double rowHeight,
   required int itemPerRow,
+  required double dateHeight,
 }) {
-  const dateHeight = 32.0;
   return dateHeight + (itemCount / itemPerRow).ceil() * rowHeight;
 }
 
 _ItemTransformerResult _buildItem(_ItemTransformerArgument arg) {
-  const sorter = compareFileDescriptorDateTimeDescending;
-  const localSorter = compareLocalFileDateTimeDescending;
+  final sortedFiles = arg.anyFiles
+      .where(
+        (f) =>
+            f.provider is! ArchivableAnyFile ||
+            (f.provider as ArchivableAnyFile).isArchived != true,
+      )
+      .sorted(anyFileDateTimeDescSorter);
 
-  final sortedFiles = arg.files
-      .where((f) => f.fdIsArchived != true)
-      .sorted(sorter);
-  final sortedLocalFiles = arg.localFiles.sorted(localSorter);
-
-  final tzOffset = clock.now().timeZoneOffset;
-  final fileGroups = groupBy<FileDescriptor, Date>(sortedFiles, (e) {
+  final fileGroups = groupBy<AnyFile, Date>(sortedFiles, (e) {
     // convert to local date
-    return e.fdDateTime.add(tzOffset).toDate();
-  });
-  final localFileGroups = groupBy<LocalFile, Date>(sortedLocalFiles, (e) {
-    // convert to local date
-    return e.bestDateTime.add(tzOffset).toDate();
+    return e.dateTime.toLocal().toDate();
   });
 
   final dateHelper = photo_list_util.DateGroupHelper(
@@ -1045,94 +1170,75 @@ _ItemTransformerResult _buildItem(_ItemTransformerArgument arg) {
   final dateTimeSet = SplayTreeSet<Date>.of([
     ...fileGroups.keys,
     ...arg.summary.items.keys,
-    ...localFileGroups.keys,
-    ...arg.localSummary.items.keys,
   ], (key1, key2) => key2.compareTo(key1));
   final transformed = <List<_Item>>[];
   final dates = <Date>{};
+  ({Date date, List<_Item> items})? section;
   for (final d in dateTimeSet) {
     final date = dateHelper.onDate(d);
     if (date != null) {
-      transformed.add([_DateItem(date: d, isMonthOnly: !arg.isGroupByDay)]);
+      if (section != null) {
+        transformed.add([
+          _SectionHeaderItem(
+            date: section.date,
+            isMonthOnly: !arg.isGroupByDay,
+            height: arg.dateHeight,
+            children: section.items,
+          ),
+          ...section.items,
+        ]);
+      }
+      section = (date: date, items: []);
     }
 
-    final items = <(DateTime, _Item)>[];
+    var items = <_FileItem>[];
     final summaryItems = <_SummaryFileItem>[];
     if (arg.summary.items.containsKey(d)) {
-      if (fileGroups.containsKey(d)) {
-        items.addAll(
+      final newItems =
           fileGroups[d]
-                  ?.map(
-                    (f) => _buildSingleRemoteItem(
-                      arg.account,
-                      f,
-                    )?.let((e) => (f.fdDateTime, e)),
-                  )
-                  .nonNulls ??
-              [],
-        );
-      } else {
-        final summary = arg.summary.items[d]!;
-        for (var i = 0; i < summary.count; ++i) {
-          summaryItems.add(
-            _SummaryFileItem(date: d, index: summaryItems.length),
-          );
-        }
+              ?.map((f) => _buildSingleItem(f, account: arg.account))
+              .nonNulls
+              .toList() ??
+          [];
+      items.addAll(newItems);
+      final summaryCount =
+          (arg.summary.items[d] ?? 0) -
+          newItems.length -
+          (arg.mergedCounts[d] ?? 0);
+      for (var i = 0; i < summaryCount; ++i) {
+        summaryItems.add(_SummaryFileItem(date: d, index: summaryItems.length));
       }
     }
-    if (arg.localSummary.items.containsKey(d)) {
-      if (localFileGroups.containsKey(d)) {
-        items.addAll(
-          localFileGroups[d]
-                  ?.map(
-                    (f) => _buildSingleLocalItem(
-                      f,
-                    )?.let((e) => (f.bestDateTime, e)),
-                  )
-                  .nonNulls ??
-              [],
-        );
-      } else {
-        final count = arg.localSummary.items[d]!;
-        for (var i = 0; i < count; ++i) {
-          summaryItems.add(
-            _SummaryFileItem(date: d, index: summaryItems.length),
-          );
-        }
-      }
-    }
-    items.sort((a, b) => b.$1.compareTo(a.$1));
-    transformed.last.addAll(items.map((e) => e.$2));
-    transformed.last.addAll(summaryItems);
+    section?.items.addAll(items);
+    section?.items.addAll(summaryItems);
 
     if (summaryItems.isEmpty) {
       dates.add(d);
     }
   }
+  if (section != null && section.items.isNotEmpty) {
+    // insert last section
+    transformed.add([
+      _SectionHeaderItem(
+        date: section.date,
+        isMonthOnly: !arg.isGroupByDay,
+        height: arg.dateHeight,
+        children: section.items,
+      ),
+      ...section.items,
+    ]);
+  }
   return _ItemTransformerResult(items: transformed, dates: dates);
 }
 
-_Item? _buildSingleRemoteItem(Account account, FileDescriptor file) {
-  if (file_util.isSupportedImageFormat(file)) {
-    return _NextcloudPhotoItem(remoteFile: file, account: account);
-  } else if (file_util.isSupportedVideoFormat(file)) {
-    return _NextcloudVideoItem(remoteFile: file, account: account);
-  } else {
-    _$__NpLog.log.shout(
-      "[_buildSingleItem] Unsupported file format: ${file.fdMime}",
-    );
-    return null;
-  }
-}
-
-_Item? _buildSingleLocalItem(LocalFile file) {
+_FileItem? _buildSingleItem(AnyFile file, {required Account account}) {
   if (file_util.isSupportedImageMime(file.mime ?? "")) {
-    return _LocalPhotoItem(localFile: file);
+    return _PhotoItem(file: file, account: account);
   } else if (file_util.isSupportedVideoMime(file.mime ?? "")) {
-    return _LocalVideoItem(localFile: file);
+    return _VideoItem(file: file, account: account);
   } else {
     _$__NpLog.log.shout(
-      "[_buildSingleLocalItem] Unsupported file format: ${file.mime}",
+      "[_buildSingleItem] Unsupported file format: ${file.mime}",
     );
     return null;
   }

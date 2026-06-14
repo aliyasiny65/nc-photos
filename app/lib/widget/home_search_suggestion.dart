@@ -11,10 +11,12 @@ import 'package:nc_photos/entity/tag.dart';
 import 'package:nc_photos/object_extension.dart';
 import 'package:nc_photos/snack_bar_manager.dart';
 import 'package:nc_photos/use_case/list_location_group.dart';
-import 'package:nc_photos/widget/collection_browser.dart';
+import 'package:nc_photos/widget/collection_browser/collection_browser.dart';
+import 'package:nc_photos/widget/my_app/my_app.dart';
 import 'package:nc_photos/widget/page_visibility_mixin.dart';
 import 'package:np_log/np_log.dart';
 import 'package:np_string/np_string.dart';
+import 'package:np_ui/np_ui.dart';
 
 part 'home_search_suggestion.g.dart';
 
@@ -60,30 +62,29 @@ class _HomeSearchSuggestionState extends State<HomeSearchSuggestion>
       child:
           BlocBuilder<HomeSearchSuggestionBloc, HomeSearchSuggestionBlocState>(
             bloc: _bloc,
-            builder:
-                (context, state) => Theme(
-                  data: Theme.of(context).run((t) {
-                    return t.copyWith(
-                      listTileTheme: ListTileThemeData(
-                        iconColor: t.colorScheme.onSurface,
-                        textColor: t.colorScheme.onSurface,
-                      ),
-                    );
-                  }),
-                  child: _buildContent(context, state),
-                ),
+            builder: (context, state) => Theme(
+              data: Theme.of(context).run((t) {
+                return t.copyWith(
+                  listTileTheme: ListTileThemeData(
+                    iconColor: t.colorScheme.onSurface,
+                    textColor: t.colorScheme.onSurface,
+                  ),
+                );
+              }),
+              child: _buildContent(context, state),
+            ),
           ),
     );
   }
 
   void _initBloc() {
-    _bloc =
-        (widget.controller._bloc ??= HomeSearchSuggestionBloc(
-          widget.account,
-          context.read<AccountController>().collectionsController,
-          context.read<AccountController>().serverController,
-          context.read<AccountController>().accountPrefController,
-        ));
+    _bloc = (widget.controller._bloc ??= HomeSearchSuggestionBloc(
+      widget.account,
+      context.read<AccountController>().collectionsController,
+      context.read<AccountController>().serverController,
+      context.read<AccountController>().accountPrefController,
+      locale: Localizations.localeOf(MyApp.globalContext),
+    ));
     if (_bloc.state is! HomeSearchSuggestionBlocInit) {
       // process the current state
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -168,32 +169,32 @@ class _HomeSearchSuggestionState extends State<HomeSearchSuggestion>
         context,
         CollectionBrowser.routeName,
         arguments: CollectionBrowserArguments(
-          CollectionBuilder.byLocationGroup(widget.account, item.location),
+          CollectionBuilder.byLocationGroup(
+            widget.account,
+            item.location,
+            Localizations.localeOf(context),
+          ),
         ),
       );
     }
   }
 
   void _transformItems(List<HomeSearchResult> results) {
-    final items =
-        () sync* {
-          for (final r in results) {
-            if (r is HomeSearchCollectionResult) {
-              yield _CollectionListItem(
-                r.collection,
-                onTap: _onCollectionPressed,
-              );
-            } else if (r is HomeSearchTagResult) {
-              yield _TagListItem(r.tag, onTap: _onTagPressed);
-            } else if (r is HomeSearchPersonResult) {
-              yield _PersonListItem(r.person, onTap: _onPersonPressed);
-            } else if (r is HomeSearchLocationResult) {
-              yield _LocationListItem(r.location, onTap: _onLocationPressed);
-            } else {
-              _log.warning("[_transformItems] Unknown type: ${r.runtimeType}");
-            }
-          }
-        }().toList();
+    final items = () sync* {
+      for (final r in results) {
+        if (r is HomeSearchCollectionResult) {
+          yield _CollectionListItem(r.collection, onTap: _onCollectionPressed);
+        } else if (r is HomeSearchTagResult) {
+          yield _TagListItem(r.tag, onTap: _onTagPressed);
+        } else if (r is HomeSearchPersonResult) {
+          yield _PersonListItem(r.person, onTap: _onPersonPressed);
+        } else if (r is HomeSearchLocationResult) {
+          yield _LocationListItem(r.location, onTap: _onLocationPressed);
+        } else {
+          _log.warning("[_transformItems] Unknown type: ${r.runtimeType}");
+        }
+      }
+    }().toList();
     _items = items;
   }
 
@@ -254,7 +255,7 @@ class _LocationListItem implements _ListItem {
   @override
   buildWidget(BuildContext context) => ListTile(
     leading: const Icon(Icons.location_on_outlined),
-    title: Text(location.place),
+    title: Text(location.name.of(context)),
     onTap: onTap == null ? null : () => onTap!(this),
   );
 

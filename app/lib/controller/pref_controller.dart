@@ -10,7 +10,7 @@ import 'package:nc_photos/json_util.dart';
 import 'package:nc_photos/k.dart' as k;
 import 'package:nc_photos/language_util.dart';
 import 'package:nc_photos/protected_page_handler.dart';
-import 'package:nc_photos/widget/home_collections.dart';
+import 'package:nc_photos/widget/home_collections/home_collections.dart';
 import 'package:nc_photos/widget/viewer/viewer.dart';
 import 'package:np_codegen/np_codegen.dart';
 import 'package:np_common/color.dart';
@@ -19,6 +19,7 @@ import 'package:np_common/size.dart';
 import 'package:np_common/type.dart';
 import 'package:np_gps_map/np_gps_map.dart';
 import 'package:np_log/np_log.dart';
+import 'package:np_platform_uploader/np_platform_uploader.dart';
 import 'package:np_string/np_string.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -73,12 +74,6 @@ class PrefController {
   Future<bool> setEnableClientExif(bool value) => _set<bool>(
     controller: _isEnableClientExifController,
     setter: (pref, value) => pref.setEnableClientExif(value),
-    value: value,
-  );
-
-  Future<bool> setProcessExifWifiOnly(bool value) => _set<bool>(
-    controller: _shouldProcessExifWifiOnlyController,
-    setter: (pref, value) => pref.setProcessExifWifiOnly(value),
     value: value,
   );
 
@@ -163,9 +158,8 @@ class PrefController {
 
   Future<bool> setSecondarySeedColor(ColorInt? value) => _setOrRemove<ColorInt>(
     controller: _secondarySeedColorController,
-    setter:
-        (pref, value) =>
-            pref.setSecondarySeedColor(value.withAlpha(0xFF).value),
+    setter: (pref, value) =>
+        pref.setSecondarySeedColor(value.withAlpha(0xFF).value),
     remover: (pref) => pref.setSecondarySeedColor(null),
     value: value,
     defaultValue: null,
@@ -180,10 +174,9 @@ class PrefController {
   Future<bool> setMapBrowserPrevPosition(MapCoord? value) =>
       _setOrRemove<MapCoord>(
         controller: _mapBrowserPrevPositionController,
-        setter:
-            (pref, value) => pref.setMapBrowserPrevPosition(
-              jsonEncode([value.latitude, value.longitude]),
-            ),
+        setter: (pref, value) => pref.setMapBrowserPrevPosition(
+          jsonEncode([value.latitude, value.longitude]),
+        ),
         remover: (pref) => pref.setMapBrowserPrevPosition(null),
         value: value,
         defaultValue: null,
@@ -269,10 +262,9 @@ class PrefController {
     List<PrefHomeCollectionsNavButton>? value,
   ) => _setOrRemove(
     controller: _homeCollectionsNavBarButtonsController,
-    setter:
-        (pref, value) => pref.setHomeCollectionsNavBarButtonsJson(
-          jsonEncode(value.map((e) => e.toJson()).toList()),
-        ),
+    setter: (pref, value) => pref.setHomeCollectionsNavBarButtonsJson(
+      jsonEncode(value.map((e) => e.toJson()).toList()),
+    ),
     remover: (pref) => pref.setHomeCollectionsNavBarButtonsJson(null),
     value: value,
     defaultValue: _homeCollectionsNavBarButtonsDefault,
@@ -296,9 +288,61 @@ class PrefController {
     value: value,
   );
 
+  bool hasLocalDirs() => pref.getLocalDirs() != null;
+
   Future<bool> setLocalDirs(List<String> value) => _set<List<String>>(
     controller: _localDirsController,
     setter: (pref, value) => pref.setLocalDirs(value),
+    value: value,
+  );
+
+  Future<void> setEnableUploadConvert(bool value) => _set(
+    controller: _isEnableUploadConvertController,
+    setter: (pref, value) => pref.setEnableUploadConvert(value),
+    value: value,
+  );
+
+  Future<void> setUploadConvertFormat(ConvertFormat value) => _set(
+    controller: _uploadConvertFormatController,
+    setter: (pref, value) => pref.setUploadConvertFormat(value),
+    value: value,
+  );
+
+  Future<void> setUploadConvertQuality(int value) => _set(
+    controller: _uploadConvertQualityController,
+    setter: (pref, value) => pref.setUploadConvertQuality(value),
+    value: value,
+  );
+
+  Future<void> setUploadConvertDownsizeMp(double? value) => _setOrRemove(
+    controller: _uploadConvertDownsizeMpController,
+    setter: (pref, value) => pref.setUploadConvertDownsizeMp(value),
+    remover: (pref) => pref.setUploadConvertDownsizeMp(null),
+    value: value,
+    defaultValue: null,
+  );
+
+  Future<void> setShowUploadConvertWarning(bool value) => _set(
+    controller: _isShowUploadConvertWarningController,
+    setter: (pref, value) => pref.setShowUploadConvertWarning(value),
+    value: value,
+  );
+
+  Future<void> setEnableLocalFile(bool value) => _set(
+    controller: _isEnableLocalFileController,
+    setter: (pref, value) => pref.setEnableLocalFile(value),
+    value: value,
+  );
+
+  Future<void> setViewerUseOriginalImage(bool value) => _set(
+    controller: _isViewerUseOriginalImageController,
+    setter: (pref, value) => pref.setViewerUseOriginalImage(value),
+    value: value,
+  );
+
+  Future<void> setBackupOnRemoteExifEdit(bool value) => _set(
+    controller: _isBackupOnRemoteExifEditController,
+    setter: (pref, value) => pref.setBackupOnRemoteExifEdit(value),
     value: value,
   );
 
@@ -363,10 +407,6 @@ class PrefController {
     pref.isEnableClientExif() ?? true,
   );
   @npSubjectAccessor
-  late final _shouldProcessExifWifiOnlyController = BehaviorSubject.seeded(
-    pref.shouldProcessExifWifiOnlyOr(true),
-  );
-  @npSubjectAccessor
   late final _memoriesRangeController = BehaviorSubject.seeded(
     pref.getMemoriesRangeOr(2),
   );
@@ -392,7 +432,7 @@ class PrefController {
   );
   @npSubjectAccessor
   late final _isSaveEditResultToServerController = BehaviorSubject.seeded(
-    pref.isSaveEditResultToServerOr(true),
+    pref.isSaveEditResultToServer() ?? true,
   );
   @npSubjectAccessor
   late final _enhanceMaxSizeController = BehaviorSubject.seeded(
@@ -480,11 +520,10 @@ class PrefController {
   @npSubjectAccessor
   late final _homeCollectionsNavBarButtonsController = BehaviorSubject.seeded(
     pref.getHomeCollectionsNavBarButtonsJson()?.let(
-          (s) =>
-              (jsonDecode(s) as List)
-                  .cast<JsonObj>()
-                  .map(PrefHomeCollectionsNavButton.fromJson)
-                  .toList(),
+          (s) => (jsonDecode(s) as List)
+              .cast<JsonObj>()
+              .map(PrefHomeCollectionsNavButton.fromJson)
+              .toList(),
         ) ??
         _homeCollectionsNavBarButtonsDefault,
   );
@@ -502,7 +541,39 @@ class PrefController {
   );
   @npSubjectAccessor
   late final _localDirsController = BehaviorSubject.seeded(
-    pref.getLocalDirs() ?? [],
+    pref.getLocalDirs() ?? ["DCIM"],
+  );
+  @npSubjectAccessor
+  late final _isEnableUploadConvertController = BehaviorSubject.seeded(
+    pref.isEnableUploadConvert() ?? false,
+  );
+  @npSubjectAccessor
+  late final _uploadConvertFormatController = BehaviorSubject.seeded(
+    pref.getUploadConvertFormat() ?? ConvertFormat.jpeg,
+  );
+  @npSubjectAccessor
+  late final _uploadConvertQualityController = BehaviorSubject.seeded(
+    pref.getUploadConvertQuality() ?? 85,
+  );
+  @npSubjectAccessor
+  late final _uploadConvertDownsizeMpController = BehaviorSubject.seeded(
+    pref.getUploadConvertDownsizeMp(),
+  );
+  @npSubjectAccessor
+  late final _isShowUploadConvertWarningController = BehaviorSubject.seeded(
+    pref.isShowUploadConvertWarning() ?? true,
+  );
+  @npSubjectAccessor
+  late final _isEnableLocalFileController = BehaviorSubject.seeded(
+    pref.isEnableLocalFile() ?? true,
+  );
+  @npSubjectAccessor
+  late final _isViewerUseOriginalImageController = BehaviorSubject.seeded(
+    pref.isViewerUseOriginalImage() ?? false,
+  );
+  @npSubjectAccessor
+  late final _isBackupOnRemoteExifEditController = BehaviorSubject.seeded(
+    pref.isBackupOnRemoteExifEdit() ?? true,
   );
 }
 
@@ -532,9 +603,8 @@ class SecurePrefController {
   Future<bool> setProtectedPageAuthPin(CiString? value) =>
       _setOrRemove<CiString>(
         controller: _protectedPageAuthPinController,
-        setter:
-            (pref, value) =>
-                pref.setProtectedPageAuthPin(value.toCaseInsensitiveString()),
+        setter: (pref, value) =>
+            pref.setProtectedPageAuthPin(value.toCaseInsensitiveString()),
         remover: (pref) => pref.setProtectedPageAuthPin(null),
         value: value,
         defaultValue: null,
@@ -543,10 +613,8 @@ class SecurePrefController {
   Future<bool> setProtectedPageAuthPassword(CiString? value) =>
       _setOrRemove<CiString>(
         controller: _protectedPageAuthPasswordController,
-        setter:
-            (pref, value) => pref.setProtectedPageAuthPassword(
-              value.toCaseInsensitiveString(),
-            ),
+        setter: (pref, value) =>
+            pref.setProtectedPageAuthPassword(value.toCaseInsensitiveString()),
         remover: (pref) => pref.setProtectedPageAuthPassword(null),
         value: value,
         defaultValue: null,

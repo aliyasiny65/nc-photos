@@ -10,6 +10,7 @@ class _SyncByServer {
     required this.db,
     this.interrupter,
     required this.fallback,
+    this.progressLogger,
   }) {
     interrupter?.listen((event) {
       _shouldRun = false;
@@ -86,16 +87,16 @@ class _SyncByServer {
 
   Future<File?> _syncOne(File file) async {
     _log.fine("[_syncOne] Syncing ${file.path}");
+    progressLogger?.add("(server) Sync ${file.path}");
     try {
       OrNull<ImageLocation>? locationUpdate;
 
       try {
-        final lat = file.metadata!.exif?.gpsLatitudeDeg;
-        final lng = file.metadata!.exif?.gpsLongitudeDeg;
+        final gps = file.metadata!.gpsCoord;
         ImageLocation? location;
-        if (lat != null && lng != null) {
+        if (gps != null) {
           _log.fine("[_syncOne] Reverse geocoding for ${file.path}");
-          final l = await _geocoder(lat, lng);
+          final l = await _geocoder(gps.lat, gps.lng);
           if (l != null) {
             location = l.toImageLocation();
           }
@@ -133,6 +134,7 @@ class _SyncByServer {
   final NpDb db;
   final Stream<void>? interrupter;
   final _SyncByApp fallback;
+  final StreamController<String>? progressLogger;
 
   final _geocoder = ReverseGeocoder();
   var _shouldRun = true;

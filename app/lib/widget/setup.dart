@@ -4,8 +4,11 @@ import 'package:nc_photos/app_localizations.dart';
 import 'package:nc_photos/controller/pref_controller.dart';
 import 'package:nc_photos/entity/pref.dart';
 import 'package:nc_photos/k.dart' as k;
+import 'package:nc_photos/mobile/android/permission_util.dart';
+import 'package:nc_photos/platform/features.dart';
 import 'package:nc_photos/widget/home/home.dart';
-import 'package:nc_photos/widget/sign_in.dart';
+import 'package:nc_photos/widget/local_root_picker/local_root_picker.dart';
+import 'package:nc_photos/widget/sign_in/sign_in.dart';
 import 'package:page_view_indicators/circle_page_indicator.dart';
 
 bool isNeedSetup() => Pref().getSetupProgressOr() & _PageId.all != _PageId.all;
@@ -29,7 +32,9 @@ class _SetupState extends State<Setup> {
   build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: Builder(builder: (context) => _buildContent(context)),
+      body: SafeArea(
+        child: Builder(builder: (context) => _buildContent(context)),
+      ),
     );
   }
 
@@ -39,10 +44,12 @@ class _SetupState extends State<Setup> {
 
   Widget _buildContent(BuildContext context) {
     final page = _pageController.hasClients ? _pageController.page!.round() : 0;
-    final pages = <Widget>[
+    final pages = <_Page>[
       if (_initialProgress & _PageId.exif == 0) _Exif(),
       if (_initialProgress & _PageId.hiddenPrefDirNotice == 0)
         _HiddenPrefDirNotice(),
+      if (isSupportLocalFiles && (_initialProgress & _PageId.localFiles == 0))
+        _LocalFiles(key: _localFilesKey),
     ];
     final isLastPage = page >= pages.length - 1;
     return Column(
@@ -66,28 +73,28 @@ class _SetupState extends State<Setup> {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children:
-                    isLastPage
-                        ? [
-                          ElevatedButton(
-                            onPressed: _onDonePressed,
-                            child: Text(L10n.global().doneButtonLabel),
-                          ),
-                        ]
-                        : [
-                          ElevatedButton(
-                            onPressed: () {
-                              if (_pageController.hasClients) {
-                                _onNextPressed(
-                                  (pages[_pageController.page!.round()]
-                                          as _Page)
-                                      .getPageId(),
-                                );
-                              }
-                            },
-                            child: Text(L10n.global().nextButtonLabel),
-                          ),
-                        ],
+                children: isLastPage
+                    ? [
+                        ElevatedButton(
+                          onPressed: () {
+                            _onDonePressed(pages.last.getPageId());
+                          },
+                          child: Text(L10n.global().doneButtonLabel),
+                        ),
+                      ]
+                    : [
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_pageController.hasClients) {
+                              _onNextPressed(
+                                pages[_pageController.page!.round()]
+                                    .getPageId(),
+                              );
+                            }
+                          },
+                          child: Text(L10n.global().nextButtonLabel),
+                        ),
+                      ],
               ),
               CirclePageIndicator(
                 itemCount: pages.length,
@@ -100,8 +107,12 @@ class _SetupState extends State<Setup> {
     );
   }
 
-  void _onDonePressed() {
-    Pref().setSetupProgress(_PageId.all);
+  void _onDonePressed(int pageId) {
+    Pref().setSetupProgress(Pref().getSetupProgressOr() | pageId);
+
+    if (pageId == _PageId.localFiles) {
+      _localFilesKey.currentState?.save();
+    }
 
     final account = context.read<PrefController>().currentAccountValue;
     if (account == null) {
@@ -117,6 +128,11 @@ class _SetupState extends State<Setup> {
 
   void _onNextPressed(int pageId) {
     Pref().setSetupProgress(Pref().getSetupProgressOr() | pageId);
+
+    if (pageId == _PageId.localFiles) {
+      _localFilesKey.currentState?.save();
+    }
+
     _pageController.nextPage(
       duration: k.animationDurationNormal,
       curve: Curves.easeInOut,
@@ -126,15 +142,19 @@ class _SetupState extends State<Setup> {
   final _initialProgress = Pref().getSetupProgressOr();
   final _pageController = PageController();
   final _currentPageNotifier = ValueNotifier<int>(0);
+
+  final _localFilesKey = GlobalKey<_LocalFilesState>();
 }
 
 class _PageId {
   static const exif = 0x01;
   static const hiddenPrefDirNotice = 0x02;
-  static const all = exif | hiddenPrefDirNotice;
+  static const localFiles = 0x04;
+  static final all =
+      exif | hiddenPrefDirNotice | (isSupportLocalFiles ? localFiles : 0);
 }
 
-abstract class _Page {
+abstract interface class _Page implements Widget {
   int getPageId();
 }
 
@@ -159,11 +179,6 @@ class _ExifState extends State<_Exif> {
             onChanged: _onValueChanged,
           ),
           const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(L10n.global().exifSupportDetails),
-          ),
-          const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(L10n.global().exifSupportNextcloud28Notes),
@@ -233,4 +248,43 @@ class _HiddenPrefDirNoticeState extends State<_HiddenPrefDirNotice> {
       ),
     );
   }
+}
+
+class _LocalFiles extends StatefulWidget implements _Page {
+  const _LocalFiles({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _LocalFilesState();
+
+  @override
+  int getPageId() => _PageId.localFiles;
+}
+
+class _LocalFilesState extends State<_LocalFiles> {
+  @override
+  void initState() {
+    super.initState();
+    requestReadMediaForResult().then((_) {
+      setState(() {
+        _isReady = true;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isReady
+        ? LocalRootPicker(
+            key: _key,
+            switchTitle: L10n.global().settingsDeviceMediaTitle,
+          )
+        : const Center(child: CircularProgressIndicator());
+  }
+
+  void save() {
+    _key.currentState?.save();
+  }
+
+  final _key = GlobalKey<LocalRootPickerState>();
+  var _isReady = false;
 }

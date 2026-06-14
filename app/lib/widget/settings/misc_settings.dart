@@ -12,6 +12,7 @@ import 'package:nc_photos/widget/page_visibility_mixin.dart';
 import 'package:nc_photos/widget/settings/app_lock_settings.dart';
 import 'package:np_common/object_util.dart';
 import 'package:np_log/np_log.dart';
+import 'package:np_ui/np_ui.dart';
 import 'package:to_string/to_string.dart';
 
 part 'misc/bloc.dart';
@@ -24,11 +25,10 @@ class MiscSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (_) => _Bloc(
-            prefController: context.read(),
-            securePrefController: context.read(),
-          ),
+      create: (_) => _Bloc(
+        prefController: context.read(),
+        securePrefController: context.read(),
+      ),
       child: const _WrappedMiscSettings(),
     );
   }
@@ -67,7 +67,7 @@ class _WrappedMiscSettingsState extends State<_WrappedMiscSettings>
           slivers: [
             SliverAppBar(
               pinned: true,
-              title: Text(L10n.global().photosTabLabel),
+              title: Text(L10n.global().settingsMiscellaneousTitle),
             ),
             SliverList(
               delegate: SliverChildListDelegate([
@@ -85,25 +85,23 @@ class _WrappedMiscSettingsState extends State<_WrappedMiscSettings>
                 ),
                 _BlocSelector<ProtectedPageAuthType?>(
                   selector: (state) => state.appLockType,
-                  builder:
-                      (context, appLockType) => ListTile(
-                        title: Text(L10n.global().settingsAppLock),
-                        subtitle:
-                            appLockType?.let(
-                              (e) => Text(e.toDisplayString()),
-                            ) ??
-                            Text(L10n.global().disabledText),
-                        onTap: () {
-                          Navigator.of(context).pushProtected(
-                            MaterialPageRoute(
-                              builder: (_) => const AppLockSettings(),
-                            ),
-                          );
-                        },
-                      ),
+                  builder: (context, appLockType) => ListTile(
+                    title: Text(L10n.global().settingsAppLock),
+                    subtitle:
+                        appLockType?.let((e) => Text(e.toDisplayString())) ??
+                        Text(L10n.global().disabledText),
+                    onTap: () {
+                      Navigator.of(context).pushProtected(
+                        MaterialPageRoute(
+                          builder: (_) => const AppLockSettings(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ]),
             ),
+            const SliverSafeBottom(),
           ],
         ),
       ),

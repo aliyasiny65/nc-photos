@@ -25,23 +25,27 @@ class SearchSqliteDbDataSource implements SearchDataSource {
   @override
   Future<List<FileDescriptor>> list(
     Account account,
-    SearchCriteria criteria,
-  ) async {
+    SearchCriteria criteria, {
+    required bool shouldUseRecognizeApiKey,
+  }) async {
     _log.info("[list] $criteria");
     final stopwatch = Stopwatch()..start();
     try {
-      final keywords =
-          search_util
-              .cleanUpSymbols(criteria.input)
-              .split(" ")
-              .where((s) => s.isNotEmpty)
-              .map((s) => s.toCi().toCaseInsensitiveString())
-              .toSet();
+      final keywords = search_util
+          .cleanUpSymbols(criteria.input)
+          .split(" ")
+          .where((s) => s.isNotEmpty)
+          .map((s) => s.toCi().toCaseInsensitiveString())
+          .toSet();
       final futures = await Future.wait([
         _listByPath(account, criteria, keywords),
         _listByLocation(account, criteria),
         _listByTag(account, criteria),
-        _listByPerson(account, criteria),
+        _listByPerson(
+          account,
+          criteria,
+          shouldUseRecognizeApiKey: shouldUseRecognizeApiKey,
+        ),
       ]);
       return futures.flatten().distinctIf(
         (a, b) => a.compareServerIdentity(b),
@@ -160,8 +164,9 @@ class SearchSqliteDbDataSource implements SearchDataSource {
 
   Future<List<FileDescriptor>> _listByPerson(
     Account account,
-    SearchCriteria criteria,
-  ) async {
+    SearchCriteria criteria, {
+    required bool shouldUseRecognizeApiKey,
+  }) async {
     // person search requires exact match of any parts, for example, searching
     // "Ada" will return results from "Ada Crook" but NOT "Adabelle"
     try {
@@ -172,16 +177,21 @@ class SearchSqliteDbDataSource implements SearchDataSource {
       if (dbPersons.isEmpty) {
         return [];
       }
-      final persons =
-          dbPersons
-              .map(DbFaceRecognitionPersonConverter.fromDb)
-              .map((p) => PersonBuilder.byFaceRecognitionPerson(account, p))
-              .toList();
+      final persons = dbPersons
+          .map(DbFaceRecognitionPersonConverter.fromDb)
+          .map((p) => PersonBuilder.byFaceRecognitionPerson(account, p))
+          .toList();
       _log.info(
         "[_listByPerson] Found people: ${persons.map((p) => p.name).toReadableString()}",
       );
       final futures = await Future.wait(
-        persons.map((p) async => ListPersonFace(_c)(account, p).last),
+        persons.map(
+          (p) async => ListPersonFace(_c)(
+            account,
+            p,
+            shouldUseRecognizeApiKey: shouldUseRecognizeApiKey,
+          ).last,
+        ),
       );
       final faces = futures.flatten().toList();
       final files = await InflateFileDescriptor(

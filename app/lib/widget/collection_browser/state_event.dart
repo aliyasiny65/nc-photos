@@ -1,4 +1,6 @@
-part of '../collection_browser.dart';
+part of 'collection_browser.dart';
+
+enum _EditPickerMode { label, map }
 
 @genCopyWith
 @toString
@@ -15,6 +17,9 @@ class _State {
     required this.isSelectionRemovable,
     required this.isSelectionManageableFile,
     required this.isSelectionDeletable,
+    required this.shareRequest,
+    required this.startSlideshowRequest,
+    required this.slideshowRequest,
     required this.isEditMode,
     required this.isEditBusy,
     this.editName,
@@ -22,11 +27,16 @@ class _State {
     this.editTransformedItems,
     this.editSort,
     required this.isAddMapBusy,
+    this.editPickerMode,
+    required this.newLabelRequest,
     required this.placePickerRequest,
+    required this.editLabelRequest,
+    required this.editMapRequest,
     required this.isDragging,
     required this.zoom,
     this.scale,
     this.importResult,
+    this.coverColorScheme,
     this.error,
     this.message,
   });
@@ -47,10 +57,16 @@ class _State {
       isSelectionRemovable: true,
       isSelectionManageableFile: true,
       isSelectionDeletable: true,
+      shareRequest: Unique(null),
+      startSlideshowRequest: Unique(null),
+      slideshowRequest: Unique(null),
       isEditMode: false,
       isEditBusy: false,
       isAddMapBusy: false,
+      newLabelRequest: Unique(null),
       placePickerRequest: Unique(null),
+      editLabelRequest: Unique(null),
+      editMapRequest: Unique(null),
       isDragging: false,
       zoom: zoom,
     );
@@ -73,6 +89,10 @@ class _State {
   final bool isSelectionRemovable;
   final bool isSelectionManageableFile;
   final bool isSelectionDeletable;
+  final Unique<_ShareRequest?> shareRequest;
+
+  final Unique<_StartSlideshowRequest?> startSlideshowRequest;
+  final Unique<_SlideshowRequest?> slideshowRequest;
 
   final bool isEditMode;
   final bool isEditBusy;
@@ -81,7 +101,11 @@ class _State {
   final List<_Item>? editTransformedItems;
   final CollectionItemSort? editSort;
   final bool isAddMapBusy;
+  final _EditPickerMode? editPickerMode;
+  final Unique<_NewLabelRequest?> newLabelRequest;
   final Unique<_PlacePickerRequest?> placePickerRequest;
+  final Unique<_EditLabelRequest?> editLabelRequest;
+  final Unique<_EditMapRequest?> editMapRequest;
 
   final bool isDragging;
 
@@ -90,11 +114,13 @@ class _State {
 
   final Collection? importResult;
 
+  final ColorScheme? coverColorScheme;
+
   final ExceptionEvent? error;
   final String? message;
 }
 
-abstract class _Event {}
+sealed class _Event {}
 
 @toString
 class _UpdateCollection implements _Event {
@@ -135,6 +161,24 @@ class _ImportPendingSharedCollection implements _Event {
 }
 
 @toString
+class _StartSlideshow implements _Event {
+  const _StartSlideshow();
+
+  @override
+  String toString() => _$toString();
+}
+
+@toString
+class _StartSlideshowResult implements _Event {
+  const _StartSlideshowResult(this.config);
+
+  @override
+  String toString() => _$toString();
+
+  final SlideshowConfig config;
+}
+
+@toString
 class _Download implements _Event {
   const _Download();
 
@@ -169,13 +213,53 @@ class _EditName implements _Event {
 }
 
 @toString
+class _RequestAddLabel implements _Event {
+  const _RequestAddLabel();
+
+  @override
+  String toString() => _$toString();
+}
+
+@toString
+class _RequestAddLabel2 implements _Event {
+  const _RequestAddLabel2({required this.before});
+
+  @override
+  String toString() => _$toString();
+
+  final _ActualItem? before;
+}
+
+@toString
 class _AddLabelToCollection implements _Event {
-  const _AddLabelToCollection(this.label);
+  const _AddLabelToCollection(this.label, {this.before});
 
   @override
   String toString() => _$toString();
 
   final String label;
+  final _ActualItem? before;
+}
+
+@toString
+class _RequestEditLabel implements _Event {
+  const _RequestEditLabel(this.item);
+
+  @override
+  String toString() => _$toString();
+
+  final CollectionLabelItem item;
+}
+
+@toString
+class _EditLabel implements _Event {
+  const _EditLabel({required this.item, required this.newText});
+
+  @override
+  String toString() => _$toString();
+
+  final CollectionLabelItem item;
+  final String newText;
 }
 
 @toString
@@ -187,13 +271,45 @@ class _RequestAddMap implements _Event {
 }
 
 @toString
+class _RequestAddMap2 implements _Event {
+  const _RequestAddMap2({required this.before});
+
+  @override
+  String toString() => _$toString();
+
+  final _ActualItem? before;
+}
+
+@toString
 class _AddMapToCollection implements _Event {
-  const _AddMapToCollection(this.location);
+  const _AddMapToCollection(this.location, {this.before});
 
   @override
   String toString() => _$toString();
 
   final CameraPosition location;
+  final _ActualItem? before;
+}
+
+@toString
+class _RequestEditMap implements _Event {
+  const _RequestEditMap(this.item);
+
+  @override
+  String toString() => _$toString();
+
+  final CollectionMapItem item;
+}
+
+@toString
+class _EditMap implements _Event {
+  const _EditMap({required this.item, required this.newLocation});
+
+  @override
+  String toString() => _$toString();
+
+  final CollectionMapItem item;
+  final CameraPosition newLocation;
 }
 
 @toString
@@ -237,6 +353,14 @@ class _DoneEdit implements _Event {
 @toString
 class _CancelEdit implements _Event {
   const _CancelEdit();
+
+  @override
+  String toString() => _$toString();
+}
+
+@toString
+class _CancelEditPickerMode implements _Event {
+  const _CancelEditPickerMode();
 
   @override
   String toString() => _$toString();
@@ -308,6 +432,14 @@ class _DeleteSelectedItems implements _Event {
 }
 
 @toString
+class _ShareSelectedItems implements _Event {
+  const _ShareSelectedItems();
+
+  @override
+  String toString() => _$toString();
+}
+
+@toString
 class _SetDragging implements _Event {
   const _SetDragging(this.flag);
 
@@ -341,6 +473,16 @@ class _SetScale implements _Event {
   String toString() => _$toString();
 
   final double scale;
+}
+
+@toString
+class _SetCoverColorScheme implements _Event {
+  const _SetCoverColorScheme(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final ColorScheme value;
 }
 
 @toString

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:infinite_pageview/infinite_pageview.dart';
 import 'package:intl/intl.dart';
 import 'package:kiwi/kiwi.dart';
 import 'package:logging/logging.dart';
@@ -27,10 +28,9 @@ import 'package:nc_photos/di_container.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/worker/factory.dart';
 import 'package:nc_photos/entity/collection.dart';
-import 'package:nc_photos/entity/collection/adapter.dart';
+import 'package:nc_photos/entity/collection/worker/factory.dart';
 import 'package:nc_photos/entity/collection_item.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
-import 'package:nc_photos/entity/local_file.dart';
 import 'package:nc_photos/exception_event.dart';
 import 'package:nc_photos/k.dart' as k;
 import 'package:nc_photos/live_photo_util.dart';
@@ -40,15 +40,15 @@ import 'package:nc_photos/theme.dart';
 import 'package:nc_photos/widget/app_intermediate_circular_progress_indicator.dart';
 import 'package:nc_photos/widget/delete_result_snack_bar.dart';
 import 'package:nc_photos/widget/disposable.dart';
-import 'package:nc_photos/widget/file_content_view.dart';
-import 'package:nc_photos/widget/horizontal_page_viewer.dart';
-import 'package:nc_photos/widget/image_editor.dart';
+import 'package:nc_photos/widget/file_content_view/file_content_view.dart';
+import 'package:nc_photos/widget/image_editor/image_editor.dart';
 import 'package:nc_photos/widget/image_enhancer.dart';
 import 'package:nc_photos/widget/page_visibility_mixin.dart';
 import 'package:nc_photos/widget/png_icon.dart';
 import 'package:nc_photos/widget/processing_dialog.dart';
+import 'package:nc_photos/widget/share_helper/share_helper.dart';
 import 'package:nc_photos/widget/slideshow_dialog.dart';
-import 'package:nc_photos/widget/slideshow_viewer.dart';
+import 'package:nc_photos/widget/slideshow_viewer/slideshow_viewer.dart';
 import 'package:nc_photos/widget/upload_dialog/upload_dialog.dart';
 import 'package:nc_photos/widget/viewer_detail_pane/viewer_detail_pane.dart';
 import 'package:nc_photos/widget/viewer_mixin.dart';
@@ -62,6 +62,7 @@ import 'package:to_string/to_string.dart';
 part 'app_bar.dart';
 part 'app_bar_buttons.dart';
 part 'bloc.dart';
+part 'delete_dialog.dart';
 part 'detail_pane.dart';
 part 'state_event.dart';
 part 'type.dart';
@@ -142,18 +143,17 @@ class Viewer extends StatelessWidget {
   const Viewer({
     super.key,
     required this.contentProvider,
-    required this.allFilesCount,
     required this.initialFile,
-    required this.initialIndex,
     this.collectionId,
   });
 
   @override
   Widget build(BuildContext context) {
     final accountController = context.read<AccountController>();
-    return BlocProvider(
-      create:
-          (_) => _Bloc(
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => _Bloc(
             KiwiContainer().resolve(),
             account: accountController.account,
             anyFilesController: accountController.anyFilesController,
@@ -163,20 +163,24 @@ class Viewer extends StatelessWidget {
             prefController: context.read(),
             accountPrefController: accountController.accountPrefController,
             contentProvider: contentProvider,
-            allFilesCount: allFilesCount,
             initialFile: initialFile,
-            initialIndex: initialIndex,
             brightness: Theme.of(context).brightness,
             collectionId: collectionId,
           )..add(const _Init()),
+        ),
+        BlocProvider(
+          create: (_) => ShareBloc(
+            KiwiContainer().resolve(),
+            account: accountController.account,
+          ),
+        ),
+      ],
       child: const _WrappedViewer(),
     );
   }
 
   final ViewerContentProvider contentProvider;
-  final int allFilesCount;
   final AnyFile initialFile;
-  final int initialIndex;
 
   /// ID of the collection these files belongs to, or null
   final String? collectionId;
@@ -261,6 +265,10 @@ class _WrappedViewerState extends State<_WrappedViewer>
               listener: _onUploadRequest,
             ),
             _BlocListenerT(
+              selector: (state) => state.deleteRequest,
+              listener: _onDeleteRequest,
+            ),
+            _BlocListenerT(
               selector: (state) => state.error,
               listener: (context, error) {
                 if (error != null && isPageVisible()) {
@@ -269,56 +277,52 @@ class _WrappedViewerState extends State<_WrappedViewer>
               },
             ),
           ],
-          child: _BlocSelector(
-            selector: (state) => state.isBusy,
-            builder:
-                (context, isBusy) => PopScope(
-                  canPop: !isBusy,
-                  child: _BlocBuilder(
-                    buildWhen:
-                        (previous, current) =>
-                            previous.isShowAppBar != current.isShowAppBar ||
-                            previous.isDetailPaneActive !=
-                                current.isDetailPaneActive,
-                    builder:
-                        (context, state) => Scaffold(
-                          extendBodyBehindAppBar: true,
-                          extendBody: true,
-                          appBar:
-                              state.isShowAppBar
-                                  ? const PreferredSize(
-                                    preferredSize: Size.fromHeight(
-                                      kToolbarHeight,
-                                    ),
-                                    child: _AppBar(),
-                                  )
-                                  : null,
-                          bottomNavigationBar:
-                              state.isShowAppBar && !state.isDetailPaneActive
-                                  ? const _BottomAppBar()
-                                  : null,
-                          body: Stack(
-                            children: [
-                              const _ContentBody(),
-                              _BlocSelector(
-                                selector: (state) => state.isBusy,
-                                builder:
-                                    (context, isBusy) =>
-                                        isBusy
-                                            ? AbsorbPointer(
-                                              child: ProcessingOverlay(
-                                                text:
-                                                    L10n.global()
-                                                        .genericProcessingDialogContent,
-                                              ),
-                                            )
-                                            : const SizedBox.shrink(),
-                              ),
-                            ],
+          child: ShareBlocListener(
+            child: _BlocSelector(
+              selector: (state) => state.isBusy,
+              builder: (context, isBusy) => PopScope(
+                canPop: !isBusy,
+                child: _BlocBuilder(
+                  buildWhen: (previous, current) =>
+                      previous.isShowAppBar != current.isShowAppBar ||
+                      previous.isDetailPaneActive != current.isDetailPaneActive,
+                  builder: (context, state) => Scaffold(
+                    extendBodyBehindAppBar: true,
+                    extendBody: true,
+                    appBar: state.isShowAppBar
+                        ? const PreferredSize(
+                            preferredSize: Size.fromHeight(kToolbarHeight),
+                            child: _AppBar(),
+                          )
+                        : null,
+                    bottomNavigationBar:
+                        state.isShowAppBar && !state.isDetailPaneActive
+                        ? const _BottomAppBar()
+                        : null,
+                    body: Stack(
+                      children: [
+                        OrientationBuilder(
+                          builder: (context, orientation) => _ContentBody(
+                            key: Key("viewer._ContentBody.${orientation.name}"),
                           ),
                         ),
+                        _BlocSelector(
+                          selector: (state) => state.isBusy,
+                          builder: (context, isBusy) => isBusy
+                              ? AbsorbPointer(
+                                  child: ProcessingOverlay(
+                                    text: L10n.global()
+                                        .genericProcessingDialogContent,
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+              ),
+            ),
           ),
         ),
       ),
@@ -331,13 +335,12 @@ class _WrappedViewerState extends State<_WrappedViewer>
   ) async {
     final result = await showDialog<SlideshowConfig>(
       context: context,
-      builder:
-          (_) => SlideshowDialog(
-            duration: context.bloc.prefController.slideshowDurationValue,
-            isShuffle: context.bloc.prefController.isSlideshowShuffleValue,
-            isRepeat: context.bloc.prefController.isSlideshowRepeatValue,
-            isReverse: context.bloc.prefController.isSlideshowReverseValue,
-          ),
+      builder: (_) => SlideshowDialog(
+        duration: context.bloc.prefController.slideshowDurationValue,
+        isShuffle: context.bloc.prefController.isSlideshowShuffleValue,
+        isRepeat: context.bloc.prefController.isSlideshowRepeatValue,
+        isReverse: context.bloc.prefController.isSlideshowReverseValue,
+      ),
     );
     if (!context.mounted || result == null) {
       return;
@@ -358,12 +361,17 @@ class _WrappedViewerState extends State<_WrappedViewer>
         slideshowRequest.config,
       ),
     );
-    _log.info("[_onSlideshowRequest] Slideshow ended, jump to: $newIndex");
-    if (newIndex != null && context.mounted) {
+    final relIndex = newIndex?.let(
+      (e) => e - slideshowRequest.startIndex + slideshowRequest.fromPage,
+    );
+    _log.info(
+      "[_onSlideshowRequest] Slideshow ended, jump to: $newIndex ($relIndex)",
+    );
+    if (relIndex != null && context.mounted) {
       context.addEvent(
         _JumpToLastSlideshow(
-          index: newIndex,
-          afId: slideshowRequest.afIds[newIndex],
+          index: relIndex,
+          afId: slideshowRequest.afIds[newIndex!],
         ),
       );
     }
@@ -376,12 +384,9 @@ class _WrappedViewerState extends State<_WrappedViewer>
     if (shareRequest.value == null) {
       return;
     }
-    final f = shareRequest.value!.file;
-    AnyFileWorkerFactory.share(
-      f,
-      account: context.bloc.account,
-      c: context.bloc._c,
-    ).share(context);
+    context.read<ShareBloc>().add(
+      ShareBlocShareFiles([shareRequest.value!.file]),
+    );
   }
 
   void _onSetAsRequest(
@@ -417,7 +422,26 @@ class _WrappedViewerState extends State<_WrappedViewer>
     AnyFileWorkerFactory.upload(
       f,
       account: context.bloc.account,
-    ).upload(config.relativePath);
+    ).upload(config.relativePath, convertConfig: config.convertConfig);
+  }
+
+  Future<void> _onDeleteRequest(
+    BuildContext context,
+    Unique<_DeleteRequest?> deleteRequest,
+  ) async {
+    if (deleteRequest.value == null) {
+      return;
+    }
+    final result = await showDialog<AnyFileRemoveHint>(
+      context: context,
+      builder: (context) => const _DeleteDialog(),
+    );
+    if (result == null || !context.mounted) {
+      return;
+    }
+    context.addEvent(
+      _DeleteWithHint(file: deleteRequest.value!.file, hint: result),
+    );
   }
 }
 

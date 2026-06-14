@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:event_bus/event_bus.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:kiwi/kiwi.dart';
 import 'package:logging/logging.dart';
@@ -52,6 +52,7 @@ import 'package:np_gps_map/np_gps_map.dart';
 import 'package:np_http/np_http.dart';
 import 'package:np_log/np_log.dart' as np_log;
 import 'package:np_platform_util/np_platform_util.dart';
+import 'package:time_machine2/time_machine2.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 enum InitIsolateType {
@@ -90,6 +91,7 @@ Future<void> init(InitIsolateType isolateType) async {
       getRawPlatform() == NpPlatform.android) {
     unawaited(_initRefreshRate());
   }
+  await _initTimeZone();
 
   _hasInitedInThisIsolate = true;
 }
@@ -99,10 +101,7 @@ void initLog() {
     return;
   }
 
-  np_log.initLog(
-    isDebugMode: np_log.isDevMode,
-    print: (log) => debugPrint(log, wrapWidth: 1024),
-  );
+  np_log.initLog(isDebugMode: np_log.isDevMode);
 }
 
 Future<void> _initPref() async {
@@ -222,13 +221,9 @@ Future<void> _initDiContainer(InitIsolateType isolateType) async {
   c.imageLocationRepo = BasicImageLocationRepo(
     ImageLocationNpDbDataSource(c.npDb),
   );
+  c.localFileRepo = const LocalFileRepo(LocalFileMediaStoreDataSource());
 
   c.touchManager = TouchManager(c);
-
-  if (getRawPlatform() == NpPlatform.android) {
-    // local file currently only supported on Android
-    c.localFileRepo = const LocalFileRepo(LocalFileMediaStoreDataSource());
-  }
 
   KiwiContainer().registerInstance<DiContainer>(c);
 }
@@ -249,10 +244,19 @@ Future<void> _initRefreshRate() async {
   }
 }
 
+Future<void> _initTimeZone() async {
+  try {
+    await TimeMachine.initialize({"rootBundle": rootBundle});
+  } catch (e, stackTrace) {
+    _log.severe("[_initTimeZone] Failed while initialize", e, stackTrace);
+  }
+}
+
 Future<NpDb> _createDb(InitIsolateType isolateType) async {
   final npDb = NpDb();
-  final androidSdk =
-      getRawPlatform() == NpPlatform.android ? AndroidInfo().sdkInt : null;
+  final androidSdk = getRawPlatform() == NpPlatform.android
+      ? AndroidInfo().sdkInt
+      : null;
   if (isolateType == InitIsolateType.main) {
     await npDb.initMainIsolate(androidSdk: androidSdk);
   } else {

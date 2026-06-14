@@ -1,0 +1,464 @@
+part of 'image_editor.dart';
+
+class _IeBloc extends Bloc<_Event, _State> with BlocLogger {
+  _IeBloc({
+    required this.account,
+    required this.fileRepo,
+    required this.prefController,
+    required this.file,
+  }) : super(_State.init()) {
+    on<_InitSrc>(_onInitSrc);
+    on<_SetActiveTool>(_onSetActiveTool);
+    on<_SetCropMode>(_onSetCropMode);
+    on<_SetFaceSelectionMode>(_onSetFaceSelectionMode);
+    on<_SetFaceSelectorImageSize>(_onSetFaceSelectorImageSize);
+    on<_SetPixelFilters>(_onSetPixelFilters);
+    on<_SetTransformFilters>(_onSetTransformFilters);
+    on<_SetCropFilter>(_onSetCropFilter);
+    on<_SetFaceLandmarks>(_onSetFaceLandmarks);
+    on<_ToggleFaceSelection>(_onToggleFaceSelection);
+    on<_FaceFilterValueChanged>(_onFaceFilterValueChanged);
+    on<_SetDst>(_onSetDst);
+    on<_SetIsApplyingFilters>((ev, emit) {
+      _log.info(ev);
+      emit(state.copyWith(isApplyingFilters: ev.value));
+    });
+    on<_Save>(_onSave);
+    on<_RequestQuit>(_onRequestQuit);
+
+    on<_SetError>(_onSetError);
+    on<_SetSaveError>(_onSetSaveError);
+
+    add(const _InitSrc());
+  }
+
+  @override
+  String get tag => _log.fullName;
+
+  @override
+  bool Function(dynamic, dynamic)? get shouldLog => (currentState, nextState) {
+    currentState = currentState as _State;
+    nextState = nextState as _State;
+    return currentState.downloadProgress == nextState.downloadProgress;
+  };
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    // we need this to prevent onError being triggered recursively
+    if (!isClosed && !_isHandlingError) {
+      _isHandlingError = true;
+      try {
+        add(_SetError(error, stackTrace));
+      } catch (_) {}
+      _isHandlingError = false;
+    }
+    super.onError(error, stackTrace);
+  }
+
+  Future<void> _onInitSrc(_InitSrc event, _Emitter emit) async {
+    final uriGetter = AnyFileContentGetterFactory.largePreviewuri(
+      file,
+      account: account,
+    );
+    try {
+      final src = await ImageLoader.loadUri(
+        await uriGetter.get(),
+        _previewWidth,
+        _previewHeight,
+        ImageLoaderResizeMethod.fit,
+        isAllowSwapSide: true,
+        shouldFixOrientation: true,
+      );
+      emit(state.copyWith(src: src));
+    } on FileNotFoundException catch (e, stackTrace) {
+      _log.severe("[_onInitSrc] Failed while loadUri", e, stackTrace);
+      emit(
+        state.copyWith(initError: const ExceptionEvent(io.SocketException(""))),
+      );
+    } catch (e, stackTrace) {
+      _log.severe("[_onInitSrc] Failed while loadUri", e, stackTrace);
+      emit(state.copyWith(initError: ExceptionEvent(e, stackTrace)));
+    }
+  }
+
+  void _onSetActiveTool(_SetActiveTool ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        activeTool: ev.value,
+        isCropMode: false,
+        isFaceSelectionMode: false,
+      ),
+    );
+  }
+
+  void _onSetCropMode(_SetCropMode ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(isCropMode: ev.value));
+  }
+
+  void _onSetFaceSelectionMode(_SetFaceSelectionMode ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(isFaceSelectionMode: ev.value));
+  }
+
+  void _onSetFaceSelectorImageSize(
+    _SetFaceSelectorImageSize ev,
+    _Emitter emit,
+  ) {
+    _log.info(ev);
+    emit(state.copyWith(faceSelectorImageSize: ev.value));
+  }
+
+  void _onSetPixelFilters(_SetPixelFilters ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(pixelFilters: ev.value));
+    _updatePreview();
+  }
+
+  void _onSetTransformFilters(_SetTransformFilters ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        transformFilters: ev.value,
+        // modifying transformation filters resets face detection
+        faceLandmarks: null,
+        selectedFaces: const [],
+        hasSelectedFaceReset: state.selectedFaces.isNotEmpty
+            ? Unique(true)
+            : null,
+      ),
+    );
+    _updatePreview();
+  }
+
+  void _onSetCropFilter(_SetCropFilter ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        cropFilter: ev.value,
+        // modifying transformation filters resets face detection
+        faceLandmarks: null,
+        selectedFaces: const [],
+        hasSelectedFaceReset: state.selectedFaces.isNotEmpty
+            ? Unique(true)
+            : null,
+      ),
+    );
+    _updatePreview();
+  }
+
+  void _onSetFaceLandmarks(_SetFaceLandmarks ev, _Emitter emit) {
+    _log.info(ev);
+    emit(
+      state.copyWith(
+        postTransformSrc: ev.postTransformSrc,
+        faceLandmarks: ev.landmarks,
+        selectedFaces: const [],
+      ),
+    );
+  }
+
+  void _onToggleFaceSelection(_ToggleFaceSelection ev, _Emitter emit) {
+    _log.info(ev);
+    final next = List.of(state.selectedFaces);
+    if (next.contains(ev.value)) {
+      next.remove(ev.value);
+    } else {
+      next.add(ev.value);
+    }
+    emit(state.copyWith(selectedFaces: next));
+    _updatePreview();
+  }
+
+  void _onFaceFilterValueChanged(_FaceFilterValueChanged ev, _Emitter emit) {
+    _log.info(ev);
+    if (state.faceLandmarks?.isNotEmpty == true &&
+        state.selectedFaces.isEmpty) {
+      emit(state.copyWith(shouldNotifySelectFace: true));
+    }
+  }
+
+  void _onSetDst(_SetDst ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(dst: ev.value));
+  }
+
+  Future<void> _onSave(_Save ev, _Emitter emit) async {
+    emit(state.copyWith(saveState: _SaveState.init, downloadProgress: 0));
+    try {
+      // download
+      final bitmapGetter = AnyFileContentGetterFactory.binaryBitmap(
+        file,
+        account: account,
+      );
+      final (:bytes, :bitmap) = await bitmapGetter.get(
+        maxWidth: 4096,
+        maxHeight: 3072,
+        shouldFixOrientation: true,
+        onProgress: (progress) {
+          emit(
+            state.copyWith(
+              saveState: _SaveState.download,
+              downloadProgress: progress,
+            ),
+          );
+        },
+      );
+
+      // do the edits
+      emit(state.copyWith(saveState: _SaveState.process));
+      final (:dir, file: jpegFile) = await _createTempFile();
+      try {
+        final pixelFilters = await _preparePixelFilters();
+        await _processFullBitmapToJpeg(
+          bitmap,
+          srcBytes: bytes,
+          dstJpegPath: jpegFile.path,
+          pixelFilters: pixelFilters,
+          transformFilters: state.transformFilters,
+          cropFilter: state.cropFilter,
+        );
+        emit(state.copyWith(saveState: _SaveState.save));
+        await _persistResult(jpegFile);
+        emit(state.copyWith(savedFile: jpegFile));
+      } catch (e) {
+        await dir.delete(recursive: true);
+        rethrow;
+      }
+    } catch (e, stackTrace) {
+      _log.severe("Failed while filter", e, stackTrace);
+      add(_SetSaveError(e, stackTrace));
+    } finally {
+      emit(state.copyWith(saveState: null, downloadProgress: 0));
+    }
+  }
+
+  Future<void> _onRequestQuit(_RequestQuit ev, _Emitter emit) async {
+    _log.info(ev);
+    emit(state.copyWith(quitRequest: Unique(null)));
+  }
+
+  void _onSetError(_SetError ev, Emitter<_State> emit) {
+    _log.info(ev);
+    emit(state.copyWith(error: ExceptionEvent(ev.error, ev.stackTrace)));
+  }
+
+  void _onSetSaveError(_SetSaveError ev, Emitter<_State> emit) {
+    _log.info(ev);
+    emit(state.copyWith(saveError: ExceptionEvent(ev.error, ev.stackTrace)));
+  }
+
+  Future<void> _updatePreview() async {
+    if (state.src == null) {
+      return;
+    }
+    final token = await _getProcessorToken();
+    await _processorMutex.protect(() async {
+      if (token != _processorToken) {
+        // outdated
+        return;
+      }
+      add(const _SetIsApplyingFilters(true));
+      try {
+        final pixelFilters = await _preparePixelFilters();
+        final result = await _applyFilters(
+          state.src!,
+          pixelFilters: pixelFilters,
+          transformFilters: state.transformFilters,
+          cropFilter: state.cropFilter,
+        );
+        add(_SetDst(result));
+      } finally {
+        add(const _SetIsApplyingFilters(false));
+      }
+    });
+  }
+
+  Future<List<image_editor.Edit>> _preparePixelFilters() async {
+    if (state.pixelFilters.any((e) => e is PixelFaceArguments)) {
+      var landmarks = state.faceLandmarks;
+      if (landmarks == null) {
+        var src = state.src!;
+        var isTransofrmed = false;
+        if (state.transformFilters.isNotEmpty || state.cropFilter != null) {
+          // apply transformation filters as they will affect face detection
+          src = await _applyFilters(
+            src,
+            pixelFilters: [],
+            transformFilters: state.transformFilters,
+            cropFilter: state.cropFilter,
+          );
+          isTransofrmed = true;
+        }
+        landmarks = await image_editor.FaceDetector().detect(src);
+        add(
+          _SetFaceLandmarks(
+            postTransformSrc: isTransofrmed ? src : null,
+            landmarks: landmarks,
+          ),
+        );
+      }
+      return state.pixelFilters.map((e) {
+        if (e is PixelFaceArguments) {
+          return e.toEdit()..setLandmarks(state.selectedFaces);
+        } else {
+          return e.toEdit();
+        }
+      }).toList();
+    } else {
+      return state.pixelFilters.map((e) => e.toEdit()).toList();
+    }
+  }
+
+  static Future<Rgba8Image> _applyFilters(
+    Rgba8Image src, {
+    required List<image_editor.Edit> pixelFilters,
+    required List<TransformArguments> transformFilters,
+    required TransformArguments? cropFilter,
+    bool useIsolate = true,
+  }) async {
+    Future<Rgba8Image> _do() async {
+      final edits = [
+        cropFilter?.toEdit(),
+        ...transformFilters.map((f) => f.toEdit()),
+        ...pixelFilters,
+      ].nonNulls.toList();
+      if (edits.isNotEmpty) {
+        return await image_editor.edit(src, edits);
+      } else {
+        return src;
+      }
+    }
+
+    if (useIsolate) {
+      return await Isolate.run(() => _do());
+    } else {
+      return await _do();
+    }
+  }
+
+  static Future<void> _processFullBitmapToJpeg(
+    Rgba8Image src, {
+    required Uint8List srcBytes,
+    required String dstJpegPath,
+    required List<image_editor.Edit> pixelFilters,
+    required List<TransformArguments> transformFilters,
+    required TransformArguments? cropFilter,
+  }) async {
+    await Isolate.run(() async {
+      final result = await _applyFilters(
+        src,
+        pixelFilters: pixelFilters,
+        transformFilters: transformFilters,
+        cropFilter: cropFilter,
+        // already in isolate
+        useIsolate: false,
+      );
+
+      // jpeg encode and save to internal
+      final isEncodeOk = await imagelib.encodeJpgFile(
+        dstJpegPath,
+        imagelib.Image.fromBytes(
+          width: result.width,
+          height: result.height,
+          bytes: result.pixel.buffer,
+          numChannels: 4,
+          order: imagelib.ChannelOrder.rgba,
+        ),
+        quality: 85,
+      );
+      if (!isEncodeOk) {
+        throw StateError("Unable to encode image to JPEG");
+      }
+      // don't copy orientation as it's applied to the src before processing
+      if (!await exiv2.copyMetadata(
+        srcBytes,
+        io.File(dstJpegPath),
+        shouldCopyOrientation: false,
+      )) {
+        throw StateError("Unable to copy metadata to JPEG");
+      }
+    });
+  }
+
+  Future<void> _persistResult(io.File jpegFile) async {
+    final isRemoteFile = file.provider is AnyFileNextcloudProvider;
+    if (isRemoteFile && prefController.isSaveEditResultToServerValue) {
+      try {
+        final remoteFile = (file.provider as AnyFileNextcloudProvider).file;
+        final fileSuffix =
+            "edited_${clock.now().millisecondsSinceEpoch / 1000}";
+        final path =
+            "${pathlib.dirname(remoteFile.fdPath)}/${pathlib.basenameWithoutExtension(remoteFile.fdPath)}_$fileSuffix.jpg";
+        await PutFileBinary(
+          fileRepo,
+        ).call(account, path, await jpegFile.readAsBytes());
+        return;
+      } catch (e, stackTrace) {
+        _log.severe(
+          "[_persistResult] Failed while PutFileBinary",
+          e,
+          stackTrace,
+        );
+        // fallback to local
+      }
+    }
+    await LocalMedia.copyPrivateFileToPublicDir(
+      jpegFile.path,
+      srcMime: "image/jpeg",
+      dstDir: "Photos (for Nextcloud)/Edited Photos",
+    );
+  }
+
+  Future<io.Directory> _openTempDir() async {
+    final root = await getTemporaryDirectory();
+    final dir = io.Directory("${root.path}/image_editor");
+    if (!await dir.exists()) {
+      return dir.create();
+    } else {
+      return dir;
+    }
+  }
+
+  Future<({io.Directory dir, io.File file})> _createTempFile() async {
+    final dstDir = await _openTempDir();
+    while (true) {
+      final dirName = const Uuid().v4();
+      final dir = io.Directory("${dstDir.path}/$dirName");
+      if (await io.FileSystemEntity.type(dir.path) !=
+          io.FileSystemEntityType.notFound) {
+        continue;
+      }
+      await dir.create();
+      return (
+        dir: dir,
+        file: io.File(
+          "${dir.path}/${pathlib.basenameWithoutExtension(file.name)}.jpg",
+        ),
+      );
+    }
+  }
+
+  Future<int> _getProcessorToken() async {
+    return _processorTokenMutex.protect(() async {
+      return ++_processorToken;
+    });
+  }
+
+  final Account account;
+  final FileRepo fileRepo;
+  final PrefController prefController;
+  final AnyFile file;
+
+  var _processorToken = 0;
+  final _processorTokenMutex = Mutex();
+  final _processorMutex = Mutex();
+
+  var _isHandlingError = false;
+
+  static final _log = Logger("ImageEditorBloc");
+
+  static const _previewWidth = 1024;
+  static const _previewHeight = 1024;
+}

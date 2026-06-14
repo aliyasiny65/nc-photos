@@ -1,14 +1,19 @@
+import 'dart:io' as io;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/cache_manager_util.dart';
+import 'package:nc_photos/controller/pref_controller.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
+import 'package:nc_photos/entity/any_file/presenter/factory.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/local_file.dart';
 import 'package:nc_photos/file_view_util.dart';
 import 'package:nc_photos/flutter_util.dart' as flutter_util;
 import 'package:nc_photos/k.dart' as k;
-import 'package:nc_photos/mobile/android/content_uri_image_provider.dart';
+import 'package:nc_photos/mobile/local_media_image.dart';
 import 'package:nc_photos/np_api_util.dart';
 import 'package:nc_photos/widget/network_thumbnail.dart';
 import 'package:nc_photos/widget/zoomable_viewer.dart';
@@ -30,18 +35,11 @@ class LocalImageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ImageProvider provider;
-    final ImageProvider heroProvider;
-    if (file is LocalUriFile) {
-      provider = ContentUriImage((file as LocalUriFile).uri);
-      heroProvider = ContentUriImage(
-        (file as LocalUriFile).uri,
-        thumbnailSizeHint: SizeInt.square(k.photoThumbSize),
-      );
-    } else {
-      throw ArgumentError("Invalid file");
-    }
-
+    final provider = LocalMediaImage(file.platformIdentifier);
+    final heroProvider = LocalMediaImage(
+      file.platformIdentifier,
+      thumbnailSizeHint: SizeInt.square(k.photoThumbSize),
+    );
     return _ImageViewer(
       canZoom: canZoom,
       onHeightChanged: onHeightChanged,
@@ -49,30 +47,28 @@ class LocalImageViewer extends StatelessWidget {
       onZoomEnded: onZoomEnded,
       child: _ImageViewHeroContainer(
         file: file.toAnyFile(),
-        heroImageBuilder:
-            (context) => Image(
-              image: heroProvider,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                const SizeChangedLayoutNotification().dispatch(context);
-                return child;
-              },
-            ),
-        imageBuilder:
-            (context, onLoaded) => Image(
-              image: provider,
-              fit: BoxFit.contain,
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                if (frame != null) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    onLoaded();
-                  });
-                }
-                const SizeChangedLayoutNotification().dispatch(context);
-                return child;
-              },
-            ),
+        heroImageBuilder: (context) => Image(
+          image: heroProvider,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            const SizeChangedLayoutNotification().dispatch(context);
+            return child;
+          },
+        ),
+        imageBuilder: (context, onLoaded) => Image(
+          image: provider,
+          fit: BoxFit.contain,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (frame != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                onLoaded();
+              });
+            }
+            const SizeChangedLayoutNotification().dispatch(context);
+            return child;
+          },
+        ),
         onLoaded: onLoaded,
       ),
     );
@@ -98,15 +94,34 @@ class RemoteImageViewer extends StatelessWidget {
     this.onZoomEnded,
   });
 
-  static void preloadImage(Account account, FileDescriptor file) {
-    final cacheManager = getCacheManager(
-      CachedNetworkImageType.largeImage,
-      file.fdMime,
-    );
-    cacheManager.getFileStream(
-      getViewerUrlForImageFile(account, file),
-      headers: {"Authorization": AuthUtil.fromAccount(account).toHeaderValue()},
-    );
+  static void preloadImage(
+    Account account,
+    PrefController? prefController,
+    FileDescriptor file,
+  ) {
+    if (prefController?.isViewerUseOriginalImageValue ?? false) {
+      final cacheManager = getCacheManager(
+        CachedNetworkImageType.originalImage,
+        file.fdMime,
+      );
+      cacheManager.getFileStream(
+        getViewerUrlForOriginalImageFile(account, file),
+        headers: {
+          "Authorization": AuthUtil.fromAccount(account).toHeaderValue(),
+        },
+      );
+    } else {
+      final cacheManager = getCacheManager(
+        CachedNetworkImageType.largeImage,
+        file.fdMime,
+      );
+      cacheManager.getFileStream(
+        getViewerUrlForImageFile(account, file),
+        headers: {
+          "Authorization": AuthUtil.fromAccount(account).toHeaderValue(),
+        },
+      );
+    }
   }
 
   @override
@@ -118,14 +133,13 @@ class RemoteImageViewer extends StatelessWidget {
       onZoomEnded: onZoomEnded,
       child: _ImageViewHeroContainer(
         file: file.toAnyFile(),
-        heroImageBuilder:
-            (context) => _PreviewImage(account: account, file: file),
-        imageBuilder:
-            (context, onLoaded) => _FullSizedImage(
-              account: account,
-              file: file,
-              onItemLoaded: onLoaded,
-            ),
+        heroImageBuilder: (context) =>
+            _PreviewImage(account: account, file: file),
+        imageBuilder: (context, onLoaded) => _FullSizedImage(
+          account: account,
+          file: file,
+          onItemLoaded: onLoaded,
+        ),
         onLoaded: onLoaded,
       ),
     );
@@ -133,6 +147,48 @@ class RemoteImageViewer extends StatelessWidget {
 
   final Account account;
   final FileDescriptor file;
+  final bool canZoom;
+  final VoidCallback? onLoaded;
+  final ValueChanged<double>? onHeightChanged;
+  final VoidCallback? onZoomStarted;
+  final VoidCallback? onZoomEnded;
+}
+
+class IoFileImageViewer extends StatelessWidget {
+  const IoFileImageViewer({
+    super.key,
+    required this.file,
+    required this.canZoom,
+    this.onLoaded,
+    this.onHeightChanged,
+    this.onZoomStarted,
+    this.onZoomEnded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _ImageViewer(
+      canZoom: canZoom,
+      onHeightChanged: onHeightChanged,
+      onZoomStarted: onZoomStarted,
+      onZoomEnded: onZoomEnded,
+      child: Image.file(
+        file,
+        fit: BoxFit.contain,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (frame != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              onLoaded?.call();
+            });
+          }
+          const SizeChangedLayoutNotification().dispatch(context);
+          return child;
+        },
+      ),
+    );
+  }
+
+  final io.File file;
   final bool canZoom;
   final VoidCallback? onLoaded;
   final ValueChanged<double>? onHeightChanged;
@@ -150,7 +206,7 @@ class _ImageViewer extends StatefulWidget {
   });
 
   @override
-  createState() => _ImageViewerState();
+  State<StatefulWidget> createState() => _ImageViewerState();
 
   final Widget child;
   final bool canZoom;
@@ -163,7 +219,7 @@ class _ImageViewer extends StatefulWidget {
 class _ImageViewerState extends State<_ImageViewer>
     with TickerProviderStateMixin {
   @override
-  build(BuildContext context) {
+  Widget build(BuildContext context) {
     final content = Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height,
@@ -237,23 +293,24 @@ class _ImageViewHeroContainerState extends State<_ImageViewHeroContainer> {
           opacity: !_isHeroDone || !_isLoaded ? 1 : 0,
           child: Hero(
             tag: flutter_util.HeroTag.fromAnyFile(widget.file),
-            flightShuttleBuilder: (
-              flightContext,
-              animation,
-              flightDirection,
-              fromHeroContext,
-              toHeroContext,
-            ) {
-              _isHeroDone = false;
-              animation.addStatusListener(_animationListener);
-              return flutter_util.defaultHeroFlightShuttleBuilder(
-                flightContext,
-                animation,
-                flightDirection,
-                fromHeroContext,
-                toHeroContext,
-              );
-            },
+            flightShuttleBuilder:
+                (
+                  flightContext,
+                  animation,
+                  flightDirection,
+                  fromHeroContext,
+                  toHeroContext,
+                ) {
+                  _isHeroDone = false;
+                  animation.addStatusListener(_animationListener);
+                  return flutter_util.defaultHeroFlightShuttleBuilder(
+                    flightContext,
+                    animation,
+                    flightDirection,
+                    fromHeroContext,
+                    toHeroContext,
+                  );
+                },
             child: widget.heroImageBuilder(context),
           ),
         ),
@@ -319,20 +376,20 @@ class _FullSizedImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CachedNetworkImageBuilder(
-      type: CachedNetworkImageType.largeImage,
-      imageUrl: getViewerUrlForImageFile(account, file),
-      mime: file.fdMime,
+    return AnyFilePresenterFactory.largeImage(
+      file.toAnyFile(),
       account: account,
+      prefController: context.read(),
+    ).buildWidget(
       fit: BoxFit.contain,
-      imageBuilder: (context, child, imageProvider) {
+      imageBuilder: (context, child) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           onItemLoaded?.call();
         });
         const SizeChangedLayoutNotification().dispatch(context);
         return child;
       },
-    ).build();
+    );
   }
 
   final Account account;

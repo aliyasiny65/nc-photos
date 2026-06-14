@@ -18,7 +18,7 @@ import 'package:nc_photos/snack_bar_manager.dart';
 import 'package:nc_photos/theme.dart';
 import 'package:nc_photos/use_case/restore_trashbin.dart';
 import 'package:nc_photos/widget/app_intermediate_circular_progress_indicator.dart';
-import 'package:nc_photos/widget/file_content_view.dart';
+import 'package:nc_photos/widget/file_content_view/file_content_view.dart';
 import 'package:nc_photos/widget/handler/remove_selection_handler.dart';
 import 'package:nc_photos/widget/horizontal_page_viewer.dart';
 import 'package:nc_photos/widget/image_viewer.dart';
@@ -138,13 +138,12 @@ class _TrashbinViewerState extends State<TrashbinViewer> {
                 ),
                 PopupMenuButton<_AppBarMenuOption>(
                   tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
-                  itemBuilder:
-                      (context) => [
-                        PopupMenuItem(
-                          value: _AppBarMenuOption.delete,
-                          child: Text(L10n.global().deletePermanentlyTooltip),
-                        ),
-                      ],
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: _AppBarMenuOption.delete,
+                      child: Text(L10n.global().deletePermanentlyTooltip),
+                    ),
+                  ],
                   onSelected: (option) {
                     switch (option) {
                       case _AppBarMenuOption.delete:
@@ -209,24 +208,21 @@ class _TrashbinViewerState extends State<TrashbinViewer> {
     unawaited(
       showDialog(
         context: context,
-        builder:
-            (_) => AlertDialog(
-              title: Text(
-                L10n.global().deletePermanentlyConfirmationDialogTitle,
-              ),
-              content: Text(
-                L10n.global().deletePermanentlyConfirmationDialogContent,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _delete(context);
-                  },
-                  child: Text(L10n.global().confirmButtonLabel),
-                ),
-              ],
+        builder: (_) => AlertDialog(
+          title: Text(L10n.global().deletePermanentlyConfirmationDialogTitle),
+          content: Text(
+            L10n.global().deletePermanentlyConfirmationDialogContent,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _delete(context);
+              },
+              child: Text(L10n.global().confirmButtonLabel),
             ),
+          ],
+        ),
       ),
     );
   }
@@ -302,13 +298,21 @@ class _TrashbinViewerState extends State<TrashbinViewer> {
       if (index > 0) {
         final prevFile = widget.streamFiles[index - 1];
         if (file_util.isSupportedImageFormat(prevFile)) {
-          RemoteImageViewer.preloadImage(widget.account, prevFile);
+          RemoteImageViewer.preloadImage(
+            widget.account,
+            context.read(),
+            prevFile,
+          );
         }
       }
       if (index + 1 < widget.streamFiles.length) {
         final nextFile = widget.streamFiles[index + 1];
         if (file_util.isSupportedImageFormat(nextFile)) {
-          RemoteImageViewer.preloadImage(widget.account, nextFile);
+          RemoteImageViewer.preloadImage(
+            widget.account,
+            context.read(),
+            nextFile,
+          );
         }
       }
       setState(() {
@@ -343,14 +347,15 @@ class _TrashbinViewerState extends State<TrashbinViewer> {
   Future<void> _delete(BuildContext context) async {
     final file = widget.streamFiles[_viewerController.currentPage];
     _log.info("[_delete] Removing file: ${file.path}");
-    final count = await RemoveSelectionHandler(
-      filesController: context.read<AccountController>().filesController,
-    )(
-      account: widget.account,
-      selection: [file],
-      shouldCleanupAlbum: false,
-      isRemoveOpened: true,
-    );
+    final count =
+        await RemoveSelectionHandler(
+          filesController: context.read<AccountController>().filesController,
+        )(
+          account: widget.account,
+          selection: [file],
+          shouldCleanupAlbum: false,
+          isRemoveOpened: true,
+        );
     if (count > 0 && mounted) {
       Navigator.of(context).pop();
     }

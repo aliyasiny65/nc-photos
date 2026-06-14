@@ -9,6 +9,7 @@ import 'package:nc_photos/controller/any_files_controller.dart';
 import 'package:nc_photos/controller/pref_controller.dart';
 import 'package:nc_photos/di_container.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
+import 'package:nc_photos/entity/any_file_util.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/file_util.dart' as file_util;
 import 'package:nc_photos/entity/local_file.dart';
@@ -21,21 +22,17 @@ import 'package:nc_photos/use_case/file/list_file.dart';
 import 'package:nc_photos/use_case/local_file/list_local_file.dart';
 import 'package:nc_photos/widget/viewer/viewer.dart';
 import 'package:np_collection/np_collection.dart';
+import 'package:np_common/exception.dart';
+import 'package:np_common/object_util.dart';
 import 'package:np_datetime/np_datetime.dart';
 import 'package:np_log/np_log.dart';
 
 part 'timeline_viewer.g.dart';
 
 class TimelineViewerArguments {
-  const TimelineViewerArguments({
-    required this.initialFile,
-    required this.initialIndex,
-    required this.allFilesCount,
-  });
+  const TimelineViewerArguments({required this.initialFile});
 
   final AnyFile initialFile;
-  final int initialIndex;
-  final int allFilesCount;
 }
 
 class TimelineViewer extends StatelessWidget {
@@ -51,20 +48,10 @@ class TimelineViewer extends StatelessWidget {
     settings: settings,
   );
 
-  const TimelineViewer({
-    super.key,
-    required this.initialFile,
-    required this.initialIndex,
-    required this.allFilesCount,
-  });
+  const TimelineViewer({super.key, required this.initialFile});
 
   TimelineViewer.fromArgs(TimelineViewerArguments args, {Key? key})
-    : this(
-        key: key,
-        initialFile: args.initialFile,
-        initialIndex: args.initialIndex,
-        allFilesCount: args.allFilesCount,
-      );
+    : this(key: key, initialFile: args.initialFile);
 
   @override
   Widget build(BuildContext context) {
@@ -80,15 +67,11 @@ class TimelineViewer extends StatelessWidget {
         ),
         prefController: context.read(),
       ),
-      allFilesCount: allFilesCount,
       initialFile: initialFile,
-      initialIndex: initialIndex,
     );
   }
 
   final AnyFile initialFile;
-  final int initialIndex;
-  final int allFilesCount;
 }
 
 @npLog
@@ -106,14 +89,16 @@ class _TimelineViewerContentProvider implements ViewerContentProvider {
     ViewerPositionInfo at,
     int count,
   ) async {
-    _log.info("[getFiles] at: ${at.pageIndex}, count: $count");
+    _log.info("[getFiles] count: $count");
     // we don't know how many files will come from remote vs local, so we need
     // to query them both. Luckily, count is likely to be small here :D
     final List<AnyFile> remote;
     final List<AnyFile> local;
     try {
-      (remote, local) =
-          await (_getRemoteFiles(at, count), _getLocalFiles(at, count)).wait;
+      (remote, local) = await (
+        _getRemoteFiles(at, count),
+        _getLocalFiles(at, count),
+      ).wait;
     } on ParallelWaitError catch (pe) {
       _log.severe(
         "[getFiles] Exceptions, 1: ${pe.errors.$1}, 2: ${pe.errors.$2}",
@@ -133,13 +118,18 @@ class _TimelineViewerContentProvider implements ViewerContentProvider {
       _log.severe("[getFiles] No results");
       return const ViewerContentProviderResult(files: []);
     }
-    final results = files.pySlice(pos + 1);
+    // results after [count] could be wrong due to potential buffer underrun in
+    // one of the source
+    final results = files.pySlice(pos + 1, count.abs());
     return ViewerContentProviderResult(files: results);
   }
 
   @override
   Future<AnyFile> getFile(int page, String afId) async {
-    final results = await FindAnyFile(c)(account, [afId]);
+    final results = await FindAnyFile(c, prefController: prefController)(
+      account,
+      [afId],
+    );
     return results.first;
   }
 
@@ -150,15 +140,17 @@ class _TimelineViewerContentProvider implements ViewerContentProvider {
 
   @override
   Future<List<String>> listAfIds() async {
-    final results = await ListAnyFileIdWithTimestamp(
-      fileRepo: c.fileRepo2,
-      localFileRepo: c.localFileRepo,
-    )(
-      account,
-      shareDirPath,
-      localDirWhitelist: ["DCIM", ...prefController.localDirsValue],
-      isArchived: false,
-    );
+    final results =
+        await ListAnyFileIdWithTimestamp(
+          fileRepo: c.fileRepo2,
+          localFileRepo: c.localFileRepo,
+          prefController: prefController,
+        )(
+          account,
+          shareDirPath,
+          localDirWhitelist: prefController.localDirsValue,
+          isArchived: false,
+        );
     return results.map((e) => e.afId).toList();
   }
 
@@ -166,17 +158,21 @@ class _TimelineViewerContentProvider implements ViewerContentProvider {
     ViewerPositionInfo at,
     int count,
   ) async {
+    // we need this because the remote and local file may share a different
+    // dateTime due to lower precision in Android's media store
+    final originalFile =
+        at.originalFile.provider.as<AnyFileMergedProvider>()?.asRemoteFile() ??
+        at.originalFile;
     final raw = await ListFile(c)(
       account,
       shareDirPath,
       isArchived: false,
-      timeRange:
-          count < 0
-              ? TimeRange(from: at.originalFile.dateTime)
-              : TimeRange(
-                to: at.originalFile.dateTime,
-                toBound: TimeRangeBound.inclusive,
-              ),
+      timeRange: count < 0
+          ? TimeRange(from: originalFile.dateTime)
+          : TimeRange(
+              to: originalFile.dateTime,
+              toBound: TimeRangeBound.inclusive,
+            ),
       isAscending: count < 0,
       limit: count.abs(),
     );
@@ -184,19 +180,32 @@ class _TimelineViewerContentProvider implements ViewerContentProvider {
   }
 
   Future<List<AnyFile>> _getLocalFiles(ViewerPositionInfo at, int count) async {
-    final raw = await ListLocalFile(c.localFileRepo)(
-      timeRange:
-          count < 0
-              ? TimeRange(from: at.originalFile.dateTime)
-              : TimeRange(
-                to: at.originalFile.dateTime,
-                toBound: TimeRangeBound.inclusive,
-              ),
-      dirWhitelist: ["DCIM", ...prefController.localDirsValue],
-      isAscending: count < 0,
-      limit: count.abs(),
-    );
-    return raw.map((e) => e.toAnyFile()).toList();
+    // we need this because the remote and local file may share a different
+    // dateTime due to lower precision in Android's media store
+    final originalFile =
+        at.originalFile.provider.as<AnyFileMergedProvider>()?.asLocalFile() ??
+        at.originalFile;
+    try {
+      final raw =
+          await ListLocalFile(
+            localFileRepo: c.localFileRepo,
+            prefController: prefController,
+          )(
+            timeRange: count < 0
+                ? TimeRange(from: originalFile.dateTime)
+                : TimeRange(
+                    to: originalFile.dateTime,
+                    toBound: TimeRangeBound.inclusive,
+                  ),
+            dirWhitelist: prefController.localDirsValue,
+            isAscending: count < 0,
+            limit: count.abs(),
+          );
+      return raw.map((e) => e.toAnyFile()).toList();
+    } on PermissionException {
+      // ignore permission not granted
+      return [];
+    }
   }
 
   List<AnyFile> _mergeSortedFileList(
@@ -204,23 +213,39 @@ class _TimelineViewerContentProvider implements ViewerContentProvider {
     List<AnyFile> b,
     bool isAscending,
   ) {
-    if (isAscending) {
-      return mergeSortedLists(a, b, (a, b) {
-        var diff = a.dateTime.compareTo(b.dateTime);
-        if (diff == 0) {
-          diff = a.id.compareTo(b.id);
-        }
-        return diff;
-      });
-    } else {
-      return mergeSortedLists(a.reversed, b.reversed, (a, b) {
-        var diff = a.dateTime.compareTo(b.dateTime);
-        if (diff == 0) {
-          diff = b.id.compareTo(a.id);
-        }
-        return diff;
-      }).reversed.toList();
+    final sorted = [...a, ...b]..sort(anyFileMergeSorter);
+    final merged = <AnyFile>[];
+    for (final e in sorted) {
+      if (merged.isEmpty) {
+        merged.add(e);
+        continue;
+      }
+      if (isAnyFileMergeable(merged.last, e)) {
+        // merge
+        final replace = merged.removeLast();
+        final remote = replace.provider is AnyFileNextcloudProvider
+            ? replace
+            : e;
+        final local = replace.provider is AnyFileLocalProvider ? replace : e;
+        merged.add(
+          AnyFile(
+            provider: AnyFileMergedProvider(
+              remote: remote.provider.cast(),
+              local: local.provider.cast(),
+            ),
+          ),
+        );
+      } else {
+        merged.add(e);
+      }
     }
+
+    if (isAscending) {
+      merged.sort(anyFileDateTimeAscSorter);
+    } else {
+      merged.sort(anyFileDateTimeDescSorter);
+    }
+    return merged;
   }
 
   final DiContainer c;

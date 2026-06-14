@@ -7,14 +7,15 @@ class _Bloc extends Bloc<_Event, _State>
     : super(
         _State(
           isEnable: prefController.isEnableClientExifValue,
-          isWifiOnly: prefController.shouldProcessExifWifiOnlyValue,
           isFallback: prefController.isFallbackClientExifValue,
+          isBackupOnRemoteExifEdit:
+              prefController.isBackupOnRemoteExifEditValue,
         ),
       ) {
     on<_Init>(_onInit);
     on<_SetEnable>(_onSetEnable);
-    on<_SetWifiOnly>(_onSetWifiOnly);
     on<_SetFallback>(_onSetFallback);
+    on<_SetBackupOnRemoteExifEdit>(_onSetBackupOnRemoteExifEdit);
   }
 
   @override
@@ -34,8 +35,8 @@ class _Bloc extends Bloc<_Event, _State>
       ),
       forEach(
         emit,
-        prefController.shouldProcessExifWifiOnlyChange,
-        onData: (data) => state.copyWith(isWifiOnly: data),
+        prefController.isFallbackClientExifChange,
+        onData: (data) => state.copyWith(isFallback: data),
         onError: (e, stackTrace) {
           _log.severe("[_onInit] Uncaught exception", e, stackTrace);
           return state.copyWith(error: ExceptionEvent(e, stackTrace));
@@ -43,8 +44,8 @@ class _Bloc extends Bloc<_Event, _State>
       ),
       forEach(
         emit,
-        prefController.isFallbackClientExifChange,
-        onData: (data) => state.copyWith(isFallback: data),
+        prefController.isBackupOnRemoteExifEditChange,
+        onData: (data) => state.copyWith(isBackupOnRemoteExifEdit: data),
         onError: (e, stackTrace) {
           _log.severe("[_onInit] Uncaught exception", e, stackTrace);
           return state.copyWith(error: ExceptionEvent(e, stackTrace));
@@ -58,16 +59,18 @@ class _Bloc extends Bloc<_Event, _State>
     prefController.setEnableClientExif(ev.value);
   }
 
-  Future<void> _onSetWifiOnly(_SetWifiOnly ev, Emitter<_State> emit) async {
-    _log.info(ev);
-    await prefController.setProcessExifWifiOnly(ev.value);
-    ServiceConfig.setProcessExifWifiOnly(ev.value).ignore();
-  }
-
   Future<void> _onSetFallback(_SetFallback ev, _Emitter emit) async {
     _log.info(ev);
     await prefController.setFallbackClientExif(ev.value);
     ServiceConfig.setFallbackClientExif(ev.value).ignore();
+  }
+
+  void _onSetBackupOnRemoteExifEdit(
+    _SetBackupOnRemoteExifEdit ev,
+    _Emitter emit,
+  ) {
+    _log.info(ev);
+    prefController.setBackupOnRemoteExifEdit(ev.value);
   }
 
   final PrefController prefController;

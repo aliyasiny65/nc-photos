@@ -9,8 +9,7 @@ class _SyncByApp {
     required this.fileRepo2,
     required this.db,
     this.interrupter,
-    required this.wifiEnsurer,
-    required this.batteryEnsurer,
+    this.progressLogger,
   }) {
     interrupter?.listen((event) {
       _shouldRun = false;
@@ -49,34 +48,28 @@ class _SyncByApp {
 
   Future<File?> syncOne(File file) async {
     _log.fine("[syncOne] Syncing ${file.path}");
+    progressLogger?.add("(app) Sync ${file.path}");
     try {
       OrNull<Metadata>? metadataUpdate;
       OrNull<ImageLocation>? locationUpdate;
       if (file.metadata == null) {
-        // since we need to download multiple images in their original size,
-        // we only do it with WiFi
-        await wifiEnsurer();
-        await batteryEnsurer();
         if (!_shouldRun) {
           return null;
         }
         _log.fine("[syncOne] Updating metadata for ${file.path}");
-        final binary = await GetFileBinary(fileRepo)(account, file);
-        final metadata = (await LoadMetadata().loadRemote(
+        final metadata = (await LoadMetadata().loadRemotefile(
           account,
           file,
-          binary,
         )).copyWith(fileEtag: file.etag);
         metadataUpdate = OrNull(metadata);
       }
 
-      final lat = (metadataUpdate?.obj ?? file.metadata)?.exif?.gpsLatitudeDeg;
-      final lng = (metadataUpdate?.obj ?? file.metadata)?.exif?.gpsLongitudeDeg;
+      final gps = (metadataUpdate?.obj ?? file.metadata)?.gpsCoord;
       try {
         ImageLocation? location;
-        if (lat != null && lng != null) {
+        if (gps != null) {
           _log.fine("[syncOne] Reverse geocoding for ${file.path}");
-          final l = await _geocoder(lat, lng);
+          final l = await _geocoder(gps.lat, gps.lng);
           if (l != null) {
             location = l.toImageLocation();
           }
@@ -117,8 +110,7 @@ class _SyncByApp {
   final FileRepo2 fileRepo2;
   final NpDb db;
   final Stream<void>? interrupter;
-  final WifiEnsurer wifiEnsurer;
-  final BatteryEnsurer batteryEnsurer;
+  final StreamController<String>? progressLogger;
 
   final _geocoder = ReverseGeocoder();
   var _shouldRun = true;

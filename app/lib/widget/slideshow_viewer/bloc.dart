@@ -1,4 +1,4 @@
-part of '../slideshow_viewer.dart';
+part of 'slideshow_viewer.dart';
 
 @npLog
 class _Bloc extends Bloc<_Event, _State>
@@ -6,9 +6,8 @@ class _Bloc extends Bloc<_Event, _State>
   _Bloc({
     required this.account,
     required this.anyFilesController,
-    required this.filesController,
-    required this.localFilesController,
     required this.collectionsController,
+    required this.prefController,
     required this.afIds,
     required this.startIndex,
     required this.collectionId,
@@ -55,8 +54,7 @@ class _Bloc extends Bloc<_Event, _State>
       stream
           .distinct(
             (a, b) =>
-                identical(a.remoteFiles, b.remoteFiles) &&
-                identical(a.localFiles, b.localFiles) &&
+                identical(a.anyFiles, b.anyFiles) &&
                 identical(a.collectionItems, b.collectionItems),
           )
           .listen((event) {
@@ -122,27 +120,19 @@ class _Bloc extends Bloc<_Event, _State>
     }
     unawaited(_prepareNextPage());
 
-    await Future.wait([
-      forEach(
-        emit,
-        filesController.stream,
-        onData: (data) => state.copyWith(remoteFiles: data.data),
-      ),
-      forEach(
-        emit,
-        localFilesController.stream,
-        onData: (data) => state.copyWith(localFiles: data.data),
-      ),
-    ]);
+    await forEach(
+      emit,
+      anyFilesController.stream,
+      onData: (data) => state.copyWith(anyFiles: data.data),
+    );
   }
 
   void _onSetCollectionItems(_SetCollectionItems ev, _Emitter emit) {
     _log.info(ev);
-    final itemMap =
-        ev.value
-            ?.whereType<CollectionFileItem>()
-            .map((e) => MapEntry(e.file.fdId, e))
-            .toMap();
+    final itemMap = ev.value
+        ?.whereType<CollectionFileItem>()
+        .map((e) => MapEntry(e.file.fdId, e))
+        .toMap();
     emit(state.copyWith(collectionItems: itemMap));
   }
 
@@ -153,14 +143,7 @@ class _Bloc extends Bloc<_Event, _State>
       return;
     }
     final merged = {
-      ...state.remoteFiles
-          .map((e) => e.toAnyFile())
-          .map((e) => MapEntry(e.id, e))
-          .toMap(),
-      ...state.localFiles
-          .map((e) => e.toAnyFile())
-          .map((e) => MapEntry(e.id, e))
-          .toMap(),
+      ...state.anyFiles,
       if (collectionId != null)
         ...state.collectionItems!.map(
           (_, e) => e.file.toAnyFile().let((f) => MapEntry(f.id, f)),
@@ -202,6 +185,7 @@ class _Bloc extends Bloc<_Event, _State>
           file_util.isSupportedImageMime(prevFile.mime ?? "")) {
         AnyFilePresenterFactory.imageViewer(
           prevFile,
+          prefController: prefController,
           account: account,
         ).preloadImage();
       }
@@ -212,6 +196,7 @@ class _Bloc extends Bloc<_Event, _State>
           file_util.isSupportedImageMime(nextFile.mime ?? "")) {
         AnyFilePresenterFactory.imageViewer(
           nextFile,
+          prefController: prefController,
           account: account,
         ).preloadImage();
       }
@@ -368,9 +353,8 @@ class _Bloc extends Bloc<_Event, _State>
 
   final Account account;
   final AnyFilesController anyFilesController;
-  final FilesController filesController;
-  final LocalFilesController localFilesController;
   final CollectionsController collectionsController;
+  final PrefController prefController;
   final List<String> afIds;
   final int startIndex;
   final String? collectionId;

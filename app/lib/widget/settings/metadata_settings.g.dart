@@ -15,8 +15,8 @@ part of 'metadata_settings.dart';
 abstract class $_StateCopyWithWorker {
   _State call({
     bool? isEnable,
-    bool? isWifiOnly,
     bool? isFallback,
+    bool? isBackupOnRemoteExifEdit,
     ExceptionEvent? error,
   });
 }
@@ -27,14 +27,15 @@ class _$_StateCopyWithWorkerImpl implements $_StateCopyWithWorker {
   @override
   _State call({
     dynamic isEnable,
-    dynamic isWifiOnly,
     dynamic isFallback,
+    dynamic isBackupOnRemoteExifEdit,
     dynamic error = copyWithNull,
   }) {
     return _State(
       isEnable: isEnable as bool? ?? that.isEnable,
-      isWifiOnly: isWifiOnly as bool? ?? that.isWifiOnly,
       isFallback: isFallback as bool? ?? that.isFallback,
+      isBackupOnRemoteExifEdit:
+          isBackupOnRemoteExifEdit as bool? ?? that.isBackupOnRemoteExifEdit,
       error: error == copyWithNull ? that.error : error as ExceptionEvent?,
     );
   }
@@ -65,7 +66,7 @@ extension _$_BlocNpLog on _Bloc {
 extension _$_StateToString on _State {
   String _$toString() {
     // ignore: unnecessary_string_interpolations
-    return "_State {isEnable: $isEnable, isWifiOnly: $isWifiOnly, isFallback: $isFallback, error: $error}";
+    return "_State {isEnable: $isEnable, isFallback: $isFallback, isBackupOnRemoteExifEdit: $isBackupOnRemoteExifEdit, error: $error}";
   }
 }
 
@@ -83,16 +84,16 @@ extension _$_SetEnableToString on _SetEnable {
   }
 }
 
-extension _$_SetWifiOnlyToString on _SetWifiOnly {
-  String _$toString() {
-    // ignore: unnecessary_string_interpolations
-    return "_SetWifiOnly {value: $value}";
-  }
-}
-
 extension _$_SetFallbackToString on _SetFallback {
   String _$toString() {
     // ignore: unnecessary_string_interpolations
     return "_SetFallback {value: $value}";
+  }
+}
+
+extension _$_SetBackupOnRemoteExifEditToString on _SetBackupOnRemoteExifEdit {
+  String _$toString() {
+    // ignore: unnecessary_string_interpolations
+    return "_SetBackupOnRemoteExifEdit {value: $value}";
   }
 }

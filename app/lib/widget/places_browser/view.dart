@@ -1,4 +1,4 @@
-part of '../places_browser.dart';
+part of 'places_browser.dart';
 
 class _AppBar extends StatelessWidget {
   const _AppBar();
@@ -29,35 +29,31 @@ class _CountryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.transformedCountryItems !=
-              current.transformedCountryItems,
-      builder:
-          (context, state) => SliverToBoxAdapter(
-            child: SizedBox(
-              height: 48,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: state.transformedCountryItems.length,
-                itemBuilder: (context, i) {
-                  final item = state.transformedCountryItems[i];
-                  return _CountryItemView(
-                    account: context.read<_Bloc>().account,
-                    item: item,
-                    onTap:
-                        onTap == null
-                            ? null
-                            : () {
-                              onTap!.call(i, item);
-                            },
-                  );
-                },
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-              ),
-            ),
+      buildWhen: (previous, current) =>
+          previous.transformedCountryItems != current.transformedCountryItems,
+      builder: (context, state) => SliverToBoxAdapter(
+        child: SizedBox(
+          height: 48,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: state.transformedCountryItems.length,
+            itemBuilder: (context, i) {
+              final item = state.transformedCountryItems[i];
+              return _CountryItemView(
+                account: context.read<_Bloc>().account,
+                item: item,
+                onTap: onTap == null
+                    ? null
+                    : () {
+                        onTap!.call(i, item);
+                      },
+              );
+            },
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
           ),
+        ),
+      ),
     );
   }
 
@@ -70,30 +66,27 @@ class _ContentList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.transformedPlaceItems != current.transformedPlaceItems,
-      builder:
-          (context, state) => SliverStaggeredGrid.extentBuilder(
-            maxCrossAxisExtent: 160,
-            mainAxisSpacing: 2,
-            crossAxisSpacing: 2,
-            itemCount: state.transformedPlaceItems.length,
-            itemBuilder: (context, index) {
-              final item = state.transformedPlaceItems[index];
-              return _PlaceItemView(
-                account: context.read<_Bloc>().account,
-                item: item,
-                onTap:
-                    onTap == null
-                        ? null
-                        : () {
-                          onTap!.call(index, item);
-                        },
-              );
-            },
-            staggeredTileBuilder: (_) => const StaggeredTile.count(1, 1),
-          ),
+      buildWhen: (previous, current) =>
+          previous.transformedPlaceItems != current.transformedPlaceItems,
+      builder: (context, state) => SliverStaggeredGrid.extentBuilder(
+        maxCrossAxisExtent: 160,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+        itemCount: state.transformedPlaceItems.length,
+        itemBuilder: (context, index) {
+          final item = state.transformedPlaceItems[index];
+          return _PlaceItemView(
+            account: context.read<_Bloc>().account,
+            item: item,
+            onTap: onTap == null
+                ? null
+                : () {
+                    onTap!.call(index, item);
+                  },
+          );
+        },
+        staggeredTileBuilder: (_) => const StaggeredTile.count(1, 1),
+      ),
     );
   }
 
@@ -106,7 +99,7 @@ class _PlaceItemView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CollectionListSmall(
-      label: item.name,
+      label: item.name.of(context),
       onTap: onTap,
       child: _LocationThumbnail(
         account: account,
@@ -144,7 +137,7 @@ class _CountryItemView extends StatelessWidget {
                 coverMime: item.coverMime,
               ),
               const SizedBox(width: 8),
-              Text(item.name),
+              Text(item.name.of(context)),
               const SizedBox(width: 8),
             ],
           ),

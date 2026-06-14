@@ -176,11 +176,10 @@ class NpDbSqlite implements NpDb {
       _log.info(
         "[replaceFaceRecognitionPersons] Removed persons: ${deletes.toReadableString()}",
       );
-      final updates =
-          to.where((t) {
-            final f = from.firstWhereOrNull((e) => e.name == t.name);
-            return f != null && f != t;
-          }).toList();
+      final updates = to.where((t) {
+        final f = from.firstWhereOrNull((e) => e.name == t.name);
+        return f != null && f != t;
+      }).toList();
       _log.info(
         "[replaceFaceRecognitionPersons] Updated persons: ${updates.toReadableString()}",
       );
@@ -215,24 +214,6 @@ class NpDbSqlite implements NpDb {
   }
 
   @override
-  Future<List<DbFile>> getFilesByDirKeyAndLocation({
-    required DbAccount account,
-    required String dirRelativePath,
-    required String? place,
-    required String countryCode,
-  }) async {
-    final sqlObjs = await _db.use((db) async {
-      return await db.queryFilesByLocation(
-        account: ByAccount.db(account),
-        dirRelativePath: dirRelativePath,
-        place: place,
-        countryCode: countryCode,
-      );
-    });
-    return sqlObjs.toDbFiles();
-  }
-
-  @override
   Future<List<DbFile>> getFilesByFileIds({
     required DbAccount account,
     required Iterable<int> fileIds,
@@ -241,22 +222,6 @@ class NpDbSqlite implements NpDb {
       return await db.queryFilesByFileIds(
         account: ByAccount.db(account),
         fileIds: fileIds,
-      );
-    });
-    return sqlObjs.toDbFiles();
-  }
-
-  @override
-  Future<List<DbFile>> getFilesByTimeRange({
-    required DbAccount account,
-    required List<String> dirRoots,
-    required TimeRange range,
-  }) async {
-    final sqlObjs = await _db.use((db) async {
-      return await db.queryFilesByTimeRange(
-        account: ByAccount.db(account),
-        dirRoots: dirRoots,
-        range: range,
       );
     });
     return sqlObjs.toDbFiles();
@@ -458,7 +423,7 @@ class NpDbSqlite implements NpDb {
     List<String>? includeRelativeDirs,
     List<String>? excludeRelativeRoots,
     List<String>? relativePathKeywords,
-    String? location,
+    DbFileQueryByLocation? location,
     bool? isFavorite,
     bool? isArchived,
     List<String>? mimes,
@@ -540,7 +505,8 @@ class NpDbSqlite implements NpDb {
   }
 
   @override
-  Future<List<({int fileId, int timestamp})>> getFileIdWithTimestamps({
+  Future<List<({int fileId, int timestamp, String filename})>>
+  getFileIdWithTimestamps({
     required DbAccount account,
     List<String>? includeRelativeRoots,
     List<String>? includeRelativeDirs,
@@ -559,10 +525,17 @@ class NpDbSqlite implements NpDb {
           isArchived: isArchived,
           mimes: mimes,
           requestTimestamp: true,
+          requestFilename: true,
         );
       });
       return dbObj
-          .map((e) => (fileId: e.fileId, timestamp: e.timestamp!))
+          .map(
+            (e) => (
+              fileId: e.fileId,
+              timestamp: e.timestamp!,
+              filename: e.filename!,
+            ),
+          )
           .toList();
     } finally {
       _log.fine(
@@ -577,52 +550,30 @@ class NpDbSqlite implements NpDb {
     List<String>? includeRelativeRoots,
     List<String>? excludeRelativeRoots,
   }) async {
-    List<ImageLocationGroup>? nameResult, admin1Result, admin2Result, ccResult;
+    final results = <ImageLocationGroup>[];
     await _db.use((db) async {
       try {
-        nameResult = await db.groupImageLocationsByName(
-          account: ByAccount.db(account),
-          includeRelativeRoots: includeRelativeRoots,
-          excludeRelativeRoots: excludeRelativeRoots,
+        results.addAll(
+          await db.groupImageLocations(
+            account: ByAccount.db(account),
+            includeRelativeRoots: includeRelativeRoots,
+            excludeRelativeRoots: excludeRelativeRoots,
+          ),
         );
       } catch (e, stackTrace) {
         _log.shout(
-          "[groupLocation] Failed while groupImageLocationsByName",
+          "[groupLocation] Failed while groupImageLocations",
           e,
           stackTrace,
         );
       }
       try {
-        admin1Result = await db.groupImageLocationsByAdmin1(
-          account: ByAccount.db(account),
-          includeRelativeRoots: includeRelativeRoots,
-          excludeRelativeRoots: excludeRelativeRoots,
-        );
-      } catch (e, stackTrace) {
-        _log.shout(
-          "[groupLocation] Failed while groupImageLocationsByAdmin1",
-          e,
-          stackTrace,
-        );
-      }
-      try {
-        admin2Result = await db.groupImageLocationsByAdmin2(
-          account: ByAccount.db(account),
-          includeRelativeRoots: includeRelativeRoots,
-          excludeRelativeRoots: excludeRelativeRoots,
-        );
-      } catch (e, stackTrace) {
-        _log.shout(
-          "[groupLocation] Failed while groupImageLocationsByAdmin2",
-          e,
-          stackTrace,
-        );
-      }
-      try {
-        ccResult = await db.groupImageLocationsByCountryCode(
-          account: ByAccount.db(account),
-          includeRelativeRoots: includeRelativeRoots,
-          excludeRelativeRoots: excludeRelativeRoots,
+        results.addAll(
+          await db.groupImageLocationsByCountryCode(
+            account: ByAccount.db(account),
+            includeRelativeRoots: includeRelativeRoots,
+            excludeRelativeRoots: excludeRelativeRoots,
+          ),
         );
       } catch (e, stackTrace) {
         _log.shout(
@@ -633,29 +584,40 @@ class NpDbSqlite implements NpDb {
       }
     });
     return DbLocationGroupResult(
-      name: nameResult?.toDbLocationGroups() ?? [],
-      admin1: admin1Result?.toDbLocationGroups() ?? [],
-      admin2: admin2Result?.toDbLocationGroups() ?? [],
-      countryCode: ccResult?.toDbLocationGroups() ?? [],
+      name: results
+          .where((e) => e.type == ImageLocationType.city)
+          .toList()
+          .toDbLocationGroups(),
+      admin1: results
+          .where((e) => e.type == ImageLocationType.admin1)
+          .toList()
+          .toDbLocationGroups(),
+      admin2: results
+          .where((e) => e.type == ImageLocationType.admin2)
+          .toList()
+          .toDbLocationGroups(),
+      countryCode: results
+          .where((e) => e.type == ImageLocationType.country)
+          .toList()
+          .toDbLocationGroups(),
     );
   }
 
   @override
-  Future<DbLocation?> getFirstLocationOfFileIds({
+  Future<({double lat, double lng})?> getFirstLocationLatLngOfFileIds({
     required DbAccount account,
     required List<int> fileIds,
-  }) async {
-    final sqlObj = await _db.use((db) async {
-      return await db.queryFirstImageLocationByFileIds(
+  }) {
+    return _db.use((db) async {
+      return db.queryFirstLocationLatLngByFileIds(
         account: ByAccount.db(account),
         fileIds: fileIds,
       );
     });
-    return sqlObj?.let(ImageLocationConverter.fromSql);
   }
 
   @override
-  Future<List<DbImageLatLng>> getImageLatLngWithFileIds({
+  Future<List<DbImageLatLng>> getImageLatLng({
     required DbAccount account,
     TimeRange? timeRange,
     List<String>? includeRelativeRoots,
@@ -728,13 +690,12 @@ class NpDbSqlite implements NpDb {
       _log.info(
         "[syncNcAlbums] Removed nc albums: ${deletes.toReadableString()}",
       );
-      final updates =
-          to.where((t) {
-            final f = from.firstWhereOrNull(
-              (e) => e.relativePath == t.relativePath,
-            );
-            return f != null && f != t;
-          }).toList();
+      final updates = to.where((t) {
+        final f = from.firstWhereOrNull(
+          (e) => e.relativePath == t.relativePath,
+        );
+        return f != null && f != t;
+      }).toList();
       _log.info(
         "[syncNcAlbums] Updated nc albums: ${updates.toReadableString()}",
       );
@@ -803,11 +764,10 @@ class NpDbSqlite implements NpDb {
       _log.info(
         "[syncNcAlbumItems] Removed nc album items: ${deletes.toReadableString()}",
       );
-      final updates =
-          to.where((t) {
-            final f = from.firstWhereOrNull((e) => e.fileId == t.fileId);
-            return f != null && f != t;
-          }).toList();
+      final updates = to.where((t) {
+        final f = from.firstWhereOrNull((e) => e.fileId == t.fileId);
+        return f != null && f != t;
+      }).toList();
       _log.info(
         "[syncNcAlbumItems] Updated nc album items: ${updates.toReadableString()}",
       );
@@ -935,11 +895,10 @@ class NpDbSqlite implements NpDb {
       _log.info(
         "[syncRecognizeFacesAndItems] Removed faces: ${deletes.toReadableString()}",
       );
-      final updates =
-          to.where((t) {
-            final f = from.firstWhereOrNull((e) => e.label == t.label);
-            return f != null && f != t;
-          }).toList();
+      final updates = to.where((t) {
+        final f = from.firstWhereOrNull((e) => e.label == t.label);
+        return f != null && f != t;
+      }).toList();
       _log.info(
         "[syncRecognizeFacesAndItems] Updated faces: ${updates.toReadableString()}",
       );
@@ -1017,11 +976,10 @@ class NpDbSqlite implements NpDb {
       _log.info("[syncTags] New tags: ${inserts.toReadableString()}");
       final deletes = diff.onlyInA;
       _log.info("[syncTags] Removed tags: ${deletes.toReadableString()}");
-      final updates =
-          to.where((t) {
-            final f = from.firstWhereOrNull((e) => e.id == t.id);
-            return f != null && f != t;
-          }).toList();
+      final updates = to.where((t) {
+        final f = from.firstWhereOrNull((e) => e.id == t.id);
+        return f != null && f != t;
+      }).toList();
       _log.info("[syncTags] Updated tags: ${updates.toReadableString()}");
       if (inserts.isNotEmpty || deletes.isNotEmpty || updates.isNotEmpty) {
         await db.replaceTags(
@@ -1084,11 +1042,10 @@ class NpDbSqlite implements NpDb {
     _log.info(
       "[_replaceRecognizeFaceItems] Removed faces: ${deletes.toReadableString()}",
     );
-    final updates =
-        to.where((t) {
-          final f = from.firstWhereOrNull((e) => e.fileId == t.fileId);
-          return f != null && f != t;
-        }).toList();
+    final updates = to.where((t) {
+      final f = from.firstWhereOrNull((e) => e.fileId == t.fileId);
+      return f != null && f != t;
+    }).toList();
     _log.info(
       "[_replaceRecognizeFaceItems] Updated faces: ${updates.toReadableString()}",
     );

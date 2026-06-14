@@ -102,7 +102,7 @@ enum PrefKey implements PrefKeyInterface {
   firstRunTime,
   @Deprecated("unused")
   isPhotosTabSortByName,
-  shouldProcessExifWifiOnly,
+  // shouldProcessExifWifiOnly,
   doubleTapExit,
   memoriesRange,
   saveEditResultToServer,
@@ -124,7 +124,15 @@ enum PrefKey implements PrefKeyInterface {
   viewerBottomAppBarButtons,
   homeCollectionsNavBarButtons,
   isFallbackClientExif,
-  localDirs;
+  localDirs,
+  isEnableUploadConvert,
+  uploadConvertFormat,
+  uploadConvertQuality,
+  uploadConvertDownsizeMp,
+  isShowUploadConvertWarning,
+  isEnableLocalFile,
+  isViewerUseOriginalImage,
+  backupOnRemoteExifEdit;
 
   @override
   String toStringKey() {
@@ -156,7 +164,7 @@ enum PrefKey implements PrefKeyInterface {
       PrefKey.firstRunTime => "firstRunTime",
       // ignore: deprecated_member_use_from_same_package
       PrefKey.isPhotosTabSortByName => "isPhotosTabSortByName",
-      PrefKey.shouldProcessExifWifiOnly => "shouldProcessExifWifiOnly",
+      // PrefKey.shouldProcessExifWifiOnly => "shouldProcessExifWifiOnly",
       PrefKey.doubleTapExit => "doubleTapExit",
       PrefKey.memoriesRange => "memoriesRange",
       PrefKey.saveEditResultToServer => "saveEditResultToServer",
@@ -179,6 +187,14 @@ enum PrefKey implements PrefKeyInterface {
       PrefKey.homeCollectionsNavBarButtons => "homeCollectionsNavBarButtons",
       PrefKey.isFallbackClientExif => "isFallbackClientExif",
       PrefKey.localDirs => "localDirs",
+      PrefKey.isEnableUploadConvert => "isEnableUploadConvert",
+      PrefKey.uploadConvertFormat => "uploadConvertFormat",
+      PrefKey.uploadConvertQuality => "uploadConvertQuality",
+      PrefKey.uploadConvertDownsizeMp => "uploadConvertDownsizeMp",
+      PrefKey.isShowUploadConvertWarning => "isShowUploadConvertWarning",
+      PrefKey.isEnableLocalFile => "isEnableLocalFile",
+      PrefKey.isViewerUseOriginalImage => "isViewerUseOriginalImage",
+      PrefKey.backupOnRemoteExifEdit => "backupOnRemoteExifEdit",
     };
   }
 }
@@ -217,6 +233,9 @@ abstract class PrefProvider {
 
   int? getInt(PrefKeyInterface key);
   Future<bool> setInt(PrefKeyInterface key, int value);
+
+  double? getDouble(PrefKeyInterface key);
+  Future<bool> setDouble(PrefKeyInterface key, double value);
 
   String? getString(PrefKeyInterface key);
   Future<bool> setString(PrefKeyInterface key, String value);

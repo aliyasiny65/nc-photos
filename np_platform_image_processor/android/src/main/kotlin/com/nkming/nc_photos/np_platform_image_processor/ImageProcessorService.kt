@@ -7,31 +7,27 @@ import android.app.Service
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
-import android.webkit.MimeTypeMap
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.ServiceCompat
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
-import com.nkming.nc_photos.np_android_core.asType
 import com.nkming.nc_photos.np_android_core.getIntOrNull
 import com.nkming.nc_photos.np_android_core.getPendingIntentFlagImmutable
-import com.nkming.nc_photos.np_android_core.logD
 import com.nkming.nc_photos.np_android_core.logE
 import com.nkming.nc_photos.np_android_core.logI
 import com.nkming.nc_photos.np_android_core.logW
 import com.nkming.nc_photos.np_android_core.measureTime
 import com.nkming.nc_photos.np_android_core.use
-import com.nkming.nc_photos.np_platform_image_processor.processor.LosslessRotator
-import com.nkming.nc_photos.np_platform_image_processor.processor.Orientation
 import java.io.File
-import java.io.Serializable
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -44,7 +40,6 @@ internal class ImageProcessorService : Service() {
 		const val METHOD_ARBITRARY_STYLE_TRANSFER = "ArbitraryStyleTransfer"
 		const val METHOD_DEEP_LAP_COLOR_POP = "DeepLab3ColorPop"
 		const val METHOD_NEUR_OP = "NeurOp"
-		const val METHOD_FILTER = "Filter"
 		const val EXTRA_FILE_URI = "fileUri"
 		const val EXTRA_HEADERS = "headers"
 		const val EXTRA_FILENAME = "filename"
@@ -90,7 +85,10 @@ internal class ImageProcessorService : Service() {
 	override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
 		if (!isForeground) {
 			try {
-				startForeground(NOTIFICATION_ID, buildNotification())
+				ServiceCompat.startForeground(
+					this, NOTIFICATION_ID, buildNotification(),
+					FOREGROUND_SERVICE_TYPE_DATA_SYNC
+				)
 				isForeground = true
 			} catch (e: Throwable) {
 				// ???
@@ -138,7 +136,6 @@ internal class ImageProcessorService : Service() {
 			)
 
 			METHOD_NEUR_OP -> onNeurOp(startId, intent.extras!!)
-			METHOD_FILTER -> onFilter(startId, intent.extras!!)
 			else -> {
 				logE(TAG, "Unknown method: $method")
 				// we can't call stopSelf here as it'll stop the service even if
@@ -198,29 +195,6 @@ internal class ImageProcessorService : Service() {
 	private fun onNeurOp(startId: Int, extras: Bundle) {
 		return onMethod(
 			startId, extras, { params -> ImageProcessorNeurOpCommand(params) },
-		)
-	}
-
-	private fun onFilter(startId: Int, extras: Bundle) {
-		val filters = extras.getSerializable(EXTRA_FILTERS)!!
-			.asType<ArrayList<Serializable>>()
-			.map { ImageFilter.fromJson(it.asType<HashMap<String, Any>>()) }
-
-		val fileUri = extras.getParcelable<Uri>(EXTRA_FILE_URI)!!
-
-		@Suppress("Unchecked_cast") val headers =
-			extras.getSerializable(EXTRA_HEADERS) as HashMap<String, String>?
-		val filename = extras.getString(EXTRA_FILENAME)!!
-		val maxWidth = extras.getInt(EXTRA_MAX_WIDTH)
-		val maxHeight = extras.getInt(EXTRA_MAX_HEIGHT)
-		val isSaveToServer = extras.getBoolean(EXTRA_IS_SAVE_TO_SERVER)
-		addCommand(
-			ImageProcessorFilterCommand(
-				ImageProcessorImageCommand.Params(
-					startId, fileUri, headers, filename, maxWidth, maxHeight,
-					isSaveToServer
-				), filters
-			)
 		)
 	}
 
@@ -361,7 +335,7 @@ internal class ImageProcessorService : Service() {
 		cmdTask = object : ImageProcessorCommandTask(applicationContext) {
 			override fun onPostExecute(result: MessageEvent) {
 				notifyResult(result, cmd.isSaveToServer)
-				cmds.removeFirst()
+				cmds.removeAt(0)
 				stopSelf(cmd.startId)
 				cmdTask = null
 				@Suppress(
@@ -400,7 +374,7 @@ internal class ImageProcessorService : Service() {
 
 				override fun onPostExecute(result: Unit?) {
 					cmdTask = null
-					cmds.removeFirst()
+					cmds.removeAt(0)
 					if (cmds.isNotEmpty() && !isCancelled) {
 						runCommand()
 					}
@@ -597,73 +571,11 @@ private open class ImageProcessorCommandTask(context: Context) :
 		val uri = localizeUri(cmd.fileUri, cmd.headers)
 		handleCancel()
 
-		// special case for lossless rotation
-		if (cmd is ImageProcessorFilterCommand) {
-			if (shouldTryLosslessRotate(cmd, cmd.filename)) {
-				val filter = cmd.filters.first() as Orientation
-				try {
-					return loselessRotate(filter.degree, uri, cmd.filename, cmd)
-				} catch (e: Throwable) {
-					logE(
-						TAG,
-						"[handleCommand] Lossless rotation has failed, fallback to lossy",
-						e
-					)
-				}
-			}
-		}
-
 		val output = measureTime(TAG, "[handleCommand] Elapsed time", {
 			cmd.apply(context, uri)
 		})
 		handleCancel()
 		return saveBitmap(output, cmd.filename, uri, cmd)
-	}
-
-	private fun shouldTryLosslessRotate(
-		cmd: ImageProcessorFilterCommand, srcFilename: String
-	): Boolean {
-		try {
-			if (cmd.filters.size != 1) {
-				return false
-			}
-			if (cmd.filters.first() !is Orientation) {
-				return false
-			}
-			// we can't use the content resolver here because the file we just
-			// downloaded does not exist in the media store
-			val ext = srcFilename.split('.').last()
-			val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
-			logD(TAG, "[shouldTryLosslessRotate] ext: $ext -> mime: $mime")
-			return mime == "image/jpeg"
-		} catch (e: Throwable) {
-			logE(TAG, "[shouldTryLosslessRotate] Uncaught exception", e)
-			return false
-		}
-	}
-
-	private fun loselessRotate(
-		degree: Int, uri: Uri, outFilename: String,
-		cmd: ImageProcessorImageCommand
-	): Uri {
-		logI(TAG, "[loselessRotate] $outFilename")
-		val outFile = File.createTempFile("out", null, getTempDir(context))
-		try {
-			outFile.outputStream().use {
-				context.contentResolver.openInputStream(uri)!!.copyTo(it)
-			}
-			val iExif =
-				ExifInterface(context.contentResolver.openInputStream(uri)!!)
-			val oExif = ExifInterface(outFile)
-			LosslessRotator()(degree, iExif, oExif)
-			oExif.saveAttributes()
-
-			handleCancel()
-			val persister = getPersister(cmd.isSaveToServer)
-			return persister.persist(cmd, outFile)
-		} finally {
-			outFile.delete()
-		}
 	}
 
 	/**

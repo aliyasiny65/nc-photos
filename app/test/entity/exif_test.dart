@@ -182,8 +182,9 @@ void main() {
             {"numerator": 4, "denominator": 100},
           ],
         };
-        final List<Rational> exif =
-            Exif.fromJson(json)["GPSLatitude"].cast<Rational>();
+        final List<Rational> exif = Exif.fromJson(
+          json,
+        )["GPSLatitude"].cast<Rational>();
         expect(exif.map((e) => e.makeComparable()).toList(), [
           const _Rational(2, 1),
           const _Rational(3, 1),
@@ -200,6 +201,36 @@ void main() {
       test("empty value", () {
         final exif = Exif({"DateTimeOriginal": ""});
         expect(exif.dateTimeOriginal, null);
+      });
+    });
+
+    group("dateTimeOriginalWithOffset", () {
+      test("no tz", () {
+        final exif = Exif({"DateTimeOriginal": "2021:01:02 03:04:05"});
+        expect(
+          exif.dateTimeOriginalWithOffset,
+          DateTime(2021, 1, 2, 3, 4, 5).toUtc(),
+        );
+      });
+      test("with tz", () {
+        final exif = Exif({
+          "DateTimeOriginal": "2021:01:02 03:04:05",
+          "OffsetTimeOriginal": "+03:30",
+        });
+        expect(
+          exif.dateTimeOriginalWithOffset,
+          DateTime.utc(2021, 1, 1, 23, 34, 5),
+        );
+      });
+      test("broken server side parser", () {
+        final exif = Exif({
+          "DateTimeOriginal": "2021:01:02 03:04:05",
+          "_OffsetTimeOriginal": "+03:30",
+        });
+        expect(
+          exif.dateTimeOriginalWithOffset,
+          DateTime.utc(2021, 1, 1, 23, 34, 5),
+        );
       });
     });
 

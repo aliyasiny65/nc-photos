@@ -1,7 +1,7 @@
 part of 'viewer.dart';
 
 class _ContentBody extends StatefulWidget {
-  const _ContentBody();
+  const _ContentBody({super.key});
 
   @override
   State<StatefulWidget> createState() => _ContentBodyState();
@@ -10,29 +10,37 @@ class _ContentBody extends StatefulWidget {
 @npLog
 class _ContentBodyState extends State<_ContentBody> {
   @override
+  void initState() {
+    super.initState();
+    _pageViewController.addListener(_onPageViewChanged);
+  }
+
+  @override
+  void dispose() {
+    _pageViewController.removeListener(_onPageViewChanged);
+    _pageViewController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
         _BlocListener(
-          listenWhen:
-              (previous, current) =>
-                  previous.pendingRemoveFile != current.pendingRemoveFile,
+          listenWhen: (previous, current) =>
+              previous.pendingRemoveFile != current.pendingRemoveFile,
           listener: (context, state) {
             final file = state.pendingRemoveFile.value;
             if (file == null) {
               return;
             }
-            final pageCount =
-                context.bloc.allFilesCount - state.removedAfIds.length;
-            if (pageCount <= 1) {
-              // removing the only item, pop view
-              Navigator.of(context).pop();
-            } else if (file.id == state.currentFile?.id) {
+            if (file.id == state.currentFile?.id) {
               // removing current page
-              if (state.index >= pageCount - 1) {
+              if (state.forwardBound != null &&
+                  state.index >= state.forwardBound! - 1) {
                 // removing the last item, go back
                 _pageViewController
-                    .previousPage(
+                    .animateToPreviousPage(
                       duration: k.animationDurationNormal,
                       curve: Curves.easeInOut,
                     )
@@ -43,7 +51,7 @@ class _ContentBodyState extends State<_ContentBody> {
                     });
               } else {
                 _pageViewController
-                    .nextPage(
+                    .animateToNextPage(
                       duration: k.animationDurationNormal,
                       curve: Curves.easeInOut,
                     )
@@ -61,11 +69,48 @@ class _ContentBodyState extends State<_ContentBody> {
         _BlocListenerT(
           selector: (state) => state.index,
           listener: (context, index) {
-            if (index != _pageViewController.currentPage) {
+            final currPage = _pageViewController.pageF;
+            if (currPage != null && (index - currPage).abs() >= 1) {
               _log.info(
-                "[build] Page out sync, correcting: ${_pageViewController.currentPage} -> $index",
+                "[build] Page out sync, correcting: $currPage -> $index",
               );
               _pageViewController.jumpToPage(index);
+            }
+          },
+        ),
+        _BlocListener(
+          listenWhen: (previous, current) =>
+              previous.index != current.index ||
+              previous.backwardBound != current.backwardBound ||
+              previous.forwardBound != current.forwardBound,
+          listener: (context, state) {
+            if (state.backwardBound != null &&
+                state.forwardBound != null &&
+                state.backwardBound! >= state.forwardBound!) {
+              // no more file
+              Navigator.of(context).pop();
+            } else if (state.backwardBound != null &&
+                state.index < state.backwardBound!) {
+              _log.info(
+                "[build] Exceed backward bound, bound: ${state.backwardBound!}, now: ${state.index}",
+              );
+              _pageViewController.animateTo(
+                state.backwardBound! *
+                    _pageViewController.position.viewportDimension,
+                duration: k.animationDurationNormal,
+                curve: Curves.ease,
+              );
+            } else if (state.forwardBound != null &&
+                state.index > state.forwardBound!) {
+              _log.info(
+                "[build] Exceed forward bound, bound: ${state.forwardBound!}, now: ${state.index}",
+              );
+              _pageViewController.animateTo(
+                state.forwardBound! *
+                    _pageViewController.position.viewportDimension,
+                duration: k.animationDurationNormal,
+                curve: Curves.ease,
+              );
             }
           },
         ),
@@ -78,63 +123,67 @@ class _ContentBodyState extends State<_ContentBody> {
           children: [
             const Positioned.fill(child: ColoredBox(color: Colors.black)),
             _BlocBuilder(
-              buildWhen:
-                  (previous, current) =>
-                      previous.isZoomed != current.isZoomed ||
-                      previous.removedAfIds != current.removedAfIds,
-              builder:
-                  (context, state) => HorizontalPageViewer(
-                    key: _key,
-                    pageCount:
-                        context.bloc.allFilesCount - state.removedAfIds.length,
-                    pageBuilder:
-                        (context, i) => _BlocSelector(
-                          selector: (state) => state.pageAfIdMap[i],
-                          builder:
-                              (context, afId) =>
-                                  afId == null
-                                      ? const Center(
-                                        child:
-                                            AppIntermediateCircularProgressIndicator(),
-                                      )
-                                      : _PageView(
-                                        key: Key("Viewer-$afId"),
-                                        afId: afId,
-                                        pageHeight:
-                                            MediaQuery.of(context).size.height,
-                                      ),
+              buildWhen: (previous, current) =>
+                  previous.isZoomed != current.isZoomed ||
+                  previous.removedAfIds != current.removedAfIds,
+              builder: (context, state) => InfinitePageView(
+                key: _key,
+                itemBuilder: (context, i) => _BlocBuilder(
+                  buildWhen: (previous, current) =>
+                      previous.pageAfIdMap[i] != current.pageAfIdMap[i] ||
+                      previous.backwardBound != current.backwardBound ||
+                      previous.forwardBound != current.forwardBound,
+                  builder: (context, state) {
+                    final afId = state.pageAfIdMap[i];
+                    if ((state.backwardBound != null &&
+                            i < state.backwardBound!) ||
+                        (state.forwardBound != null &&
+                            i > state.forwardBound!)) {
+                      return Center(
+                        child: Text(
+                          L10n.global().viewerLastPageText,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
                         ),
-                    initialPage: context.bloc.initialIndex,
-                    controller: _pageViewController,
-                    viewportFraction: _viewportFraction,
-                    canSwitchPage: !state.isZoomed,
-                    onPageChanged: (from, to) {
-                      context.addEvent(_SetIndex(to));
-                    },
-                  ),
+                      );
+                    } else if (afId == null) {
+                      return const Center(
+                        child: AppIntermediateCircularProgressIndicator(),
+                      );
+                    } else {
+                      return _PageView(
+                        key: Key("Viewer-$afId"),
+                        afId: afId,
+                        pageHeight: MediaQuery.of(context).size.height,
+                      );
+                    }
+                  },
+                ),
+                controller: _pageViewController,
+                physics: !state.isZoomed
+                    ? null
+                    : const NeverScrollableScrollPhysics(),
+              ),
             ),
             _BlocSelector<bool>(
               selector: (state) => state.isShowAppBar,
-              builder:
-                  (context, isShowAppBar) =>
-                      isShowAppBar
-                          ? Container(
-                            // + status bar height
-                            height:
-                                kToolbarHeight +
-                                MediaQuery.of(context).padding.top,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment(0, -1),
-                                end: Alignment(0, 1),
-                                colors: [
-                                  Color.fromARGB(192, 0, 0, 0),
-                                  Color.fromARGB(0, 0, 0, 0),
-                                ],
-                              ),
-                            ),
-                          )
-                          : const SizedBox.shrink(),
+              builder: (context, isShowAppBar) => isShowAppBar
+                  ? Container(
+                      // + status bar height
+                      height:
+                          kToolbarHeight + MediaQuery.of(context).padding.top,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment(0, -1),
+                          end: Alignment(0, 1),
+                          colors: [
+                            Color.fromARGB(192, 0, 0, 0),
+                            Color.fromARGB(0, 0, 0, 0),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
@@ -142,9 +191,18 @@ class _ContentBodyState extends State<_ContentBody> {
     );
   }
 
+  void _onPageViewChanged() {
+    final currPage = _pageViewController.pageF;
+    if (currPage != null && (context.state.index - currPage).abs() >= .9) {
+      context.addEvent(_SetIndex(currPage.round()));
+    }
+  }
+
   // prevent view getting disposed
   final _key = GlobalKey();
-  final _pageViewController = HorizontalPageViewerController();
+  late final _pageViewController = InfiniteScrollController(
+    initialPage: context.state.index,
+  );
 }
 
 class _PageView extends StatefulWidget {
@@ -165,11 +223,11 @@ class _PageViewState extends State<_PageView> {
     _scrollController = ScrollController(
       initialScrollOffset:
           context.state.isShowDetailPane && !context.state.isClosingDetailPane
-              ? _calcDetailPaneOpenedScrollPosition(
-                context.state.fileStates[widget.afId],
-                widget.pageHeight,
-              )
-              : 0,
+          ? _calcDetailPaneOpenedScrollPosition(
+              context.state.fileStates[widget.afId],
+              widget.pageHeight,
+            )
+          : 0,
     );
     if (context.state.isShowDetailPane && !context.state.isClosingDetailPane) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -199,10 +257,8 @@ class _PageViewState extends State<_PageView> {
     return MultiBlocListener(
       listeners: [
         _BlocListener(
-          listenWhen:
-              (previous, current) =>
-                  previous.openDetailPaneRequest !=
-                  current.openDetailPaneRequest,
+          listenWhen: (previous, current) =>
+              previous.openDetailPaneRequest != current.openDetailPaneRequest,
           listener: (context, state) {
             if (!state.canOpenDetailPane) {
               _log.warning("[build] Can't open detail pane right now");
@@ -258,85 +314,71 @@ class _PageViewState extends State<_PageView> {
               child: AppIntermediateCircularProgressIndicator(),
             );
           } else {
-            return FractionallySizedBox(
-              widthFactor: 1 / _viewportFraction,
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _onPageContentScrolled,
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(
-                    context,
-                  ).copyWith(scrollbars: false),
-                  child: _BlocBuilder(
-                    buildWhen:
-                        (previous, current) =>
-                            previous.isZoomed != current.isZoomed,
-                    builder:
-                        (context, state) => SingleChildScrollView(
-                          controller: _scrollController,
-                          physics:
-                              !state.isZoomed
-                                  ? null
-                                  : const NeverScrollableScrollPhysics(),
-                          child: Stack(
-                            children: [
-                              _BlocBuilder(
-                                buildWhen:
-                                    (previous, current) =>
-                                        previous.fileStates[widget.afId] !=
-                                            current.fileStates[widget.afId] ||
-                                        previous.isShowAppBar !=
-                                            current.isShowAppBar ||
-                                        previous.isDetailPaneActive !=
-                                            current.isDetailPaneActive,
-                                builder:
-                                    (context, state) => FileContentView(
-                                      file: file,
-                                      shouldPlayLivePhoto:
-                                          state
-                                              .fileStates[widget.afId]
-                                              ?.shouldPlayLivePhoto ??
-                                          false,
-                                      canZoom: !state.isDetailPaneActive,
-                                      canPlay: !state.isDetailPaneActive,
-                                      isPlayControlVisible:
-                                          state.isShowAppBar &&
-                                          !state.isDetailPaneActive,
-                                      onContentHeightChanged: (contentHeight) {
-                                        context.addEvent(
-                                          _SetFileContentHeight(
-                                            widget.afId,
-                                            contentHeight,
-                                          ),
-                                        );
-                                      },
-                                      onZoomChanged: (isZoomed) {
-                                        context.addEvent(
-                                          _SetIsZoomed(isZoomed),
-                                        );
-                                      },
-                                      onVideoPlayingChanged: (isPlaying) {
-                                        if (isPlaying) {
-                                          context.addEvent(const _HideAppBar());
-                                        } else {
-                                          context.addEvent(const _ShowAppBar());
-                                        }
-                                      },
-                                      onLoadFailure: () {
-                                        if (state
-                                                .fileStates[widget.afId]
-                                                ?.shouldPlayLivePhoto ==
-                                            true) {
-                                          context.addEvent(
-                                            _PauseLivePhoto(widget.afId),
-                                          );
-                                        }
-                                      },
-                                    ),
-                              ),
-                              _DetailPaneContainer(afId: widget.afId),
-                            ],
+            return NotificationListener<ScrollNotification>(
+              onNotification: _onPageContentScrolled,
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(scrollbars: false),
+                child: _BlocBuilder(
+                  buildWhen: (previous, current) =>
+                      previous.isZoomed != current.isZoomed,
+                  builder: (context, state) => SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: !state.isZoomed
+                        ? null
+                        : const NeverScrollableScrollPhysics(),
+                    child: Stack(
+                      children: [
+                        _BlocBuilder(
+                          buildWhen: (previous, current) =>
+                              previous.fileStates[widget.afId] !=
+                                  current.fileStates[widget.afId] ||
+                              previous.isShowAppBar != current.isShowAppBar ||
+                              previous.isDetailPaneActive !=
+                                  current.isDetailPaneActive,
+                          builder: (context, state) => FileContentView(
+                            file: file,
+                            shouldPlayLivePhoto:
+                                state
+                                    .fileStates[widget.afId]
+                                    ?.shouldPlayLivePhoto ??
+                                false,
+                            canZoom: !state.isDetailPaneActive,
+                            canPlay: !state.isDetailPaneActive,
+                            isPlayControlVisible:
+                                state.isShowAppBar && !state.isDetailPaneActive,
+                            onContentHeightChanged: (contentHeight) {
+                              context.addEvent(
+                                _SetFileContentHeight(
+                                  widget.afId,
+                                  contentHeight,
+                                ),
+                              );
+                            },
+                            onZoomChanged: (isZoomed) {
+                              context.addEvent(_SetIsZoomed(isZoomed));
+                            },
+                            onVideoPlayingChanged: (isPlaying) {
+                              if (isPlaying) {
+                                context.addEvent(const _HideAppBar());
+                              } else {
+                                context.addEvent(const _ShowAppBar());
+                              }
+                            },
+                            onLoadFailure: () {
+                              if (state
+                                      .fileStates[widget.afId]
+                                      ?.shouldPlayLivePhoto ==
+                                  true) {
+                                context.addEvent(_PauseLivePhoto(widget.afId));
+                              }
+                            },
                           ),
                         ),
+                        _DetailPaneContainer(afId: widget.afId),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -420,4 +462,52 @@ double _calcDetailPaneOffset(_PageState? pageState, double pageHeight) {
   }
 }
 
-const _viewportFraction = 1.05;
+extension on InfiniteScrollController {
+  double? get pageF {
+    if (!hasClients || !position.hasViewportDimension) {
+      return null;
+    }
+    return offset / position.viewportDimension;
+  }
+
+  // ignore: unused_element
+  int? get page => pageF?.round();
+
+  Future<void> animateToPreviousPage({
+    required Duration duration,
+    required Curve curve,
+  }) {
+    if (!hasClients || !position.hasViewportDimension) {
+      return Future.value();
+    }
+    final p = page;
+    if (p == null) {
+      return Future.value();
+    }
+    final dst = p - 1;
+    return animateTo(
+      dst * position.viewportDimension,
+      duration: duration,
+      curve: curve,
+    );
+  }
+
+  Future<void> animateToNextPage({
+    required Duration duration,
+    required Curve curve,
+  }) {
+    if (!hasClients || !position.hasViewportDimension) {
+      return Future.value();
+    }
+    final p = page;
+    if (p == null) {
+      return Future.value();
+    }
+    final dst = p + 1;
+    return animateTo(
+      dst * position.viewportDimension,
+      duration: duration,
+      curve: curve,
+    );
+  }
+}

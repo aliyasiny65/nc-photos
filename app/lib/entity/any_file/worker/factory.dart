@@ -1,11 +1,16 @@
+import 'dart:io' as io;
+
 import 'package:flutter/material.dart';
 import 'package:nc_photos/account.dart';
+import 'package:nc_photos/controller/any_files_controller.dart';
 import 'package:nc_photos/controller/files_controller.dart';
 import 'package:nc_photos/controller/local_files_controller.dart';
 import 'package:nc_photos/di_container.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/worker/local.dart';
+import 'package:nc_photos/entity/any_file/worker/merged.dart';
 import 'package:nc_photos/entity/any_file/worker/nextcloud.dart';
+import 'package:np_platform_uploader/np_platform_uploader.dart';
 
 abstract interface class AnyFileWorkerFactory {
   static AnyFileCapabilityWorker capability(AnyFile file) {
@@ -14,6 +19,8 @@ abstract interface class AnyFileWorkerFactory {
         return const AnyFileNextcloudCapabilityWorker();
       case AnyFileLocalProvider _:
         return const AnyFileLocalCapabilityWorker();
+      case AnyFileMergedProvider _:
+        return const AnyFileMergedCapabilityWorker();
     }
   }
 
@@ -29,6 +36,11 @@ abstract interface class AnyFileWorkerFactory {
         );
       case AnyFileLocalProvider _:
         return const AnyFileLocalFavoriteWorker();
+      case AnyFileMergedProvider _:
+        return AnyFileMergedFavoriteWorker(
+          file,
+          filesController: filesController,
+        );
     }
   }
 
@@ -44,6 +56,11 @@ abstract interface class AnyFileWorkerFactory {
         );
       case AnyFileLocalProvider _:
         return const AnyFileLocalArchiveWorker();
+      case AnyFileMergedProvider _:
+        return AnyFileMergedArchiveWorker(
+          file,
+          filesController: filesController,
+        );
     }
   }
 
@@ -57,6 +74,8 @@ abstract interface class AnyFileWorkerFactory {
         return AnyFileNextcloudDownloadWorker(file, account: account, c: c);
       case AnyFileLocalProvider _:
         return const AnyFileLocalDownloadWorker();
+      case AnyFileMergedProvider _:
+        return const AnyFileMergedDownloadWorker();
     }
   }
 
@@ -76,19 +95,12 @@ abstract interface class AnyFileWorkerFactory {
           file,
           localFilesController: localFilesController,
         );
-    }
-  }
-
-  static AnyFileShareWorker share(
-    AnyFile file, {
-    required Account account,
-    required DiContainer c,
-  }) {
-    switch (file.provider) {
-      case AnyFileNextcloudProvider _:
-        return AnyFileNextcloudShareWorker(file, account: account, c: c);
-      case AnyFileLocalProvider _:
-        return AnyFileLocalShareWorker(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedDeleteWorker(
+          file,
+          filesController: filesController,
+          localFilesController: localFilesController,
+        );
     }
   }
 
@@ -102,6 +114,8 @@ abstract interface class AnyFileWorkerFactory {
         return AnyFileNextcloudSetAsWorker(file, account: account, c: c);
       case AnyFileLocalProvider _:
         return AnyFileLocalSetAsWorker(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedSetAsWorker(file);
     }
   }
 
@@ -111,6 +125,35 @@ abstract interface class AnyFileWorkerFactory {
         return const AnyFileNextcloudUploadWorker();
       case AnyFileLocalProvider _:
         return AnyFileLocalUploadWorker(file, account: account);
+      case AnyFileMergedProvider _:
+        return const AnyFileMergedUploadWorker();
+    }
+  }
+
+  // currently only work with nextcloud files
+  static AnyFileReplaceWithBackupWorker replaceWithBackup(
+    AnyFile file, {
+    required FilesController filesController,
+    required Account account,
+    required DiContainer c,
+  }) {
+    switch (file.provider) {
+      case AnyFileNextcloudProvider _:
+        return AnyFileNextcloudReplaceWithBackupWorker(
+          file,
+          filesController: filesController,
+          account: account,
+          c: c,
+        );
+      case AnyFileLocalProvider _:
+        return AnyFileLocalReplaceWithBackupWorker(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedReplaceWithBackupWorker(
+          file,
+          filesController: filesController,
+          account: account,
+          c: c,
+        );
     }
   }
 }
@@ -135,11 +178,7 @@ abstract interface class AnyFileDownloadWorker {
 }
 
 abstract interface class AnyFileDeleteWorker {
-  Future<bool> delete();
-}
-
-abstract interface class AnyFileShareWorker {
-  Future<void> share(BuildContext context);
+  Future<bool> delete({AnyFileRemoveHint hint = AnyFileRemoveHint.both});
 }
 
 abstract interface class AnyFileSetAsWorker {
@@ -147,5 +186,18 @@ abstract interface class AnyFileSetAsWorker {
 }
 
 abstract interface class AnyFileUploadWorker {
-  void upload(String relativePath);
+  void upload(
+    String relativePath, {
+    ConvertConfig? convertConfig,
+    void Function(bool isSuccess)? onResult,
+  });
+}
+
+abstract interface class AnyFileReplaceWithBackupWorker {
+  Future<void> replace(
+    io.File srcFile, {
+    void Function(double progress)? onProgress,
+    void Function(String backupFilename)? onBackedUp,
+    required bool shouldBackup,
+  });
 }

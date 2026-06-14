@@ -45,17 +45,10 @@ extension _$MetadataUpgraderV4NpLog on MetadataUpgraderV4 {
 // ToStringGenerator
 // **************************************************************************
 
-extension _$ImageLocationToString on ImageLocation {
-  String _$toString() {
-    // ignore: unnecessary_string_interpolations
-    return "ImageLocation {version: $version, ${name == null ? "" : "name: $name, "}${latitude == null ? "" : "latitude: ${latitude!.toStringAsFixed(3)}, "}${longitude == null ? "" : "longitude: ${longitude!.toStringAsFixed(3)}, "}${countryCode == null ? "" : "countryCode: $countryCode, "}${admin1 == null ? "" : "admin1: $admin1, "}${admin2 == null ? "" : "admin2: $admin2"}}";
-  }
-}
-
 extension _$MetadataToString on Metadata {
   String _$toString() {
     // ignore: unnecessary_string_interpolations
-    return "Metadata {lastUpdated: $lastUpdated, ${fileEtag == null ? "" : "fileEtag: $fileEtag, "}${imageWidth == null ? "" : "imageWidth: $imageWidth, "}${imageHeight == null ? "" : "imageHeight: $imageHeight, "}${exif == null ? "" : "exif: $exif, "}src: ${src.name}}";
+    return "Metadata {lastUpdated: $lastUpdated, ${fileEtag == null ? "" : "fileEtag: $fileEtag, "}${imageWidth == null ? "" : "imageWidth: $imageWidth, "}${imageHeight == null ? "" : "imageHeight: $imageHeight, "}${exif == null ? "" : "exif: $exif, "}${xmp == null ? "" : "xmp: $xmp, "}src: ${src.name}}";
   }
 }
 

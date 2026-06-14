@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kiwi/kiwi.dart';
 import 'package:logging/logging.dart';
@@ -16,8 +17,10 @@ import 'package:nc_photos/use_case/list_location_group.dart';
 import 'package:nc_photos/use_case/list_tag.dart';
 import 'package:nc_photos/use_case/person/list_person.dart';
 import 'package:np_collection/np_collection.dart';
+import 'package:np_common/localized_string.dart';
 import 'package:np_log/np_log.dart';
 import 'package:np_string/np_string.dart';
+import 'package:np_ui/np_ui.dart';
 import 'package:to_string/to_string.dart';
 import 'package:woozy_search/woozy_search.dart';
 
@@ -130,8 +133,9 @@ class HomeSearchSuggestionBloc
     this.account,
     this.collectionsController,
     this.serverController,
-    this.accountPrefController,
-  ) : super(const HomeSearchSuggestionBlocInit()) {
+    this.accountPrefController, {
+    required this.locale,
+  }) : super(const HomeSearchSuggestionBlocInit()) {
     final c = KiwiContainer().resolve<DiContainer>();
     assert(require(c));
     assert(ListTag.require(c));
@@ -172,24 +176,20 @@ class HomeSearchSuggestionBloc
       final str = results.map((e) => "${e.score}: ${e.text}").join("\n");
       _log.fine("[_onEventSearch] Search '${ev.phrase}':\n$str");
     }
-    final matches =
-        results
-            .where((element) => element.score > 0)
-            .map((e) {
-              if (e.value!.toKeywords().any((k) => k.startsWith(ev.phrase))) {
-                // prefer names that start exactly with the search phrase
-                return (score: e.score + 1, item: e.value);
-              } else {
-                return (score: e.score, item: e.value);
-              }
-            })
-            .sorted((a, b) => b.score.compareTo(a.score))
-            .distinctIf(
-              (a, b) => identical(a.item, b.item),
-              (a) => a.item.hashCode,
-            )
-            .map((e) => e.item!.toResult())
-            .toList();
+    final matches = results
+        .where((element) => element.score > 0)
+        .map((e) {
+          if (e.value!.toKeywords().any((k) => k.startsWith(ev.phrase))) {
+            // prefer names that start exactly with the search phrase
+            return (score: e.score + 1, item: e.value);
+          } else {
+            return (score: e.score, item: e.value);
+          }
+        })
+        .sorted((a, b) => b.score.compareTo(a.score))
+        .distinctIf((a, b) => identical(a.item, b.item), (a) => a.item.hashCode)
+        .map((e) => e.item!.toResult())
+        .toList();
     emit(HomeSearchSuggestionBlocSuccess(matches));
   }
 
@@ -199,17 +199,16 @@ class HomeSearchSuggestionBloc
   ) async {
     final product = <_Searcheable>[];
     try {
-      var collections =
-          collectionsController
-              .peekStream()
-              .data
-              .map((e) => e.collection)
-              .toList();
+      var collections = collectionsController
+          .peekStream()
+          .data
+          .map((e) => e.collection)
+          .toList();
       if (collections.isEmpty) {
-        collections =
-            await ListCollection(_c, serverController: serverController)(
-              account,
-            ).last;
+        collections = await ListCollection(
+          _c,
+          serverController: serverController,
+        )(account).last;
       }
       product.addAll(collections.map(_CollectionSearcheable.new));
       _log.info(
@@ -226,11 +225,13 @@ class HomeSearchSuggestionBloc
       _log.warning("[_onEventPreloadData] Failed while ListTag", e);
     }
     try {
-      final persons =
-          await ListPerson(_c)(
-            account,
-            accountPrefController.personProviderValue,
-          ).last;
+      final persons = await ListPerson(_c)(
+        account,
+        accountPrefController.personProviderValue,
+        shouldUseRecognizeApiKey: serverController.isSupported(
+          ServerFeature.recognizeApiKey,
+        ),
+      ).last;
       product.addAll(persons.map((t) => _PersonSearcheable(t)));
       _log.info("[_onEventPreloadData] Loaded ${persons.length} people");
     } catch (e) {
@@ -239,15 +240,15 @@ class HomeSearchSuggestionBloc
     try {
       final locations = await ListLocationGroup(_c)(account);
       // make sure no duplicates
-      final map = <String, LocationGroup>{};
+      final map = <LocalizedString, LocationGroup>{};
       for (final l
           in locations.name +
               locations.admin1 +
               locations.admin2 +
               locations.countryCode) {
-        map[l.place] = l;
+        map[l.name] = l;
       }
-      product.addAll(map.values.map((e) => _LocationSearcheable(e)));
+      product.addAll(map.values.map((e) => _LocationSearcheable(e, locale)));
       _log.info(
         "[_onEventPreloadData] Loaded ${locations.name.length + locations.countryCode.length} locations",
       );
@@ -272,6 +273,7 @@ class HomeSearchSuggestionBloc
   final ServerController serverController;
   final AccountPrefController accountPrefController;
   late final DiContainer _c;
+  final Locale locale;
 
   final _search = Woozy<_Searcheable>(limit: 10);
 }
@@ -318,13 +320,14 @@ class _PersonSearcheable implements _Searcheable {
 }
 
 class _LocationSearcheable implements _Searcheable {
-  const _LocationSearcheable(this.location);
+  const _LocationSearcheable(this.location, this.locale);
 
   @override
-  toKeywords() => [location.place.toCi()];
+  List<CiString> toKeywords() => [location.name.ofLocale(locale).toCi()];
 
   @override
   toResult() => HomeSearchLocationResult(location);
 
   final LocationGroup location;
+  final Locale locale;
 }

@@ -1,4 +1,4 @@
-part of '../home_photos2.dart';
+part of 'home_photos.dart';
 
 class _ContentList extends StatelessWidget {
   const _ContentList();
@@ -6,10 +6,9 @@ class _ContentList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.zoom != current.zoom ||
-              previous.viewWidth != current.viewWidth,
+      buildWhen: (previous, current) =>
+          previous.zoom != current.zoom ||
+          previous.viewWidth != current.viewWidth,
       builder: (context, state) {
         if (state.viewWidth == null) {
           return const SliverFillRemaining();
@@ -34,10 +33,9 @@ class _ScalingList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.scale != current.scale ||
-              previous.viewWidth != current.viewWidth,
+      buildWhen: (previous, current) =>
+          previous.scale != current.scale ||
+          previous.viewWidth != current.viewWidth,
       builder: (context, state) {
         if (state.viewWidth == null || state.scale == null) {
           return const SliverFillRemaining();
@@ -74,86 +72,54 @@ class _ContentListBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.transformedItems != current.transformedItems ||
-              previous.selectedItems != current.selectedItems ||
-              (previous.itemPerRow == null) != (current.itemPerRow == null) ||
-              (previous.itemSize == null) != (current.itemSize == null),
-      builder:
-          (context, state) =>
-              state.itemPerRow == null || state.itemSize == null
-                  ? const SliverToBoxAdapter(child: SizedBox.shrink())
-                  : SelectableSectionList<_Item>(
-                    sections:
-                        state.transformedItems
-                            .map(
-                              (e) => SelectableSection(
-                                header: e.first,
-                                items: e.sublist(1),
-                              ),
-                            )
-                            .toList(),
-                    selectedItems: state.selectedItems,
-                    sectionHeaderBuilder:
-                        (context, section, item) => item.buildWidget(context),
-                    itemBuilder: (context, section, index, item) {
-                      final w = item.buildWidget(context);
-                      if (isNeedVisibilityInfo) {
-                        return _ContentListItemView(
-                          key: Key("${_log.fullName}.${item.id}"),
-                          item: item,
-                          child: w,
-                        );
-                      } else {
-                        return w;
-                      }
-                    },
-                    extentOptimizer: SelectableSectionListExtentOptimizer(
-                      itemPerRow: itemPerRow,
-                      titleExtentBuilder:
-                          (_) =>
-                              AppDimension.of(context).timelineDateItemHeight,
-                      itemExtentBuilder: (_) => itemSize,
-                    ),
-                    onSelectionChange: (_, selected) {
-                      context.addEvent(
-                        _SetSelectedItems(items: selected.cast()),
-                      );
-                    },
-                    onItemTap: (context, section, index, item) {
-                      if (item is _FileItem) {
-                        final fileDate = item.file.dateTime.toLocal().toDate();
-                        final summary = [
-                          ...context.state.filesSummary.items.entries.map(
-                            (e) => (e.key, e.value.count),
-                          ),
-                          ...context.state.localFilesSummary.items.entries.map(
-                            (e) => (e.key, e.value),
-                          ),
-                        ];
-                        var count = 0;
-                        for (final e
-                            in summary.sortedBy((e) => e.$1).reversed) {
-                          if (e.$1.isAfter(fileDate)) {
-                            count += e.$2;
-                          } else {
-                            break;
-                          }
-                        }
-                        count += index;
-
-                        Navigator.of(context).pushNamed(
-                          TimelineViewer.routeName,
-                          arguments: TimelineViewerArguments(
-                            initialFile: item.file,
-                            initialIndex: count,
-                            allFilesCount: summary.map((e) => e.$2).sum,
-                          ),
-                        );
-                      }
-                    },
-                  ),
+      buildWhen: (previous, current) =>
+          previous.transformedItems != current.transformedItems ||
+          previous.selectedItems != current.selectedItems ||
+          (previous.itemPerRow == null) != (current.itemPerRow == null) ||
+          (previous.itemSize == null) != (current.itemSize == null),
+      builder: (context, state) =>
+          state.itemPerRow == null || state.itemSize == null
+          ? const SliverToBoxAdapter(child: SizedBox.shrink())
+          : SelectableSectionList<_Item>(
+              sections: state.transformedItems
+                  .map(
+                    (e) =>
+                        SelectableSection(header: e.first, items: e.sublist(1)),
+                  )
+                  .toList(),
+              selectedItems: state.selectedItems,
+              sectionHeaderBuilder: (context, section, item) =>
+                  item.buildWidget(context),
+              itemBuilder: (context, section, index, item) {
+                final w = item.buildWidget(context);
+                if (isNeedVisibilityInfo) {
+                  return _ContentListItemView(
+                    key: Key("${_log.fullName}.${item.id}"),
+                    item: item,
+                    child: w,
+                  );
+                } else {
+                  return w;
+                }
+              },
+              extentOptimizer: SelectableSectionListExtentOptimizer(
+                itemPerRow: itemPerRow,
+                titleExtentBuilder: (_) =>
+                    AppDimension.of(context).timelineDateItemHeight,
+                itemExtentBuilder: (_) => itemSize,
+              ),
+              onSelectionChange: (_, selected) {
+                context.addEvent(_SetSelectedItems(items: selected.cast()));
+              },
+              onItemTap: (context, section, index, item) {
+                if (item is _FileItem) {
+                  Navigator.of(context).pushNamed(
+                    TimelineViewer.routeName,
+                    arguments: TimelineViewerArguments(initialFile: item.file),
+                  );
+                }
+              },
+            ),
     );
   }
 
@@ -240,148 +206,152 @@ class _MemoryCollectionList extends StatelessWidget {
         height: _MemoryCollectionItemView.height,
         child: _BlocSelector<List<Collection>>(
           selector: (state) => state.memoryCollections,
-          builder:
-              (context, memoryCollections) => ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: memoryCollections.length,
-                itemBuilder: (context, index) {
-                  final c = memoryCollections[index];
-                  final result = c.getCoverUrl(
-                    k.photoThumbSize,
-                    k.photoThumbSize,
-                    isKeepAspectRatio: true,
-                  );
-                  return _MemoryCollectionItemView(
-                    coverUrl: result?.url,
-                    coverMime: result?.mime,
-                    label: c.name,
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        CollectionBrowser.routeName,
-                        arguments: CollectionBrowserArguments(c),
-                      );
-                    },
+          builder: (context, memoryCollections) => ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: memoryCollections.length,
+            itemBuilder: (context, index) {
+              final c = memoryCollections[index];
+              final result = c.getCoverUrl(k.coverSize, k.coverSize);
+              final year = (c.contentProvider as CollectionMemoryProvider).year;
+              return _MemoryCollectionItemView(
+                coverUrl: result?.url,
+                coverMime: result?.mime,
+                label: c.name,
+                year: year,
+                heroTag: flutter_util.HeroTag.fromCollection(c),
+                onTap: () {
+                  Navigator.of(context).pushNamed(
+                    CollectionBrowser.routeName,
+                    arguments: CollectionBrowserArguments(c),
                   );
                 },
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-              ),
+              );
+            },
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+          ),
         ),
       ),
     );
   }
 }
 
-class _MemoryCollectionItemView extends StatelessWidget {
-  static const width = 96.0;
-  static const height = 128.0;
+class _MemoryCollectionItemView extends StatefulWidget {
+  static const width = 140.0;
+  static const height = 190.0;
 
   const _MemoryCollectionItemView({
     required this.coverUrl,
     required this.coverMime,
     required this.label,
+    required this.year,
+    required this.heroTag,
     this.onTap,
   });
 
   @override
+  State<StatefulWidget> createState() => _MemoryCollectionItemViewState();
+
+  final String? coverUrl;
+  final String? coverMime;
+  final String label;
+  final int year;
+  final flutter_util.HeroTag heroTag;
+  final VoidCallback? onTap;
+}
+
+class _MemoryCollectionItemViewState extends State<_MemoryCollectionItemView> {
+  @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.topStart,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: width,
-          height: height,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              OverflowBox(
-                maxHeight: height,
-                maxWidth: height,
-                child: SizedBox.square(
-                  dimension: height,
-                  child: PhotoListImage(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: SizedBox(
+        width: _MemoryCollectionItemView.width,
+        height: _MemoryCollectionItemView.height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            OverflowBox(
+              maxHeight: _MemoryCollectionItemView.height,
+              maxWidth: _MemoryCollectionItemView.height,
+              child: SizedBox.square(
+                dimension: _MemoryCollectionItemView.height,
+                child: Hero(
+                  tag: widget.heroTag,
+                  child: PhotoListImageOnly(
                     account: context.bloc.account,
-                    previewUrl: coverUrl,
-                    mime: coverMime,
-                    padding: const EdgeInsets.all(0),
+                    previewUrl: widget.coverUrl,
+                    mime: widget.coverMime,
+                    cacheType: CachedNetworkImageType.cover,
+                    onDominantColor: (value) {
+                      setState(() {
+                        _colorScheme = value;
+                      });
+                    },
                   ),
                 ),
               ),
+            ),
+            Positioned(
+              top: 0,
+              bottom: 8,
+              left: 0,
+              right: 0,
+              child: FittedBox(
+                alignment: Alignment.center,
+                fit: BoxFit.none,
+                child: Text(
+                  "${widget.year}".substring(2),
+                  style: TextStyle(
+                    fontSize: 184,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -8,
+                    color:
+                        (Theme.of(context).brightness == Brightness.light
+                                ? _colorScheme?.primary
+                                : _colorScheme?.inversePrimary)
+                            ?.withValues(alpha: .20) ??
+                        Colors.black12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color:
+                    (_colorScheme?.primaryContainer ??
+                            Theme.of(context).colorScheme.inverseSurface)
+                        .withValues(alpha: 0.75),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(4),
+                child: Text(
+                  widget.label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color:
+                        _colorScheme?.onPrimaryContainer ??
+                        Theme.of(context).colorScheme.onInverseSurface,
+                  ),
+                ),
+              ),
+            ),
+            if (widget.onTap != null)
               Positioned.fill(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.center,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black87],
-                    ),
-                  ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(onTap: widget.onTap),
                 ),
               ),
-              Positioned.fill(
-                child: Align(
-                  alignment: AlignmentDirectional.bottomStart,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context).onDarkSurface,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (onTap != null)
-                Positioned.fill(
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: InkWell(onTap: onTap),
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  final String? coverUrl;
-  final String? coverMime;
-  final String label;
-  final VoidCallback? onTap;
-}
-
-class _ScrollLabel extends StatelessWidget {
-  const _ScrollLabel();
-
-  @override
-  Widget build(BuildContext context) {
-    return _BlocSelector<Date?>(
-      selector: (state) => state.scrollDate,
-      builder: (context, scrollDate) {
-        if (scrollDate == null) {
-          return const SizedBox.shrink();
-        }
-        final text = DateFormat(
-          DateFormat.YEAR_ABBR_MONTH,
-          Localizations.localeOf(context).languageCode,
-        ).format(scrollDate.toUtcDateTime());
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: DefaultTextStyle(
-            style:
-                Theme.of(context).textStyleColored(
-                  (textTheme) => textTheme.titleMedium,
-                  (colorScheme) => colorScheme.onSecondaryContainer,
-                )!,
-            child: Text(text),
-          ),
-        );
-      },
-    );
-  }
+  ColorScheme? _colorScheme;
 }
 
 class _VideoPreviewHintDialog extends StatelessWidget {
@@ -407,6 +377,68 @@ class _VideoPreviewHintDialog extends StatelessWidget {
           child: Text(L10n.global().dontShowAgain),
         ),
       ],
+    );
+  }
+}
+
+class _DateBar extends StatelessWidget {
+  const _DateBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return _BlocBuilder(
+      buildWhen: (previous, current) =>
+          previous.dateBarContent != current.dateBarContent ||
+          previous.appBarPosition != current.appBarPosition,
+      builder: (context, state) {
+        if (state.dateBarContent == null) {
+          return const SizedBox.shrink();
+        }
+        final appBarY = state.appBarPosition?.dy;
+        double y = 8;
+        if (appBarY != null) {
+          y += max(appBarY, MediaQuery.paddingOf(context).top);
+        }
+
+        final String datePattern;
+        if (context.bloc.prefController.homePhotosZoomLevelValue >= 0) {
+          datePattern = DateFormat.YEAR_MONTH_DAY;
+        } else {
+          datePattern = DateFormat.YEAR_MONTH;
+        }
+        final text = DateFormat(
+          datePattern,
+          Localizations.localeOf(context).languageCode,
+        ).format(state.dateBarContent!.toLocalDateTime());
+        return Padding(
+          padding: EdgeInsets.only(top: max(y, 0), left: 16, right: 16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: Theme.of(context).appBarBlurFilter,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(32),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: .75),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  text,
+                  style: Theme.of(context).textStyleColored(
+                    (textTheme) => textTheme.titleMedium,
+                    (colorScheme) => colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

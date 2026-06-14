@@ -120,6 +120,7 @@ void main() {
             upgraderV2: null,
             upgraderV3: null,
             upgraderV4: null,
+            upgraderV5: null,
           ),
           Metadata(
             lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5, 678, 901),
@@ -142,6 +143,7 @@ void main() {
             upgraderV2: null,
             upgraderV3: null,
             upgraderV4: null,
+            upgraderV5: null,
           ),
           Metadata(
             lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5, 678, 901),
@@ -165,6 +167,7 @@ void main() {
             upgraderV2: null,
             upgraderV3: null,
             upgraderV4: null,
+            upgraderV5: null,
           ),
           Metadata(
             lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5, 678, 901),
@@ -188,6 +191,7 @@ void main() {
             upgraderV2: null,
             upgraderV3: null,
             upgraderV4: null,
+            upgraderV5: null,
           ),
           Metadata(
             lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5, 678, 901),
@@ -211,6 +215,7 @@ void main() {
             upgraderV2: null,
             upgraderV3: null,
             upgraderV4: null,
+            upgraderV5: null,
           ),
           Metadata(
             lastUpdated: DateTime.utc(2020, 1, 2, 3, 4, 5, 678, 901),
@@ -296,6 +301,10 @@ void main() {
       group("gps", () {
         test("place1", _fromApiGpsPlace1);
         test("place2", _fromApiGpsPlace2);
+      });
+      group("OffsetTimeOriginal", () {
+        test("fixed", _fromApiOffsetTimeFixed);
+        test("broken", _fromApiOffsetTimeBroken);
       });
     });
   });
@@ -1363,6 +1372,27 @@ void _fromApiGpsPlace2() {
         "GPSAltitudeRef": 1,
       }),
     ),
+  );
+}
+
+void _fromApiOffsetTimeFixed() {
+  final actual = Metadata.fromApi(
+    etag: null,
+    size: {"width": "1234", "height": "5678"},
+    exif: {"OffsetTimeOriginal": "-03:30"},
+  );
+  expect(actual?.exif, Exif({"OffsetTimeOriginal": "-03:30"}));
+}
+
+void _fromApiOffsetTimeBroken() {
+  final actual = Metadata.fromApi(
+    etag: null,
+    size: {"width": "1234", "height": "5678"},
+    exif: {"UndefinedTag__x____": "-03:30"},
+  );
+  expect(
+    actual?.exif,
+    Exif({"UndefinedTag__x____": "-03:30", "_OffsetTimeOriginal": "-03:30"}),
   );
 }
 

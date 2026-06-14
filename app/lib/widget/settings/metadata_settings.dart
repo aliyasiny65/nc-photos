@@ -10,7 +10,7 @@ import 'package:nc_photos/service/service.dart';
 import 'package:nc_photos/snack_bar_manager.dart';
 import 'package:nc_photos/widget/page_visibility_mixin.dart';
 import 'package:np_log/np_log.dart';
-import 'package:np_platform_util/np_platform_util.dart';
+import 'package:np_ui/np_ui.dart';
 import 'package:to_string/to_string.dart';
 
 part 'metadata/bloc.dart';
@@ -65,74 +65,48 @@ class _WrappedMetadataSettingsState extends State<_WrappedMetadataSettings>
                   builder: (context, state) {
                     return SwitchListTile(
                       title: Text(L10n.global().settingsExifSupportTitle2),
-                      subtitle:
-                          state
-                              ? Text(
-                                L10n.global().settingsExifSupportTrueSubtitle,
-                              )
-                              : null,
+                      subtitle: state
+                          ? Text(L10n.global().settingsExifSupportTrueSubtitle)
+                          : null,
                       value: state,
                       onChanged: (value) => _onEnableChanged(context, value),
                     );
                   },
                 ),
-                if (getRawPlatform().isMobile)
-                  _BlocBuilder(
-                    buildWhen:
-                        (previous, current) =>
-                            previous.isEnable != current.isEnable ||
-                            previous.isWifiOnly != current.isWifiOnly,
-                    builder: (context, state) {
-                      return SwitchListTile(
-                        title: Text(L10n.global().settingsExifWifiOnlyTitle),
-                        subtitle:
-                            state.isWifiOnly
-                                ? null
-                                : Text(
-                                  L10n.global()
-                                      .settingsExifWifiOnlyFalseSubtitle,
-                                ),
-                        value: state.isWifiOnly,
-                        onChanged:
-                            state.isEnable
-                                ? (value) {
-                                  context.addEvent(_SetWifiOnly(value));
-                                }
-                                : null,
-                      );
-                    },
-                  ),
                 _BlocBuilder(
-                  buildWhen:
-                      (previous, current) =>
-                          previous.isEnable != current.isEnable ||
-                          previous.isFallback != current.isFallback,
-                  builder:
-                      (context, state) => SwitchListTile(
+                  buildWhen: (previous, current) =>
+                      previous.isEnable != current.isEnable ||
+                      previous.isFallback != current.isFallback,
+                  builder: (context, state) => SwitchListTile(
+                    title: Text(L10n.global().settingsFallbackClientExifTitle),
+                    subtitle: state.isFallback
+                        ? Text(L10n.global().settingsFallbackClientExifTrueText)
+                        : Text(
+                            L10n.global().settingsFallbackClientExifFalseText,
+                          ),
+                    value: state.isFallback,
+                    onChanged: state.isEnable
+                        ? (value) {
+                            _onFallbackChanged(context, value);
+                          }
+                        : null,
+                  ),
+                ),
+                _BlocSelector(
+                  selector: (state) => state.isBackupOnRemoteExifEdit,
+                  builder: (context, isBackupOnRemoteExifEdit) =>
+                      SwitchListTile(
                         title: Text(
-                          L10n.global().settingsFallbackClientExifTitle,
+                          L10n.global().settingsBackupOnRemoteExifEditTitle,
                         ),
-                        subtitle:
-                            state.isFallback
-                                ? Text(
-                                  L10n.global()
-                                      .settingsFallbackClientExifTrueText,
-                                )
-                                : Text(
-                                  L10n.global()
-                                      .settingsFallbackClientExifFalseText,
-                                ),
-                        value: state.isFallback,
-                        onChanged:
-                            state.isEnable
-                                ? (value) {
-                                  _onFallbackChanged(context, value);
-                                }
-                                : null,
+                        value: isBackupOnRemoteExifEdit,
+                        onChanged: (value) =>
+                            context.addEvent(_SetBackupOnRemoteExifEdit(value)),
                       ),
                 ),
               ]),
             ),
+            const SliverSafeBottom(),
           ],
         ),
       ),
@@ -143,34 +117,24 @@ class _WrappedMetadataSettingsState extends State<_WrappedMetadataSettings>
     if (value) {
       final result = await showDialog<bool>(
         context: context,
-        builder:
-            (context) => AlertDialog(
-              title: Text(L10n.global().exifSupportConfirmationDialogTitle2),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(L10n.global().exifSupportDetails),
-                  const SizedBox(height: 16),
-                  Text(L10n.global().exifSupportNextcloud28Notes),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    MaterialLocalizations.of(context).cancelButtonLabel,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  },
-                  child: Text(L10n.global().enableButtonLabel),
-                ),
-              ],
+        builder: (context) => AlertDialog(
+          title: Text(L10n.global().exifSupportConfirmationDialogTitle2),
+          content: Text(L10n.global().exifSupportNextcloud28Notes),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
             ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: Text(L10n.global().enableButtonLabel),
+            ),
+          ],
+        ),
       );
       if (context.mounted && result == true) {
         context.addEvent(const _SetEnable(true));
@@ -184,31 +148,28 @@ class _WrappedMetadataSettingsState extends State<_WrappedMetadataSettings>
     if (value) {
       final result = await showDialog<bool>(
         context: context,
-        builder:
-            (context) => AlertDialog(
-              title: Text(
-                L10n.global().settingsFallbackClientExifConfirmDialogTitle,
-              ),
-              content: Text(
-                L10n.global().settingsFallbackClientExifConfirmDialogText,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    MaterialLocalizations.of(context).cancelButtonLabel,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  },
-                  child: Text(L10n.global().enableButtonLabel),
-                ),
-              ],
+        builder: (context) => AlertDialog(
+          title: Text(
+            L10n.global().settingsFallbackClientExifConfirmDialogTitle,
+          ),
+          content: Text(
+            L10n.global().settingsFallbackClientExifConfirmDialogText,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
             ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: Text(L10n.global().enableButtonLabel),
+            ),
+          ],
+        ),
       );
       if (context.mounted && result == true) {
         context.addEvent(const _SetFallback(true));

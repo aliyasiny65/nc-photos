@@ -1,4 +1,4 @@
-part of '../home_photos2.dart';
+part of 'home_photos.dart';
 
 abstract class _Item implements SelectableItemMetadata {
   const _Item();
@@ -31,61 +31,67 @@ abstract class _FileItem extends _Item {
   final AnyFile file;
 }
 
-abstract class _NextcloudFileItem extends _FileItem {
-  _NextcloudFileItem({required this.remoteFile})
-    : super(file: remoteFile.toAnyFile());
-
-  final FileDescriptor remoteFile;
-}
-
-class _NextcloudPhotoItem extends _NextcloudFileItem {
-  _NextcloudPhotoItem({required super.remoteFile, required this.account})
-    : _previewUrl = NetworkRectThumbnail.imageUrlForFile(account, remoteFile);
+class _PhotoItem extends _FileItem {
+  const _PhotoItem({required super.file, required this.account});
 
   @override
   StaggeredTile get staggeredTile => const StaggeredTile.count(1, 1);
 
   @override
   Widget buildWidget(BuildContext context) {
-    return PhotoListImage(
-      account: account,
-      previewUrl: _previewUrl,
-      mime: file.mime,
-      isFavorite: remoteFile.fdIsFavorite,
-      heroKey: flutter_util.HeroTag.fromAnyFile(file),
+    return _BlocSelector(
+      selector: (state) => state.uploadingFiles,
+      builder: (context, uploadingFiles) =>
+          AnyFilePresenterFactory.photoListImage(
+            file,
+            account: account,
+          ).buildWidget(
+            shouldShowFavorite: true,
+            shouldUseHero: true,
+            isUploading:
+                uploadingFiles.indexWhere((e) => e.id == file.id) != -1,
+          ),
     );
   }
 
   final Account account;
-  final String _previewUrl;
 }
 
-class _NextcloudVideoItem extends _NextcloudFileItem {
-  _NextcloudVideoItem({required super.remoteFile, required this.account})
-    : _previewUrl = NetworkRectThumbnail.imageUrlForFile(account, remoteFile);
+class _VideoItem extends _FileItem {
+  const _VideoItem({required super.file, required this.account});
 
   @override
   StaggeredTile get staggeredTile => const StaggeredTile.count(1, 1);
 
   @override
   Widget buildWidget(BuildContext context) {
-    return PhotoListVideo(
-      account: account,
-      previewUrl: _previewUrl,
-      mime: file.mime,
-      isFavorite: remoteFile.fdIsFavorite,
-      onError: () {
-        context.addEvent(const _TripMissingVideoPreview());
-      },
+    return _BlocSelector(
+      selector: (state) => state.uploadingFiles,
+      builder: (context, uploadingFiles) =>
+          AnyFilePresenterFactory.photoListVideo(
+            file,
+            account: account,
+            onError: () {
+              context.addEvent(const _TripMissingVideoPreview());
+            },
+          ).buildWidget(
+            shouldShowFavorite: true,
+            isUploading:
+                uploadingFiles.indexWhere((e) => e.id == file.id) != -1,
+          ),
     );
   }
 
   final Account account;
-  final String _previewUrl;
 }
 
-class _DateItem extends _Item {
-  const _DateItem({required this.date, required this.isMonthOnly});
+class _SectionHeaderItem extends _Item {
+  const _SectionHeaderItem({
+    required this.date,
+    required this.isMonthOnly,
+    required this.height,
+    required this.children,
+  });
 
   @override
   String get id => "date-$date";
@@ -94,71 +100,88 @@ class _DateItem extends _Item {
   bool get isSelectable => false;
 
   @override
-  StaggeredTile get staggeredTile => const StaggeredTile.extent(99, 32);
+  StaggeredTile get staggeredTile => StaggeredTile.extent(99, height);
 
   @override
   Widget buildWidget(BuildContext context) {
-    return SizedBox(
-      height: AppDimension.of(context).timelineDateItemHeight,
-      child: PhotoListDate(date: date, isMonthOnly: isMonthOnly),
+    return _BlocSelector(
+      selector: (state) => state.selectedItems,
+      builder: (context, selectedItems) {
+        final isSectionSelected = selectedItems.containsAll(children);
+        return InkWell(
+          onTap: isSectionSelected
+              ? () {
+                  context.addEvent(_UnselectSection(date));
+                }
+              : null,
+          onLongPress: () {
+            if (isSectionSelected) {
+              context.addEvent(_UnselectSection(date));
+            } else {
+              context.addEvent(_SelectSection(date));
+            }
+          },
+          child: SizedBox(
+            height: height,
+            child: Row(
+              children: [
+                Expanded(
+                  child: PhotoListDate(date: date, isMonthOnly: isMonthOnly),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: IconButton(
+                    icon: isSectionSelected
+                        ? Icon(
+                            Icons.check_circle,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : const Icon(Icons.check_circle_outline, size: 20),
+                    color: Theme.of(context).colorScheme.onSurfaceLow,
+                    onPressed: () {
+                      if (isSectionSelected) {
+                        context.addEvent(_UnselectSection(date));
+                      } else {
+                        context.addEvent(_SelectSection(date));
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   final Date date;
   final bool isMonthOnly;
-}
-
-abstract class _LocalFileItem extends _FileItem {
-  _LocalFileItem({required this.localFile})
-    : super(file: localFile.toAnyFile());
-
-  final LocalFile localFile;
-}
-
-class _LocalPhotoItem extends _LocalFileItem {
-  _LocalPhotoItem({required super.localFile});
-
-  @override
-  StaggeredTile get staggeredTile => const StaggeredTile.count(1, 1);
-
-  @override
-  Widget buildWidget(BuildContext context) {
-    return PhotoListLocalImage(file: localFile);
-  }
-}
-
-class _LocalVideoItem extends _LocalFileItem {
-  _LocalVideoItem({required super.localFile});
-
-  @override
-  StaggeredTile get staggeredTile => const StaggeredTile.count(1, 1);
-
-  @override
-  Widget buildWidget(BuildContext context) {
-    return PhotoListLocalVideo(file: localFile);
-  }
+  final double height;
+  final List<_Item> children;
 }
 
 class _ItemTransformerArgument {
   const _ItemTransformerArgument({
     required this.account,
-    required this.files,
+    required this.anyFiles,
     required this.summary,
-    required this.localFiles,
-    required this.localSummary,
+    required this.mergedCounts,
     this.itemPerRow,
     this.itemSize,
     required this.isGroupByDay,
+    required this.dateHeight,
   });
 
   final Account account;
-  final List<FileDescriptor> files;
-  final DbFilesSummary summary;
-  final List<LocalFile> localFiles;
-  final LocalFilesSummary localSummary;
+  final List<AnyFile> anyFiles;
+  final AnyFilesSummary summary;
+  final Map<Date, int> mergedCounts;
   final int? itemPerRow;
   final double? itemSize;
   final bool isGroupByDay;
+  final double dateHeight;
 }
 
 class _ItemTransformerResult {
@@ -189,16 +212,6 @@ class _VisibleDate implements Comparable<_VisibleDate> {
 }
 
 enum _SelectionMenuOption { archive, delete, download }
-
-@toString
-class _ArchiveFailedError implements Exception {
-  const _ArchiveFailedError(this.count);
-
-  @override
-  String toString() => _$toString();
-
-  final int count;
-}
 
 @toString
 class _RemoveFailedError implements Exception {
@@ -240,24 +253,24 @@ class _SummaryFileItem extends _Item {
   final int index;
 }
 
-@toString
 class _ShareRequest {
-  const _ShareRequest({
-    required this.files,
-    required this.isRemoteShareOnly,
-    required this.isLocalShareOnly,
-  });
-
-  @override
-  String toString() => _$toString();
+  const _ShareRequest({required this.files});
 
   final List<AnyFile> files;
-  final bool isRemoteShareOnly;
-  final bool isLocalShareOnly;
 }
 
 class _UploadRequest {
   const _UploadRequest({required this.files});
+
+  final List<AnyFile> files;
+}
+
+@toString
+class _DeleteRequest {
+  const _DeleteRequest({required this.files});
+
+  @override
+  String toString() => _$toString();
 
   final List<AnyFile> files;
 }

@@ -1,4 +1,4 @@
-part of '../places_browser.dart';
+part of 'places_browser.dart';
 
 @npLog
 class _Item {
@@ -24,7 +24,7 @@ class _Item {
     }
   }
 
-  String get name => place.place;
+  LocalizedString get name => place.name;
   String? get coverUrl => _coverUrl;
   String? get coverMime => place.latestFileMime;
 

@@ -23,13 +23,14 @@ import 'package:nc_photos/widget/photo_list_item.dart';
 import 'package:nc_photos/widget/photo_list_util.dart' as photo_list_util;
 import 'package:nc_photos/widget/selectable_item_stream_list_mixin.dart';
 import 'package:nc_photos/widget/selection_app_bar.dart';
-import 'package:nc_photos_plugin/nc_photos_plugin.dart';
 import 'package:np_async/np_async.dart';
 import 'package:np_collection/np_collection.dart';
+import 'package:np_common/exception.dart';
 import 'package:np_common/object_util.dart';
 import 'package:np_log/np_log.dart';
 import 'package:np_platform_permission/np_platform_permission.dart';
 import 'package:np_platform_util/np_platform_util.dart';
+import 'package:np_ui/np_ui.dart';
 
 part 'enhanced_photo_browser.g.dart';
 
@@ -165,6 +166,7 @@ class _EnhancedPhotoBrowserState extends State<EnhancedPhotoBrowser>
               slivers: [
                 _buildAppBar(context),
                 buildItemStreamList(maxCrossAxisExtent: _thumbSize.toDouble()),
+                const SliverSafeBottom(),
               ],
             ),
           ),
@@ -207,13 +209,12 @@ class _EnhancedPhotoBrowserState extends State<EnhancedPhotoBrowser>
         ),
         PopupMenuButton<_SelectionMenuOption>(
           tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: _SelectionMenuOption.delete,
-                  child: Text(L10n.global().deletePermanentlyTooltip),
-                ),
-              ],
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: _SelectionMenuOption.delete,
+              child: Text(L10n.global().deletePermanentlyTooltip),
+            ),
+          ],
           onSelected: (option) => _onSelectionMenuSelected(context, option),
         ),
       ],
@@ -244,11 +245,10 @@ class _EnhancedPhotoBrowserState extends State<EnhancedPhotoBrowser>
 
   Future<void> _onSelectionSharePressed(BuildContext context) async {
     final c = KiwiContainer().resolve<DiContainer>();
-    final selected =
-        selectedListItems
-            .whereType<PhotoListLocalFileItem>()
-            .map((e) => e.file)
-            .toList();
+    final selected = selectedListItems
+        .whereType<PhotoListLocalFileItem>()
+        .map((e) => e.file)
+        .toList();
     await ShareHandler(
       c,
       context: context,
@@ -274,31 +274,29 @@ class _EnhancedPhotoBrowserState extends State<EnhancedPhotoBrowser>
   Future<void> _onSelectionDeletePressed(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(L10n.global().deletePermanentlyConfirmationDialogTitle),
-            content: Text(
-              L10n.global().deletePermanentlyLocalConfirmationDialogContent,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-                child: Text(L10n.global().confirmButtonLabel),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text(L10n.global().deletePermanentlyConfirmationDialogTitle),
+        content: Text(
+          L10n.global().deletePermanentlyLocalConfirmationDialogContent,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text(L10n.global().confirmButtonLabel),
           ),
+        ],
+      ),
     );
     if (result != true) {
       return;
     }
 
-    final selectedFiles =
-        selectedListItems
-            .whereType<PhotoListLocalFileItem>()
-            .map((e) => e.file)
-            .toList();
+    final selectedFiles = selectedListItems
+        .whereType<PhotoListLocalFileItem>()
+        .map((e) => e.file)
+        .toList();
     setState(() {
       clearSelectedItems();
     });

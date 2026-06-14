@@ -7,6 +7,7 @@ import 'package:nc_photos/entity/file.dart';
 import 'package:nc_photos/entity/file/repo.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/file_util.dart' as file_util;
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/exception.dart';
 import 'package:nc_photos/np_api_util.dart';
 import 'package:nc_photos/remote_storage_util.dart' as remote_storage_util;
@@ -27,6 +28,7 @@ class FileRemoteDataSource implements FileDataSource2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -68,8 +70,9 @@ class FileRemoteDataSource implements FileDataSource2 {
         "app:metadata": jsonEncode(metadata!.obj!.toJson()),
       if (isArchived?.obj != null) "app:is-archived": isArchived!.obj,
       if (overrideDateTime?.obj != null)
-        "app:override-date-time":
-            overrideDateTime!.obj!.toUtc().toIso8601String(),
+        "app:override-date-time": overrideDateTime!.obj!
+            .toUtc()
+            .toIso8601String(),
       if (favorite != null) "oc:favorite": favorite ? 1 : 0,
       if (location?.obj != null)
         "app:location": jsonEncode(location!.obj!.toJson()),
@@ -122,6 +125,7 @@ class FileNpDbDataSource implements FileDataSource2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -132,6 +136,7 @@ class FileNpDbDataSource implements FileDataSource2 {
     return _getFileDescriptors(
       account,
       shareDirPath,
+      location: location,
       timeRange: timeRange,
       isArchived: isArchived,
       isAscending: isAscending,
@@ -150,15 +155,13 @@ class FileNpDbDataSource implements FileDataSource2 {
     final dbObj = await db.getFileIdWithTimestamps(
       account: account.toDb(),
       // need this because this arg expect empty string for root instead of "."
-      includeRelativeRoots:
-          account.roots
-              .map(
-                (e) =>
-                    File(
-                      path: file_util.unstripPath(account, e),
-                    ).strippedPathWithEmpty,
-              )
-              .toList(),
+      includeRelativeRoots: account.roots
+          .map(
+            (e) => File(
+              path: file_util.unstripPath(account, e),
+            ).strippedPathWithEmpty,
+          )
+          .toList(),
       includeRelativeDirs: [File(path: shareDirPath).strippedPathWithEmpty],
       excludeRelativeRoots: [remote_storage_util.remoteStorageDirRelativePath],
       mimes: file_util.supportedFormatMimes,
@@ -166,7 +169,11 @@ class FileNpDbDataSource implements FileDataSource2 {
     );
     return dbObj
         .map(
-          (e) => FileIdWithTimestamp(fileId: e.fileId, timestamp: e.timestamp),
+          (e) => FileIdWithTimestamp(
+            fileId: e.fileId,
+            timestamp: e.timestamp,
+            filename: e.filename,
+          ),
         )
         .toList();
   }
@@ -196,20 +203,17 @@ class FileNpDbDataSource implements FileDataSource2 {
       isFavorite: favorite?.let(OrNull.new),
       isArchived: isArchived,
       overrideDateTime: overrideDateTime,
-      bestDateTime:
-          overrideDateTime == null && metadata == null
-              ? null
-              : file_util.getBestDateTime(
-                overrideDateTime:
-                    overrideDateTime == null
-                        ? (f as File).overrideDateTime
-                        : overrideDateTime.obj,
-                dateTimeOriginal:
-                    metadata == null
-                        ? (f as File).metadata?.exif?.dateTimeOriginal
-                        : metadata.obj?.exif?.dateTimeOriginal,
-                lastModified: (f as File).lastModified,
-              ),
+      bestDateTime: overrideDateTime == null && metadata == null
+          ? null
+          : file_util.getBestDateTime(
+              overrideDateTime: overrideDateTime == null
+                  ? (f as File).overrideDateTime
+                  : overrideDateTime.obj,
+              metadataDateTime: metadata == null
+                  ? (f as File).metadata?.dateTime
+                  : metadata.obj?.dateTime,
+              lastModified: (f as File).lastModified,
+            ),
       imageData: metadata?.let((e) => OrNull(e.obj?.toDb())),
       location: location?.let((e) => OrNull(e.obj?.toDb())),
     );
@@ -228,6 +232,7 @@ class FileNpDbDataSource implements FileDataSource2 {
   Future<List<FileDescriptor>> _getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -240,17 +245,16 @@ class FileNpDbDataSource implements FileDataSource2 {
     final results = await db.getFileDescriptors(
       account: account.toDb(),
       // need this because this arg expect empty string for root instead of "."
-      includeRelativeRoots:
-          account.roots
-              .map(
-                (e) =>
-                    File(
-                      path: file_util.unstripPath(account, e),
-                    ).strippedPathWithEmpty,
-              )
-              .toList(),
+      includeRelativeRoots: account.roots
+          .map(
+            (e) => File(
+              path: file_util.unstripPath(account, e),
+            ).strippedPathWithEmpty,
+          )
+          .toList(),
       includeRelativeDirs: [File(path: shareDirPath).strippedPathWithEmpty],
       excludeRelativeRoots: [remote_storage_util.remoteStorageDirRelativePath],
+      location: location,
       mimes: file_util.supportedFormatMimes,
       timeRange: timeRange,
       isArchived: isArchived,

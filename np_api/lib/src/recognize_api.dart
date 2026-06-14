@@ -1,7 +1,7 @@
 part of 'api.dart';
 
 class ApiRecognize {
-  const ApiRecognize(this.api, this.userId);
+  const ApiRecognize(this.api, this.userId, {required this.apiKey});
 
   ApiRecognizeFaces faces() => ApiRecognizeFaces(this);
   ApiRecognizeFace face(String name) => ApiRecognizeFace(this, name);
@@ -12,6 +12,7 @@ class ApiRecognize {
 
   final Api api;
   final String userId;
+  final String? apiKey;
 }
 
 @npLog
@@ -21,7 +22,14 @@ class ApiRecognizeFaces {
   Future<Response> propfind() async {
     final endpoint = "${recognize._userPath}/faces";
     try {
-      return await api.request("PROPFIND", endpoint);
+      return await api.request(
+        "PROPFIND",
+        endpoint,
+        header: {
+          if (recognize.apiKey != null)
+            "X-Recognize-Api-Key": recognize.apiKey!,
+        },
+      );
     } catch (e) {
       _log.severe("[propfind] Failed while propfind", e);
       rethrow;
@@ -52,14 +60,14 @@ class ApiRecognizeFace {
     try {
       final bool hasDavNs =
           (getcontentlength != null ||
-              getcontenttype != null ||
-              getetag != null ||
-              getlastmodified != null);
+          getcontenttype != null ||
+          getetag != null ||
+          getlastmodified != null);
       final bool hasNcNs =
           (faceDetections != null ||
-              fileMetadataSize != null ||
-              hasPreview != null ||
-              realpath != null);
+          fileMetadataSize != null ||
+          hasPreview != null ||
+          realpath != null);
       final bool hasOcNs = (favorite != null || fileid != null);
       if (!hasDavNs && !hasOcNs && !hasNcNs) {
         // no body
@@ -118,7 +126,11 @@ class ApiRecognizeFace {
       return await api.request(
         "PROPFIND",
         endpoint,
-        header: {"Content-Type": "application/xml"},
+        header: {
+          "Content-Type": "application/xml",
+          if (recognize.apiKey != null)
+            "X-Recognize-Api-Key": recognize.apiKey!,
+        },
         body: builder.buildDocument().toXmlString(),
       );
     } catch (e) {

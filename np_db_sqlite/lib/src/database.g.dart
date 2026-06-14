@@ -70,16 +70,14 @@ class $ServersTable extends Servers with TableInfo<$ServersTable, Server> {
   Server map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Server(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      address:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}address'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      )!,
     );
   }
 
@@ -290,21 +288,18 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   Account map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Account(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      server:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}server'],
-          )!,
-      userId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}user_id'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      server: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
     );
   }
 
@@ -530,9 +525,6 @@ class $FilesTable extends Files with TableInfo<$FilesTable, File> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
-    'lastModified',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime>
   lastModified = GeneratedColumn<DateTime>(
@@ -676,7 +668,6 @@ class $FilesTable extends Files with TableInfo<$FilesTable, File> {
         etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
       );
     }
-    context.handle(_lastModifiedMeta, const VerificationResult.success());
     if (data.containsKey('is_collection')) {
       context.handle(
         _isCollectionMeta,
@@ -726,21 +717,18 @@ class $FilesTable extends Files with TableInfo<$FilesTable, File> {
   File map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return File(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      server:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}server'],
-          )!,
-      fileId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}file_id'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      server: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server'],
+      )!,
+      fileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file_id'],
+      )!,
       contentLength: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}content_length'],
@@ -863,39 +851,31 @@ class File extends DataClass implements Insertable<File> {
       rowId: Value(rowId),
       server: Value(server),
       fileId: Value(fileId),
-      contentLength:
-          contentLength == null && nullToAbsent
-              ? const Value.absent()
-              : Value(contentLength),
-      contentType:
-          contentType == null && nullToAbsent
-              ? const Value.absent()
-              : Value(contentType),
+      contentLength: contentLength == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentLength),
+      contentType: contentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentType),
       etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
-      lastModified:
-          lastModified == null && nullToAbsent
-              ? const Value.absent()
-              : Value(lastModified),
-      isCollection:
-          isCollection == null && nullToAbsent
-              ? const Value.absent()
-              : Value(isCollection),
-      usedBytes:
-          usedBytes == null && nullToAbsent
-              ? const Value.absent()
-              : Value(usedBytes),
-      hasPreview:
-          hasPreview == null && nullToAbsent
-              ? const Value.absent()
-              : Value(hasPreview),
-      ownerId:
-          ownerId == null && nullToAbsent
-              ? const Value.absent()
-              : Value(ownerId),
-      ownerDisplayName:
-          ownerDisplayName == null && nullToAbsent
-              ? const Value.absent()
-              : Value(ownerDisplayName),
+      lastModified: lastModified == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModified),
+      isCollection: isCollection == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isCollection),
+      usedBytes: usedBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usedBytes),
+      hasPreview: hasPreview == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasPreview),
+      ownerId: ownerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerId),
+      ownerDisplayName: ownerDisplayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerDisplayName),
     );
   }
 
@@ -955,8 +935,9 @@ class File extends DataClass implements Insertable<File> {
     rowId: rowId ?? this.rowId,
     server: server ?? this.server,
     fileId: fileId ?? this.fileId,
-    contentLength:
-        contentLength.present ? contentLength.value : this.contentLength,
+    contentLength: contentLength.present
+        ? contentLength.value
+        : this.contentLength,
     contentType: contentType.present ? contentType.value : this.contentType,
     etag: etag.present ? etag.value : this.etag,
     lastModified: lastModified.present ? lastModified.value : this.lastModified,
@@ -964,39 +945,36 @@ class File extends DataClass implements Insertable<File> {
     usedBytes: usedBytes.present ? usedBytes.value : this.usedBytes,
     hasPreview: hasPreview.present ? hasPreview.value : this.hasPreview,
     ownerId: ownerId.present ? ownerId.value : this.ownerId,
-    ownerDisplayName:
-        ownerDisplayName.present
-            ? ownerDisplayName.value
-            : this.ownerDisplayName,
+    ownerDisplayName: ownerDisplayName.present
+        ? ownerDisplayName.value
+        : this.ownerDisplayName,
   );
   File copyWithCompanion(FilesCompanion data) {
     return File(
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       server: data.server.present ? data.server.value : this.server,
       fileId: data.fileId.present ? data.fileId.value : this.fileId,
-      contentLength:
-          data.contentLength.present
-              ? data.contentLength.value
-              : this.contentLength,
-      contentType:
-          data.contentType.present ? data.contentType.value : this.contentType,
+      contentLength: data.contentLength.present
+          ? data.contentLength.value
+          : this.contentLength,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
       etag: data.etag.present ? data.etag.value : this.etag,
-      lastModified:
-          data.lastModified.present
-              ? data.lastModified.value
-              : this.lastModified,
-      isCollection:
-          data.isCollection.present
-              ? data.isCollection.value
-              : this.isCollection,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      isCollection: data.isCollection.present
+          ? data.isCollection.value
+          : this.isCollection,
       usedBytes: data.usedBytes.present ? data.usedBytes.value : this.usedBytes,
-      hasPreview:
-          data.hasPreview.present ? data.hasPreview.value : this.hasPreview,
+      hasPreview: data.hasPreview.present
+          ? data.hasPreview.value
+          : this.hasPreview,
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
-      ownerDisplayName:
-          data.ownerDisplayName.present
-              ? data.ownerDisplayName.value
-              : this.ownerDisplayName,
+      ownerDisplayName: data.ownerDisplayName.present
+          ? data.ownerDisplayName.value
+          : this.ownerDisplayName,
     );
   }
 
@@ -1302,9 +1280,6 @@ class $AccountFilesTable extends AccountFiles
       'CHECK ("is_archived" IN (0, 1))',
     ),
   );
-  static const VerificationMeta _overrideDateTimeMeta = const VerificationMeta(
-    'overrideDateTime',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime>
   overrideDateTime = GeneratedColumn<DateTime>(
@@ -1314,9 +1289,6 @@ class $AccountFilesTable extends AccountFiles
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   ).withConverter<DateTime?>($AccountFilesTable.$converteroverrideDateTimen);
-  static const VerificationMeta _bestDateTimeMeta = const VerificationMeta(
-    'bestDateTime',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime, DateTime> bestDateTime =
       GeneratedColumn<DateTime>(
@@ -1394,8 +1366,6 @@ class $AccountFilesTable extends AccountFiles
         isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
       );
     }
-    context.handle(_overrideDateTimeMeta, const VerificationResult.success());
-    context.handle(_bestDateTimeMeta, const VerificationResult.success());
     return context;
   }
 
@@ -1409,26 +1379,22 @@ class $AccountFilesTable extends AccountFiles
   AccountFile map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return AccountFile(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      account:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}account'],
-          )!,
-      file:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}file'],
-          )!,
-      relativePath:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}relative_path'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      account: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account'],
+      )!,
+      file: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
       isFavorite: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_favorite'],
@@ -1516,18 +1482,15 @@ class AccountFile extends DataClass implements Insertable<AccountFile> {
       account: Value(account),
       file: Value(file),
       relativePath: Value(relativePath),
-      isFavorite:
-          isFavorite == null && nullToAbsent
-              ? const Value.absent()
-              : Value(isFavorite),
-      isArchived:
-          isArchived == null && nullToAbsent
-              ? const Value.absent()
-              : Value(isArchived),
-      overrideDateTime:
-          overrideDateTime == null && nullToAbsent
-              ? const Value.absent()
-              : Value(overrideDateTime),
+      isFavorite: isFavorite == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isFavorite),
+      isArchived: isArchived == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isArchived),
+      overrideDateTime: overrideDateTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(overrideDateTime),
       bestDateTime: Value(bestDateTime),
     );
   }
@@ -1581,10 +1544,9 @@ class AccountFile extends DataClass implements Insertable<AccountFile> {
     relativePath: relativePath ?? this.relativePath,
     isFavorite: isFavorite.present ? isFavorite.value : this.isFavorite,
     isArchived: isArchived.present ? isArchived.value : this.isArchived,
-    overrideDateTime:
-        overrideDateTime.present
-            ? overrideDateTime.value
-            : this.overrideDateTime,
+    overrideDateTime: overrideDateTime.present
+        ? overrideDateTime.value
+        : this.overrideDateTime,
     bestDateTime: bestDateTime ?? this.bestDateTime,
   );
   AccountFile copyWithCompanion(AccountFilesCompanion data) {
@@ -1592,22 +1554,21 @@ class AccountFile extends DataClass implements Insertable<AccountFile> {
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       account: data.account.present ? data.account.value : this.account,
       file: data.file.present ? data.file.value : this.file,
-      relativePath:
-          data.relativePath.present
-              ? data.relativePath.value
-              : this.relativePath,
-      isFavorite:
-          data.isFavorite.present ? data.isFavorite.value : this.isFavorite,
-      isArchived:
-          data.isArchived.present ? data.isArchived.value : this.isArchived,
-      overrideDateTime:
-          data.overrideDateTime.present
-              ? data.overrideDateTime.value
-              : this.overrideDateTime,
-      bestDateTime:
-          data.bestDateTime.present
-              ? data.bestDateTime.value
-              : this.bestDateTime,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+      overrideDateTime: data.overrideDateTime.present
+          ? data.overrideDateTime.value
+          : this.overrideDateTime,
+      bestDateTime: data.bestDateTime.present
+          ? data.bestDateTime.value
+          : this.bestDateTime,
     );
   }
 
@@ -1798,9 +1759,6 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
       'REFERENCES account_files (row_id) ON DELETE CASCADE',
     ),
   );
-  static const VerificationMeta _lastUpdatedMeta = const VerificationMeta(
-    'lastUpdated',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime, DateTime> lastUpdated =
       GeneratedColumn<DateTime>(
@@ -1850,6 +1808,15 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _xmpRawMeta = const VerificationMeta('xmpRaw');
+  @override
+  late final GeneratedColumn<String> xmpRaw = GeneratedColumn<String>(
+    'xmp_raw',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _srcMeta = const VerificationMeta('src');
   @override
   late final GeneratedColumn<int> src = GeneratedColumn<int>(
@@ -1858,9 +1825,6 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
     true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-  );
-  static const VerificationMeta _dateTimeOriginalMeta = const VerificationMeta(
-    'dateTimeOriginal',
   );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime>
@@ -1879,6 +1843,7 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
     width,
     height,
     exifRaw,
+    xmpRaw,
     src,
     dateTimeOriginal,
   ];
@@ -1903,7 +1868,6 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
         ),
       );
     }
-    context.handle(_lastUpdatedMeta, const VerificationResult.success());
     if (data.containsKey('file_etag')) {
       context.handle(
         _fileEtagMeta,
@@ -1928,13 +1892,18 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
         exifRaw.isAcceptableOrUnknown(data['exif_raw']!, _exifRawMeta),
       );
     }
+    if (data.containsKey('xmp_raw')) {
+      context.handle(
+        _xmpRawMeta,
+        xmpRaw.isAcceptableOrUnknown(data['xmp_raw']!, _xmpRawMeta),
+      );
+    }
     if (data.containsKey('src')) {
       context.handle(
         _srcMeta,
         src.isAcceptableOrUnknown(data['src']!, _srcMeta),
       );
     }
-    context.handle(_dateTimeOriginalMeta, const VerificationResult.success());
     return context;
   }
 
@@ -1944,11 +1913,10 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
   Image map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Image(
-      accountFile:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}account_file'],
-          )!,
+      accountFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_file'],
+      )!,
       lastUpdated: $ImagesTable.$converterlastUpdated.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime,
@@ -1970,6 +1938,10 @@ class $ImagesTable extends Images with TableInfo<$ImagesTable, Image> {
       exifRaw: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}exif_raw'],
+      ),
+      xmpRaw: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}xmp_raw'],
       ),
       src: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -2004,6 +1976,7 @@ class Image extends DataClass implements Insertable<Image> {
   final int? width;
   final int? height;
   final String? exifRaw;
+  final String? xmpRaw;
   final int? src;
   final DateTime? dateTimeOriginal;
   const Image({
@@ -2013,6 +1986,7 @@ class Image extends DataClass implements Insertable<Image> {
     this.width,
     this.height,
     this.exifRaw,
+    this.xmpRaw,
     this.src,
     this.dateTimeOriginal,
   });
@@ -2037,6 +2011,9 @@ class Image extends DataClass implements Insertable<Image> {
     if (!nullToAbsent || exifRaw != null) {
       map['exif_raw'] = Variable<String>(exifRaw);
     }
+    if (!nullToAbsent || xmpRaw != null) {
+      map['xmp_raw'] = Variable<String>(xmpRaw);
+    }
     if (!nullToAbsent || src != null) {
       map['src'] = Variable<int>(src);
     }
@@ -2052,23 +2029,25 @@ class Image extends DataClass implements Insertable<Image> {
     return ImagesCompanion(
       accountFile: Value(accountFile),
       lastUpdated: Value(lastUpdated),
-      fileEtag:
-          fileEtag == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fileEtag),
-      width:
-          width == null && nullToAbsent ? const Value.absent() : Value(width),
-      height:
-          height == null && nullToAbsent ? const Value.absent() : Value(height),
-      exifRaw:
-          exifRaw == null && nullToAbsent
-              ? const Value.absent()
-              : Value(exifRaw),
+      fileEtag: fileEtag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileEtag),
+      width: width == null && nullToAbsent
+          ? const Value.absent()
+          : Value(width),
+      height: height == null && nullToAbsent
+          ? const Value.absent()
+          : Value(height),
+      exifRaw: exifRaw == null && nullToAbsent
+          ? const Value.absent()
+          : Value(exifRaw),
+      xmpRaw: xmpRaw == null && nullToAbsent
+          ? const Value.absent()
+          : Value(xmpRaw),
       src: src == null && nullToAbsent ? const Value.absent() : Value(src),
-      dateTimeOriginal:
-          dateTimeOriginal == null && nullToAbsent
-              ? const Value.absent()
-              : Value(dateTimeOriginal),
+      dateTimeOriginal: dateTimeOriginal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateTimeOriginal),
     );
   }
 
@@ -2084,6 +2063,7 @@ class Image extends DataClass implements Insertable<Image> {
       width: serializer.fromJson<int?>(json['width']),
       height: serializer.fromJson<int?>(json['height']),
       exifRaw: serializer.fromJson<String?>(json['exifRaw']),
+      xmpRaw: serializer.fromJson<String?>(json['xmpRaw']),
       src: serializer.fromJson<int?>(json['src']),
       dateTimeOriginal: serializer.fromJson<DateTime?>(
         json['dateTimeOriginal'],
@@ -2100,6 +2080,7 @@ class Image extends DataClass implements Insertable<Image> {
       'width': serializer.toJson<int?>(width),
       'height': serializer.toJson<int?>(height),
       'exifRaw': serializer.toJson<String?>(exifRaw),
+      'xmpRaw': serializer.toJson<String?>(xmpRaw),
       'src': serializer.toJson<int?>(src),
       'dateTimeOriginal': serializer.toJson<DateTime?>(dateTimeOriginal),
     };
@@ -2112,6 +2093,7 @@ class Image extends DataClass implements Insertable<Image> {
     Value<int?> width = const Value.absent(),
     Value<int?> height = const Value.absent(),
     Value<String?> exifRaw = const Value.absent(),
+    Value<String?> xmpRaw = const Value.absent(),
     Value<int?> src = const Value.absent(),
     Value<DateTime?> dateTimeOriginal = const Value.absent(),
   }) => Image(
@@ -2121,27 +2103,29 @@ class Image extends DataClass implements Insertable<Image> {
     width: width.present ? width.value : this.width,
     height: height.present ? height.value : this.height,
     exifRaw: exifRaw.present ? exifRaw.value : this.exifRaw,
+    xmpRaw: xmpRaw.present ? xmpRaw.value : this.xmpRaw,
     src: src.present ? src.value : this.src,
-    dateTimeOriginal:
-        dateTimeOriginal.present
-            ? dateTimeOriginal.value
-            : this.dateTimeOriginal,
+    dateTimeOriginal: dateTimeOriginal.present
+        ? dateTimeOriginal.value
+        : this.dateTimeOriginal,
   );
   Image copyWithCompanion(ImagesCompanion data) {
     return Image(
-      accountFile:
-          data.accountFile.present ? data.accountFile.value : this.accountFile,
-      lastUpdated:
-          data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
+      accountFile: data.accountFile.present
+          ? data.accountFile.value
+          : this.accountFile,
+      lastUpdated: data.lastUpdated.present
+          ? data.lastUpdated.value
+          : this.lastUpdated,
       fileEtag: data.fileEtag.present ? data.fileEtag.value : this.fileEtag,
       width: data.width.present ? data.width.value : this.width,
       height: data.height.present ? data.height.value : this.height,
       exifRaw: data.exifRaw.present ? data.exifRaw.value : this.exifRaw,
+      xmpRaw: data.xmpRaw.present ? data.xmpRaw.value : this.xmpRaw,
       src: data.src.present ? data.src.value : this.src,
-      dateTimeOriginal:
-          data.dateTimeOriginal.present
-              ? data.dateTimeOriginal.value
-              : this.dateTimeOriginal,
+      dateTimeOriginal: data.dateTimeOriginal.present
+          ? data.dateTimeOriginal.value
+          : this.dateTimeOriginal,
     );
   }
 
@@ -2154,6 +2138,7 @@ class Image extends DataClass implements Insertable<Image> {
           ..write('width: $width, ')
           ..write('height: $height, ')
           ..write('exifRaw: $exifRaw, ')
+          ..write('xmpRaw: $xmpRaw, ')
           ..write('src: $src, ')
           ..write('dateTimeOriginal: $dateTimeOriginal')
           ..write(')'))
@@ -2168,6 +2153,7 @@ class Image extends DataClass implements Insertable<Image> {
     width,
     height,
     exifRaw,
+    xmpRaw,
     src,
     dateTimeOriginal,
   );
@@ -2181,6 +2167,7 @@ class Image extends DataClass implements Insertable<Image> {
           other.width == this.width &&
           other.height == this.height &&
           other.exifRaw == this.exifRaw &&
+          other.xmpRaw == this.xmpRaw &&
           other.src == this.src &&
           other.dateTimeOriginal == this.dateTimeOriginal);
 }
@@ -2192,6 +2179,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
   final Value<int?> width;
   final Value<int?> height;
   final Value<String?> exifRaw;
+  final Value<String?> xmpRaw;
   final Value<int?> src;
   final Value<DateTime?> dateTimeOriginal;
   const ImagesCompanion({
@@ -2201,6 +2189,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
     this.width = const Value.absent(),
     this.height = const Value.absent(),
     this.exifRaw = const Value.absent(),
+    this.xmpRaw = const Value.absent(),
     this.src = const Value.absent(),
     this.dateTimeOriginal = const Value.absent(),
   });
@@ -2211,6 +2200,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
     this.width = const Value.absent(),
     this.height = const Value.absent(),
     this.exifRaw = const Value.absent(),
+    this.xmpRaw = const Value.absent(),
     this.src = const Value.absent(),
     this.dateTimeOriginal = const Value.absent(),
   }) : lastUpdated = Value(lastUpdated);
@@ -2221,6 +2211,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
     Expression<int>? width,
     Expression<int>? height,
     Expression<String>? exifRaw,
+    Expression<String>? xmpRaw,
     Expression<int>? src,
     Expression<DateTime>? dateTimeOriginal,
   }) {
@@ -2231,6 +2222,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
       if (width != null) 'width': width,
       if (height != null) 'height': height,
       if (exifRaw != null) 'exif_raw': exifRaw,
+      if (xmpRaw != null) 'xmp_raw': xmpRaw,
       if (src != null) 'src': src,
       if (dateTimeOriginal != null) 'date_time_original': dateTimeOriginal,
     });
@@ -2243,6 +2235,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
     Value<int?>? width,
     Value<int?>? height,
     Value<String?>? exifRaw,
+    Value<String?>? xmpRaw,
     Value<int?>? src,
     Value<DateTime?>? dateTimeOriginal,
   }) {
@@ -2253,6 +2246,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
       width: width ?? this.width,
       height: height ?? this.height,
       exifRaw: exifRaw ?? this.exifRaw,
+      xmpRaw: xmpRaw ?? this.xmpRaw,
       src: src ?? this.src,
       dateTimeOriginal: dateTimeOriginal ?? this.dateTimeOriginal,
     );
@@ -2281,6 +2275,9 @@ class ImagesCompanion extends UpdateCompanion<Image> {
     if (exifRaw.present) {
       map['exif_raw'] = Variable<String>(exifRaw.value);
     }
+    if (xmpRaw.present) {
+      map['xmp_raw'] = Variable<String>(xmpRaw.value);
+    }
     if (src.present) {
       map['src'] = Variable<int>(src.value);
     }
@@ -2301,6 +2298,7 @@ class ImagesCompanion extends UpdateCompanion<Image> {
           ..write('width: $width, ')
           ..write('height: $height, ')
           ..write('exifRaw: $exifRaw, ')
+          ..write('xmpRaw: $xmpRaw, ')
           ..write('src: $src, ')
           ..write('dateTimeOriginal: $dateTimeOriginal')
           ..write(')'))
@@ -2328,25 +2326,16 @@ class $ImageLocationsTable extends ImageLocations
       'REFERENCES account_files (row_id) ON DELETE CASCADE',
     ),
   );
-  static const VerificationMeta _versionMeta = const VerificationMeta(
-    'version',
+  static const VerificationMeta _dataRevisionMeta = const VerificationMeta(
+    'dataRevision',
   );
   @override
-  late final GeneratedColumn<int> version = GeneratedColumn<int>(
-    'version',
+  late final GeneratedColumn<int> dataRevision = GeneratedColumn<int>(
+    'data_revision',
     aliasedName,
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _latitudeMeta = const VerificationMeta(
     'latitude',
@@ -2381,34 +2370,13 @@ class $ImageLocationsTable extends ImageLocations
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _admin1Meta = const VerificationMeta('admin1');
-  @override
-  late final GeneratedColumn<String> admin1 = GeneratedColumn<String>(
-    'admin1',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _admin2Meta = const VerificationMeta('admin2');
-  @override
-  late final GeneratedColumn<String> admin2 = GeneratedColumn<String>(
-    'admin2',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   @override
   List<GeneratedColumn> get $columns => [
     accountFile,
-    version,
-    name,
+    dataRevision,
     latitude,
     longitude,
     countryCode,
-    admin1,
-    admin2,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2431,19 +2399,16 @@ class $ImageLocationsTable extends ImageLocations
         ),
       );
     }
-    if (data.containsKey('version')) {
+    if (data.containsKey('data_revision')) {
       context.handle(
-        _versionMeta,
-        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+        _dataRevisionMeta,
+        dataRevision.isAcceptableOrUnknown(
+          data['data_revision']!,
+          _dataRevisionMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_versionMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
+      context.missing(_dataRevisionMeta);
     }
     if (data.containsKey('latitude')) {
       context.handle(
@@ -2466,18 +2431,6 @@ class $ImageLocationsTable extends ImageLocations
         ),
       );
     }
-    if (data.containsKey('admin1')) {
-      context.handle(
-        _admin1Meta,
-        admin1.isAcceptableOrUnknown(data['admin1']!, _admin1Meta),
-      );
-    }
-    if (data.containsKey('admin2')) {
-      context.handle(
-        _admin2Meta,
-        admin2.isAcceptableOrUnknown(data['admin2']!, _admin2Meta),
-      );
-    }
     return context;
   }
 
@@ -2487,20 +2440,14 @@ class $ImageLocationsTable extends ImageLocations
   ImageLocation map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ImageLocation(
-      accountFile:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}account_file'],
-          )!,
-      version:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}version'],
-          )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      ),
+      accountFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_file'],
+      )!,
+      dataRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}data_revision'],
+      )!,
       latitude: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}latitude'],
@@ -2513,14 +2460,6 @@ class $ImageLocationsTable extends ImageLocations
         DriftSqlType.string,
         data['${effectivePrefix}country_code'],
       ),
-      admin1: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}admin1'],
-      ),
-      admin2: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}admin2'],
-      ),
     );
   }
 
@@ -2532,31 +2471,22 @@ class $ImageLocationsTable extends ImageLocations
 
 class ImageLocation extends DataClass implements Insertable<ImageLocation> {
   final int accountFile;
-  final int version;
-  final String? name;
+  final int dataRevision;
   final double? latitude;
   final double? longitude;
   final String? countryCode;
-  final String? admin1;
-  final String? admin2;
   const ImageLocation({
     required this.accountFile,
-    required this.version,
-    this.name,
+    required this.dataRevision,
     this.latitude,
     this.longitude,
     this.countryCode,
-    this.admin1,
-    this.admin2,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['account_file'] = Variable<int>(accountFile);
-    map['version'] = Variable<int>(version);
-    if (!nullToAbsent || name != null) {
-      map['name'] = Variable<String>(name);
-    }
+    map['data_revision'] = Variable<int>(dataRevision);
     if (!nullToAbsent || latitude != null) {
       map['latitude'] = Variable<double>(latitude);
     }
@@ -2566,36 +2496,22 @@ class ImageLocation extends DataClass implements Insertable<ImageLocation> {
     if (!nullToAbsent || countryCode != null) {
       map['country_code'] = Variable<String>(countryCode);
     }
-    if (!nullToAbsent || admin1 != null) {
-      map['admin1'] = Variable<String>(admin1);
-    }
-    if (!nullToAbsent || admin2 != null) {
-      map['admin2'] = Variable<String>(admin2);
-    }
     return map;
   }
 
   ImageLocationsCompanion toCompanion(bool nullToAbsent) {
     return ImageLocationsCompanion(
       accountFile: Value(accountFile),
-      version: Value(version),
-      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
-      latitude:
-          latitude == null && nullToAbsent
-              ? const Value.absent()
-              : Value(latitude),
-      longitude:
-          longitude == null && nullToAbsent
-              ? const Value.absent()
-              : Value(longitude),
-      countryCode:
-          countryCode == null && nullToAbsent
-              ? const Value.absent()
-              : Value(countryCode),
-      admin1:
-          admin1 == null && nullToAbsent ? const Value.absent() : Value(admin1),
-      admin2:
-          admin2 == null && nullToAbsent ? const Value.absent() : Value(admin2),
+      dataRevision: Value(dataRevision),
+      latitude: latitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitude),
+      longitude: longitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitude),
+      countryCode: countryCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(countryCode),
     );
   }
 
@@ -2606,13 +2522,10 @@ class ImageLocation extends DataClass implements Insertable<ImageLocation> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ImageLocation(
       accountFile: serializer.fromJson<int>(json['accountFile']),
-      version: serializer.fromJson<int>(json['version']),
-      name: serializer.fromJson<String?>(json['name']),
+      dataRevision: serializer.fromJson<int>(json['dataRevision']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
       countryCode: serializer.fromJson<String?>(json['countryCode']),
-      admin1: serializer.fromJson<String?>(json['admin1']),
-      admin2: serializer.fromJson<String?>(json['admin2']),
     );
   }
   @override
@@ -2620,47 +2533,39 @@ class ImageLocation extends DataClass implements Insertable<ImageLocation> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'accountFile': serializer.toJson<int>(accountFile),
-      'version': serializer.toJson<int>(version),
-      'name': serializer.toJson<String?>(name),
+      'dataRevision': serializer.toJson<int>(dataRevision),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
       'countryCode': serializer.toJson<String?>(countryCode),
-      'admin1': serializer.toJson<String?>(admin1),
-      'admin2': serializer.toJson<String?>(admin2),
     };
   }
 
   ImageLocation copyWith({
     int? accountFile,
-    int? version,
-    Value<String?> name = const Value.absent(),
+    int? dataRevision,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
     Value<String?> countryCode = const Value.absent(),
-    Value<String?> admin1 = const Value.absent(),
-    Value<String?> admin2 = const Value.absent(),
   }) => ImageLocation(
     accountFile: accountFile ?? this.accountFile,
-    version: version ?? this.version,
-    name: name.present ? name.value : this.name,
+    dataRevision: dataRevision ?? this.dataRevision,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
     countryCode: countryCode.present ? countryCode.value : this.countryCode,
-    admin1: admin1.present ? admin1.value : this.admin1,
-    admin2: admin2.present ? admin2.value : this.admin2,
   );
   ImageLocation copyWithCompanion(ImageLocationsCompanion data) {
     return ImageLocation(
-      accountFile:
-          data.accountFile.present ? data.accountFile.value : this.accountFile,
-      version: data.version.present ? data.version.value : this.version,
-      name: data.name.present ? data.name.value : this.name,
+      accountFile: data.accountFile.present
+          ? data.accountFile.value
+          : this.accountFile,
+      dataRevision: data.dataRevision.present
+          ? data.dataRevision.value
+          : this.dataRevision,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
-      countryCode:
-          data.countryCode.present ? data.countryCode.value : this.countryCode,
-      admin1: data.admin1.present ? data.admin1.value : this.admin1,
-      admin2: data.admin2.present ? data.admin2.value : this.admin2,
+      countryCode: data.countryCode.present
+          ? data.countryCode.value
+          : this.countryCode,
     );
   }
 
@@ -2668,112 +2573,77 @@ class ImageLocation extends DataClass implements Insertable<ImageLocation> {
   String toString() {
     return (StringBuffer('ImageLocation(')
           ..write('accountFile: $accountFile, ')
-          ..write('version: $version, ')
-          ..write('name: $name, ')
+          ..write('dataRevision: $dataRevision, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
-          ..write('countryCode: $countryCode, ')
-          ..write('admin1: $admin1, ')
-          ..write('admin2: $admin2')
+          ..write('countryCode: $countryCode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-    accountFile,
-    version,
-    name,
-    latitude,
-    longitude,
-    countryCode,
-    admin1,
-    admin2,
-  );
+  int get hashCode =>
+      Object.hash(accountFile, dataRevision, latitude, longitude, countryCode);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ImageLocation &&
           other.accountFile == this.accountFile &&
-          other.version == this.version &&
-          other.name == this.name &&
+          other.dataRevision == this.dataRevision &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
-          other.countryCode == this.countryCode &&
-          other.admin1 == this.admin1 &&
-          other.admin2 == this.admin2);
+          other.countryCode == this.countryCode);
 }
 
 class ImageLocationsCompanion extends UpdateCompanion<ImageLocation> {
   final Value<int> accountFile;
-  final Value<int> version;
-  final Value<String?> name;
+  final Value<int> dataRevision;
   final Value<double?> latitude;
   final Value<double?> longitude;
   final Value<String?> countryCode;
-  final Value<String?> admin1;
-  final Value<String?> admin2;
   const ImageLocationsCompanion({
     this.accountFile = const Value.absent(),
-    this.version = const Value.absent(),
-    this.name = const Value.absent(),
+    this.dataRevision = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.countryCode = const Value.absent(),
-    this.admin1 = const Value.absent(),
-    this.admin2 = const Value.absent(),
   });
   ImageLocationsCompanion.insert({
     this.accountFile = const Value.absent(),
-    required int version,
-    this.name = const Value.absent(),
+    required int dataRevision,
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.countryCode = const Value.absent(),
-    this.admin1 = const Value.absent(),
-    this.admin2 = const Value.absent(),
-  }) : version = Value(version);
+  }) : dataRevision = Value(dataRevision);
   static Insertable<ImageLocation> custom({
     Expression<int>? accountFile,
-    Expression<int>? version,
-    Expression<String>? name,
+    Expression<int>? dataRevision,
     Expression<double>? latitude,
     Expression<double>? longitude,
     Expression<String>? countryCode,
-    Expression<String>? admin1,
-    Expression<String>? admin2,
   }) {
     return RawValuesInsertable({
       if (accountFile != null) 'account_file': accountFile,
-      if (version != null) 'version': version,
-      if (name != null) 'name': name,
+      if (dataRevision != null) 'data_revision': dataRevision,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       if (countryCode != null) 'country_code': countryCode,
-      if (admin1 != null) 'admin1': admin1,
-      if (admin2 != null) 'admin2': admin2,
     });
   }
 
   ImageLocationsCompanion copyWith({
     Value<int>? accountFile,
-    Value<int>? version,
-    Value<String?>? name,
+    Value<int>? dataRevision,
     Value<double?>? latitude,
     Value<double?>? longitude,
     Value<String?>? countryCode,
-    Value<String?>? admin1,
-    Value<String?>? admin2,
   }) {
     return ImageLocationsCompanion(
       accountFile: accountFile ?? this.accountFile,
-      version: version ?? this.version,
-      name: name ?? this.name,
+      dataRevision: dataRevision ?? this.dataRevision,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       countryCode: countryCode ?? this.countryCode,
-      admin1: admin1 ?? this.admin1,
-      admin2: admin2 ?? this.admin2,
     );
   }
 
@@ -2783,11 +2653,8 @@ class ImageLocationsCompanion extends UpdateCompanion<ImageLocation> {
     if (accountFile.present) {
       map['account_file'] = Variable<int>(accountFile.value);
     }
-    if (version.present) {
-      map['version'] = Variable<int>(version.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
+    if (dataRevision.present) {
+      map['data_revision'] = Variable<int>(dataRevision.value);
     }
     if (latitude.present) {
       map['latitude'] = Variable<double>(latitude.value);
@@ -2798,12 +2665,6 @@ class ImageLocationsCompanion extends UpdateCompanion<ImageLocation> {
     if (countryCode.present) {
       map['country_code'] = Variable<String>(countryCode.value);
     }
-    if (admin1.present) {
-      map['admin1'] = Variable<String>(admin1.value);
-    }
-    if (admin2.present) {
-      map['admin2'] = Variable<String>(admin2.value);
-    }
     return map;
   }
 
@@ -2811,13 +2672,10 @@ class ImageLocationsCompanion extends UpdateCompanion<ImageLocation> {
   String toString() {
     return (StringBuffer('ImageLocationsCompanion(')
           ..write('accountFile: $accountFile, ')
-          ..write('version: $version, ')
-          ..write('name: $name, ')
+          ..write('dataRevision: $dataRevision, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
-          ..write('countryCode: $countryCode, ')
-          ..write('admin1: $admin1, ')
-          ..write('admin2: $admin2')
+          ..write('countryCode: $countryCode')
           ..write(')'))
         .toString();
   }
@@ -2861,9 +2719,6 @@ class $TrashesTable extends Trashes with TableInfo<$TrashesTable, Trash> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _deletionTimeMeta = const VerificationMeta(
-    'deletionTime',
   );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime, DateTime> deletionTime =
@@ -2918,7 +2773,6 @@ class $TrashesTable extends Trashes with TableInfo<$TrashesTable, Trash> {
     } else if (isInserting) {
       context.missing(_originalLocationMeta);
     }
-    context.handle(_deletionTimeMeta, const VerificationResult.success());
     return context;
   }
 
@@ -2928,21 +2782,18 @@ class $TrashesTable extends Trashes with TableInfo<$TrashesTable, Trash> {
   Trash map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Trash(
-      file:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}file'],
-          )!,
-      filename:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}filename'],
-          )!,
-      originalLocation:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}original_location'],
-          )!,
+      file: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file'],
+      )!,
+      filename: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}filename'],
+      )!,
+      originalLocation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_location'],
+      )!,
       deletionTime: $TrashesTable.$converterdeletionTime.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime,
@@ -3033,14 +2884,12 @@ class Trash extends DataClass implements Insertable<Trash> {
     return Trash(
       file: data.file.present ? data.file.value : this.file,
       filename: data.filename.present ? data.filename.value : this.filename,
-      originalLocation:
-          data.originalLocation.present
-              ? data.originalLocation.value
-              : this.originalLocation,
-      deletionTime:
-          data.deletionTime.present
-              ? data.deletionTime.value
-              : this.deletionTime,
+      originalLocation: data.originalLocation.present
+          ? data.originalLocation.value
+          : this.originalLocation,
+      deletionTime: data.deletionTime.present
+          ? data.deletionTime.value
+          : this.deletionTime,
     );
   }
 
@@ -3215,16 +3064,14 @@ class $DirFilesTable extends DirFiles with TableInfo<$DirFilesTable, DirFile> {
   DirFile map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return DirFile(
-      dir:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}dir'],
-          )!,
-      child:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}child'],
-          )!,
+      dir: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dir'],
+      )!,
+      child: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}child'],
+      )!,
     );
   }
 
@@ -3412,9 +3259,6 @@ class $AlbumsTable extends Albums with TableInfo<$AlbumsTable, Album> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _lastUpdatedMeta = const VerificationMeta(
-    'lastUpdated',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime, DateTime> lastUpdated =
       GeneratedColumn<DateTime>(
@@ -3555,7 +3399,6 @@ class $AlbumsTable extends Albums with TableInfo<$AlbumsTable, Album> {
     } else if (isInserting) {
       context.missing(_versionMeta);
     }
-    context.handle(_lastUpdatedMeta, const VerificationResult.success());
     if (data.containsKey('name')) {
       context.handle(
         _nameMeta,
@@ -3639,66 +3482,56 @@ class $AlbumsTable extends Albums with TableInfo<$AlbumsTable, Album> {
   Album map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Album(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      file:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}file'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      file: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file'],
+      )!,
       fileEtag: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}file_etag'],
       ),
-      version:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}version'],
-          )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
       lastUpdated: $AlbumsTable.$converterlastUpdated.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime,
           data['${effectivePrefix}last_updated'],
         )!,
       ),
-      name:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}name'],
-          )!,
-      providerType:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}provider_type'],
-          )!,
-      providerContent:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}provider_content'],
-          )!,
-      coverProviderType:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}cover_provider_type'],
-          )!,
-      coverProviderContent:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}cover_provider_content'],
-          )!,
-      sortProviderType:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sort_provider_type'],
-          )!,
-      sortProviderContent:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}sort_provider_content'],
-          )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      providerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_type'],
+      )!,
+      providerContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_content'],
+      )!,
+      coverProviderType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_provider_type'],
+      )!,
+      coverProviderContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_provider_content'],
+      )!,
+      sortProviderType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sort_provider_type'],
+      )!,
+      sortProviderContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sort_provider_content'],
+      )!,
     );
   }
 
@@ -3766,10 +3599,9 @@ class Album extends DataClass implements Insertable<Album> {
     return AlbumsCompanion(
       rowId: Value(rowId),
       file: Value(file),
-      fileEtag:
-          fileEtag == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fileEtag),
+      fileEtag: fileEtag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileEtag),
       version: Value(version),
       lastUpdated: Value(lastUpdated),
       name: Value(name),
@@ -3858,33 +3690,28 @@ class Album extends DataClass implements Insertable<Album> {
       file: data.file.present ? data.file.value : this.file,
       fileEtag: data.fileEtag.present ? data.fileEtag.value : this.fileEtag,
       version: data.version.present ? data.version.value : this.version,
-      lastUpdated:
-          data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
+      lastUpdated: data.lastUpdated.present
+          ? data.lastUpdated.value
+          : this.lastUpdated,
       name: data.name.present ? data.name.value : this.name,
-      providerType:
-          data.providerType.present
-              ? data.providerType.value
-              : this.providerType,
-      providerContent:
-          data.providerContent.present
-              ? data.providerContent.value
-              : this.providerContent,
-      coverProviderType:
-          data.coverProviderType.present
-              ? data.coverProviderType.value
-              : this.coverProviderType,
-      coverProviderContent:
-          data.coverProviderContent.present
-              ? data.coverProviderContent.value
-              : this.coverProviderContent,
-      sortProviderType:
-          data.sortProviderType.present
-              ? data.sortProviderType.value
-              : this.sortProviderType,
-      sortProviderContent:
-          data.sortProviderContent.present
-              ? data.sortProviderContent.value
-              : this.sortProviderContent,
+      providerType: data.providerType.present
+          ? data.providerType.value
+          : this.providerType,
+      providerContent: data.providerContent.present
+          ? data.providerContent.value
+          : this.providerContent,
+      coverProviderType: data.coverProviderType.present
+          ? data.coverProviderType.value
+          : this.coverProviderType,
+      coverProviderContent: data.coverProviderContent.present
+          ? data.coverProviderContent.value
+          : this.coverProviderContent,
+      sortProviderType: data.sortProviderType.present
+          ? data.sortProviderType.value
+          : this.sortProviderType,
+      sortProviderContent: data.sortProviderContent.present
+          ? data.sortProviderContent.value
+          : this.sortProviderContent,
     );
   }
 
@@ -4158,9 +3985,6 @@ class $AlbumSharesTable extends AlbumShares
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _sharedAtMeta = const VerificationMeta(
-    'sharedAt',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime, DateTime> sharedAt =
       GeneratedColumn<DateTime>(
@@ -4209,7 +4033,6 @@ class $AlbumSharesTable extends AlbumShares
         ),
       );
     }
-    context.handle(_sharedAtMeta, const VerificationResult.success());
     return context;
   }
 
@@ -4219,16 +4042,14 @@ class $AlbumSharesTable extends AlbumShares
   AlbumShare map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return AlbumShare(
-      album:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}album'],
-          )!,
-      userId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}user_id'],
-          )!,
+      album: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}album'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
       displayName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
@@ -4282,10 +4103,9 @@ class AlbumShare extends DataClass implements Insertable<AlbumShare> {
     return AlbumSharesCompanion(
       album: Value(album),
       userId: Value(userId),
-      displayName:
-          displayName == null && nullToAbsent
-              ? const Value.absent()
-              : Value(displayName),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
       sharedAt: Value(sharedAt),
     );
   }
@@ -4328,8 +4148,9 @@ class AlbumShare extends DataClass implements Insertable<AlbumShare> {
     return AlbumShare(
       album: data.album.present ? data.album.value : this.album,
       userId: data.userId.present ? data.userId.value : this.userId,
-      displayName:
-          data.displayName.present ? data.displayName.value : this.displayName,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
       sharedAt: data.sharedAt.present ? data.sharedAt.value : this.sharedAt,
     );
   }
@@ -4610,26 +4431,22 @@ class $TagsTable extends Tags with TableInfo<$TagsTable, Tag> {
   Tag map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Tag(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      server:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}server'],
-          )!,
-      tagId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}tag_id'],
-          )!,
-      displayName:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}display_name'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      server: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server'],
+      )!,
+      tagId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tag_id'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
       userVisible: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}user_visible'],
@@ -4684,14 +4501,12 @@ class Tag extends DataClass implements Insertable<Tag> {
       server: Value(server),
       tagId: Value(tagId),
       displayName: Value(displayName),
-      userVisible:
-          userVisible == null && nullToAbsent
-              ? const Value.absent()
-              : Value(userVisible),
-      userAssignable:
-          userAssignable == null && nullToAbsent
-              ? const Value.absent()
-              : Value(userAssignable),
+      userVisible: userVisible == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userVisible),
+      userAssignable: userAssignable == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userAssignable),
     );
   }
 
@@ -4735,22 +4550,24 @@ class Tag extends DataClass implements Insertable<Tag> {
     tagId: tagId ?? this.tagId,
     displayName: displayName ?? this.displayName,
     userVisible: userVisible.present ? userVisible.value : this.userVisible,
-    userAssignable:
-        userAssignable.present ? userAssignable.value : this.userAssignable,
+    userAssignable: userAssignable.present
+        ? userAssignable.value
+        : this.userAssignable,
   );
   Tag copyWithCompanion(TagsCompanion data) {
     return Tag(
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       server: data.server.present ? data.server.value : this.server,
       tagId: data.tagId.present ? data.tagId.value : this.tagId,
-      displayName:
-          data.displayName.present ? data.displayName.value : this.displayName,
-      userVisible:
-          data.userVisible.present ? data.userVisible.value : this.userVisible,
-      userAssignable:
-          data.userAssignable.present
-              ? data.userAssignable.value
-              : this.userAssignable,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      userVisible: data.userVisible.present
+          ? data.userVisible.value
+          : this.userVisible,
+      userAssignable: data.userAssignable.present
+          ? data.userAssignable.value
+          : this.userAssignable,
     );
   }
 
@@ -5023,31 +4840,26 @@ class $FaceRecognitionPersonsTable extends FaceRecognitionPersons
   FaceRecognitionPerson map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return FaceRecognitionPerson(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      account:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}account'],
-          )!,
-      name:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}name'],
-          )!,
-      thumbFaceId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}thumb_face_id'],
-          )!,
-      count:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}count'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      account: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      thumbFaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}thumb_face_id'],
+      )!,
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
     );
   }
 
@@ -5137,8 +4949,9 @@ class FaceRecognitionPerson extends DataClass
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       account: data.account.present ? data.account.value : this.account,
       name: data.name.present ? data.name.value : this.name,
-      thumbFaceId:
-          data.thumbFaceId.present ? data.thumbFaceId.value : this.thumbFaceId,
+      thumbFaceId: data.thumbFaceId.present
+          ? data.thumbFaceId.value
+          : this.thumbFaceId,
       count: data.count.present ? data.count.value : this.count,
     );
   }
@@ -5334,9 +5147,6 @@ class $NcAlbumsTable extends NcAlbums with TableInfo<$NcAlbumsTable, NcAlbum> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _dateStartMeta = const VerificationMeta(
-    'dateStart',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime> dateStart =
       GeneratedColumn<DateTime>(
@@ -5346,9 +5156,6 @@ class $NcAlbumsTable extends NcAlbums with TableInfo<$NcAlbumsTable, NcAlbum> {
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       ).withConverter<DateTime?>($NcAlbumsTable.$converterdateStartn);
-  static const VerificationMeta _dateEndMeta = const VerificationMeta(
-    'dateEnd',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime> dateEnd =
       GeneratedColumn<DateTime>(
@@ -5453,8 +5260,6 @@ class $NcAlbumsTable extends NcAlbums with TableInfo<$NcAlbumsTable, NcAlbum> {
         location.isAcceptableOrUnknown(data['location']!, _locationMeta),
       );
     }
-    context.handle(_dateStartMeta, const VerificationResult.success());
-    context.handle(_dateEndMeta, const VerificationResult.success());
     if (data.containsKey('collaborators')) {
       context.handle(
         _collaboratorsMeta,
@@ -5487,30 +5292,26 @@ class $NcAlbumsTable extends NcAlbums with TableInfo<$NcAlbumsTable, NcAlbum> {
   NcAlbum map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return NcAlbum(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      account:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}account'],
-          )!,
-      relativePath:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}relative_path'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      account: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
       lastPhoto: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}last_photo'],
       ),
-      nbItems:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}nb_items'],
-          )!,
+      nbItems: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nb_items'],
+      )!,
       location: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}location'],
@@ -5527,16 +5328,14 @@ class $NcAlbumsTable extends NcAlbums with TableInfo<$NcAlbumsTable, NcAlbum> {
           data['${effectivePrefix}date_end'],
         ),
       ),
-      collaborators:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}collaborators'],
-          )!,
-      isOwned:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_owned'],
-          )!,
+      collaborators: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collaborators'],
+      )!,
+      isOwned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_owned'],
+      )!,
     );
   }
 
@@ -5611,23 +5410,19 @@ class NcAlbum extends DataClass implements Insertable<NcAlbum> {
       rowId: Value(rowId),
       account: Value(account),
       relativePath: Value(relativePath),
-      lastPhoto:
-          lastPhoto == null && nullToAbsent
-              ? const Value.absent()
-              : Value(lastPhoto),
+      lastPhoto: lastPhoto == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastPhoto),
       nbItems: Value(nbItems),
-      location:
-          location == null && nullToAbsent
-              ? const Value.absent()
-              : Value(location),
-      dateStart:
-          dateStart == null && nullToAbsent
-              ? const Value.absent()
-              : Value(dateStart),
-      dateEnd:
-          dateEnd == null && nullToAbsent
-              ? const Value.absent()
-              : Value(dateEnd),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      dateStart: dateStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateStart),
+      dateEnd: dateEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateEnd),
       collaborators: Value(collaborators),
       isOwned: Value(isOwned),
     );
@@ -5695,19 +5490,17 @@ class NcAlbum extends DataClass implements Insertable<NcAlbum> {
     return NcAlbum(
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       account: data.account.present ? data.account.value : this.account,
-      relativePath:
-          data.relativePath.present
-              ? data.relativePath.value
-              : this.relativePath,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
       lastPhoto: data.lastPhoto.present ? data.lastPhoto.value : this.lastPhoto,
       nbItems: data.nbItems.present ? data.nbItems.value : this.nbItems,
       location: data.location.present ? data.location.value : this.location,
       dateStart: data.dateStart.present ? data.dateStart.value : this.dateStart,
       dateEnd: data.dateEnd.present ? data.dateEnd.value : this.dateEnd,
-      collaborators:
-          data.collaborators.present
-              ? data.collaborators.value
-              : this.collaborators,
+      collaborators: data.collaborators.present
+          ? data.collaborators.value
+          : this.collaborators,
       isOwned: data.isOwned.present ? data.isOwned.value : this.isOwned,
     );
   }
@@ -5989,9 +5782,6 @@ class $NcAlbumItemsTable extends NcAlbumItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
-    'lastModified',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime>
   lastModified = GeneratedColumn<DateTime>(
@@ -6134,7 +5924,6 @@ class $NcAlbumItemsTable extends NcAlbumItems
         etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
       );
     }
-    context.handle(_lastModifiedMeta, const VerificationResult.success());
     if (data.containsKey('has_preview')) {
       context.handle(
         _hasPreviewMeta,
@@ -6178,26 +5967,22 @@ class $NcAlbumItemsTable extends NcAlbumItems
   NcAlbumItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return NcAlbumItem(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      parent:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}parent'],
-          )!,
-      relativePath:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}relative_path'],
-          )!,
-      fileId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}file_id'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      parent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}parent'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      fileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file_id'],
+      )!,
       contentLength: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}content_length'],
@@ -6315,35 +6100,28 @@ class NcAlbumItem extends DataClass implements Insertable<NcAlbumItem> {
       parent: Value(parent),
       relativePath: Value(relativePath),
       fileId: Value(fileId),
-      contentLength:
-          contentLength == null && nullToAbsent
-              ? const Value.absent()
-              : Value(contentLength),
-      contentType:
-          contentType == null && nullToAbsent
-              ? const Value.absent()
-              : Value(contentType),
+      contentLength: contentLength == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentLength),
+      contentType: contentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentType),
       etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
-      lastModified:
-          lastModified == null && nullToAbsent
-              ? const Value.absent()
-              : Value(lastModified),
-      hasPreview:
-          hasPreview == null && nullToAbsent
-              ? const Value.absent()
-              : Value(hasPreview),
-      isFavorite:
-          isFavorite == null && nullToAbsent
-              ? const Value.absent()
-              : Value(isFavorite),
-      fileMetadataWidth:
-          fileMetadataWidth == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fileMetadataWidth),
-      fileMetadataHeight:
-          fileMetadataHeight == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fileMetadataHeight),
+      lastModified: lastModified == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModified),
+      hasPreview: hasPreview == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasPreview),
+      isFavorite: isFavorite == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isFavorite),
+      fileMetadataWidth: fileMetadataWidth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileMetadataWidth),
+      fileMetadataHeight: fileMetadataHeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileMetadataHeight),
     );
   }
 
@@ -6404,54 +6182,51 @@ class NcAlbumItem extends DataClass implements Insertable<NcAlbumItem> {
     parent: parent ?? this.parent,
     relativePath: relativePath ?? this.relativePath,
     fileId: fileId ?? this.fileId,
-    contentLength:
-        contentLength.present ? contentLength.value : this.contentLength,
+    contentLength: contentLength.present
+        ? contentLength.value
+        : this.contentLength,
     contentType: contentType.present ? contentType.value : this.contentType,
     etag: etag.present ? etag.value : this.etag,
     lastModified: lastModified.present ? lastModified.value : this.lastModified,
     hasPreview: hasPreview.present ? hasPreview.value : this.hasPreview,
     isFavorite: isFavorite.present ? isFavorite.value : this.isFavorite,
-    fileMetadataWidth:
-        fileMetadataWidth.present
-            ? fileMetadataWidth.value
-            : this.fileMetadataWidth,
-    fileMetadataHeight:
-        fileMetadataHeight.present
-            ? fileMetadataHeight.value
-            : this.fileMetadataHeight,
+    fileMetadataWidth: fileMetadataWidth.present
+        ? fileMetadataWidth.value
+        : this.fileMetadataWidth,
+    fileMetadataHeight: fileMetadataHeight.present
+        ? fileMetadataHeight.value
+        : this.fileMetadataHeight,
   );
   NcAlbumItem copyWithCompanion(NcAlbumItemsCompanion data) {
     return NcAlbumItem(
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       parent: data.parent.present ? data.parent.value : this.parent,
-      relativePath:
-          data.relativePath.present
-              ? data.relativePath.value
-              : this.relativePath,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
       fileId: data.fileId.present ? data.fileId.value : this.fileId,
-      contentLength:
-          data.contentLength.present
-              ? data.contentLength.value
-              : this.contentLength,
-      contentType:
-          data.contentType.present ? data.contentType.value : this.contentType,
+      contentLength: data.contentLength.present
+          ? data.contentLength.value
+          : this.contentLength,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
       etag: data.etag.present ? data.etag.value : this.etag,
-      lastModified:
-          data.lastModified.present
-              ? data.lastModified.value
-              : this.lastModified,
-      hasPreview:
-          data.hasPreview.present ? data.hasPreview.value : this.hasPreview,
-      isFavorite:
-          data.isFavorite.present ? data.isFavorite.value : this.isFavorite,
-      fileMetadataWidth:
-          data.fileMetadataWidth.present
-              ? data.fileMetadataWidth.value
-              : this.fileMetadataWidth,
-      fileMetadataHeight:
-          data.fileMetadataHeight.present
-              ? data.fileMetadataHeight.value
-              : this.fileMetadataHeight,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      hasPreview: data.hasPreview.present
+          ? data.hasPreview.value
+          : this.hasPreview,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
+      fileMetadataWidth: data.fileMetadataWidth.present
+          ? data.fileMetadataWidth.value
+          : this.fileMetadataWidth,
+      fileMetadataHeight: data.fileMetadataHeight.present
+          ? data.fileMetadataHeight.value
+          : this.fileMetadataHeight,
     );
   }
 
@@ -6766,21 +6541,18 @@ class $RecognizeFacesTable extends RecognizeFaces
   RecognizeFace map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return RecognizeFace(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      account:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}account'],
-          )!,
-      label:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}label'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      account: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
     );
   }
 
@@ -7019,9 +6791,6 @@ class $RecognizeFaceItemsTable extends RecognizeFaceItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
-    'lastModified',
-  );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, DateTime>
   lastModified = GeneratedColumn<DateTime>(
@@ -7188,7 +6957,6 @@ class $RecognizeFaceItemsTable extends RecognizeFaceItems
         etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
       );
     }
-    context.handle(_lastModifiedMeta, const VerificationResult.success());
     if (data.containsKey('has_preview')) {
       context.handle(
         _hasPreviewMeta,
@@ -7247,26 +7015,22 @@ class $RecognizeFaceItemsTable extends RecognizeFaceItems
   RecognizeFaceItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return RecognizeFaceItem(
-      rowId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}row_id'],
-          )!,
-      parent:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}parent'],
-          )!,
-      relativePath:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}relative_path'],
-          )!,
-      fileId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}file_id'],
-          )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_id'],
+      )!,
+      parent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}parent'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      fileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file_id'],
+      )!,
       contentLength: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}content_length'],
@@ -7403,43 +7167,34 @@ class RecognizeFaceItem extends DataClass
       parent: Value(parent),
       relativePath: Value(relativePath),
       fileId: Value(fileId),
-      contentLength:
-          contentLength == null && nullToAbsent
-              ? const Value.absent()
-              : Value(contentLength),
-      contentType:
-          contentType == null && nullToAbsent
-              ? const Value.absent()
-              : Value(contentType),
+      contentLength: contentLength == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentLength),
+      contentType: contentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentType),
       etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
-      lastModified:
-          lastModified == null && nullToAbsent
-              ? const Value.absent()
-              : Value(lastModified),
-      hasPreview:
-          hasPreview == null && nullToAbsent
-              ? const Value.absent()
-              : Value(hasPreview),
-      realPath:
-          realPath == null && nullToAbsent
-              ? const Value.absent()
-              : Value(realPath),
-      isFavorite:
-          isFavorite == null && nullToAbsent
-              ? const Value.absent()
-              : Value(isFavorite),
-      fileMetadataWidth:
-          fileMetadataWidth == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fileMetadataWidth),
-      fileMetadataHeight:
-          fileMetadataHeight == null && nullToAbsent
-              ? const Value.absent()
-              : Value(fileMetadataHeight),
-      faceDetections:
-          faceDetections == null && nullToAbsent
-              ? const Value.absent()
-              : Value(faceDetections),
+      lastModified: lastModified == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModified),
+      hasPreview: hasPreview == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasPreview),
+      realPath: realPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(realPath),
+      isFavorite: isFavorite == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isFavorite),
+      fileMetadataWidth: fileMetadataWidth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileMetadataWidth),
+      fileMetadataHeight: fileMetadataHeight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileMetadataHeight),
+      faceDetections: faceDetections == null && nullToAbsent
+          ? const Value.absent()
+          : Value(faceDetections),
     );
   }
 
@@ -7506,62 +7261,59 @@ class RecognizeFaceItem extends DataClass
     parent: parent ?? this.parent,
     relativePath: relativePath ?? this.relativePath,
     fileId: fileId ?? this.fileId,
-    contentLength:
-        contentLength.present ? contentLength.value : this.contentLength,
+    contentLength: contentLength.present
+        ? contentLength.value
+        : this.contentLength,
     contentType: contentType.present ? contentType.value : this.contentType,
     etag: etag.present ? etag.value : this.etag,
     lastModified: lastModified.present ? lastModified.value : this.lastModified,
     hasPreview: hasPreview.present ? hasPreview.value : this.hasPreview,
     realPath: realPath.present ? realPath.value : this.realPath,
     isFavorite: isFavorite.present ? isFavorite.value : this.isFavorite,
-    fileMetadataWidth:
-        fileMetadataWidth.present
-            ? fileMetadataWidth.value
-            : this.fileMetadataWidth,
-    fileMetadataHeight:
-        fileMetadataHeight.present
-            ? fileMetadataHeight.value
-            : this.fileMetadataHeight,
-    faceDetections:
-        faceDetections.present ? faceDetections.value : this.faceDetections,
+    fileMetadataWidth: fileMetadataWidth.present
+        ? fileMetadataWidth.value
+        : this.fileMetadataWidth,
+    fileMetadataHeight: fileMetadataHeight.present
+        ? fileMetadataHeight.value
+        : this.fileMetadataHeight,
+    faceDetections: faceDetections.present
+        ? faceDetections.value
+        : this.faceDetections,
   );
   RecognizeFaceItem copyWithCompanion(RecognizeFaceItemsCompanion data) {
     return RecognizeFaceItem(
       rowId: data.rowId.present ? data.rowId.value : this.rowId,
       parent: data.parent.present ? data.parent.value : this.parent,
-      relativePath:
-          data.relativePath.present
-              ? data.relativePath.value
-              : this.relativePath,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
       fileId: data.fileId.present ? data.fileId.value : this.fileId,
-      contentLength:
-          data.contentLength.present
-              ? data.contentLength.value
-              : this.contentLength,
-      contentType:
-          data.contentType.present ? data.contentType.value : this.contentType,
+      contentLength: data.contentLength.present
+          ? data.contentLength.value
+          : this.contentLength,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
       etag: data.etag.present ? data.etag.value : this.etag,
-      lastModified:
-          data.lastModified.present
-              ? data.lastModified.value
-              : this.lastModified,
-      hasPreview:
-          data.hasPreview.present ? data.hasPreview.value : this.hasPreview,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      hasPreview: data.hasPreview.present
+          ? data.hasPreview.value
+          : this.hasPreview,
       realPath: data.realPath.present ? data.realPath.value : this.realPath,
-      isFavorite:
-          data.isFavorite.present ? data.isFavorite.value : this.isFavorite,
-      fileMetadataWidth:
-          data.fileMetadataWidth.present
-              ? data.fileMetadataWidth.value
-              : this.fileMetadataWidth,
-      fileMetadataHeight:
-          data.fileMetadataHeight.present
-              ? data.fileMetadataHeight.value
-              : this.fileMetadataHeight,
-      faceDetections:
-          data.faceDetections.present
-              ? data.faceDetections.value
-              : this.faceDetections,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
+      fileMetadataWidth: data.fileMetadataWidth.present
+          ? data.fileMetadataWidth.value
+          : this.fileMetadataWidth,
+      fileMetadataHeight: data.fileMetadataHeight.present
+          ? data.fileMetadataHeight.value
+          : this.fileMetadataHeight,
+      faceDetections: data.faceDetections.present
+          ? data.faceDetections.value
+          : this.faceDetections,
     );
   }
 
@@ -7815,6 +7567,601 @@ class RecognizeFaceItemsCompanion extends UpdateCompanion<RecognizeFaceItem> {
   }
 }
 
+class $ImageLocationNamesTable extends ImageLocationNames
+    with TableInfo<$ImageLocationNamesTable, ImageLocationName> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImageLocationNamesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dataRevisionMeta = const VerificationMeta(
+    'dataRevision',
+  );
+  @override
+  late final GeneratedColumn<int> dataRevision = GeneratedColumn<int>(
+    'data_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _geonameIdMeta = const VerificationMeta(
+    'geonameId',
+  );
+  @override
+  late final GeneratedColumn<int> geonameId = GeneratedColumn<int>(
+    'geoname_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _langMeta = const VerificationMeta('lang');
+  @override
+  late final GeneratedColumn<String> lang = GeneratedColumn<String>(
+    'lang',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [dataRevision, geonameId, lang, name];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'image_location_names';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImageLocationName> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('data_revision')) {
+      context.handle(
+        _dataRevisionMeta,
+        dataRevision.isAcceptableOrUnknown(
+          data['data_revision']!,
+          _dataRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dataRevisionMeta);
+    }
+    if (data.containsKey('geoname_id')) {
+      context.handle(
+        _geonameIdMeta,
+        geonameId.isAcceptableOrUnknown(data['geoname_id']!, _geonameIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_geonameIdMeta);
+    }
+    if (data.containsKey('lang')) {
+      context.handle(
+        _langMeta,
+        lang.isAcceptableOrUnknown(data['lang']!, _langMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_langMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dataRevision, geonameId, lang};
+  @override
+  ImageLocationName map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImageLocationName(
+      dataRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}data_revision'],
+      )!,
+      geonameId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}geoname_id'],
+      )!,
+      lang: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lang'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+    );
+  }
+
+  @override
+  $ImageLocationNamesTable createAlias(String alias) {
+    return $ImageLocationNamesTable(attachedDatabase, alias);
+  }
+}
+
+class ImageLocationName extends DataClass
+    implements Insertable<ImageLocationName> {
+  final int dataRevision;
+  final int geonameId;
+  final String lang;
+  final String name;
+  const ImageLocationName({
+    required this.dataRevision,
+    required this.geonameId,
+    required this.lang,
+    required this.name,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['data_revision'] = Variable<int>(dataRevision);
+    map['geoname_id'] = Variable<int>(geonameId);
+    map['lang'] = Variable<String>(lang);
+    map['name'] = Variable<String>(name);
+    return map;
+  }
+
+  ImageLocationNamesCompanion toCompanion(bool nullToAbsent) {
+    return ImageLocationNamesCompanion(
+      dataRevision: Value(dataRevision),
+      geonameId: Value(geonameId),
+      lang: Value(lang),
+      name: Value(name),
+    );
+  }
+
+  factory ImageLocationName.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImageLocationName(
+      dataRevision: serializer.fromJson<int>(json['dataRevision']),
+      geonameId: serializer.fromJson<int>(json['geonameId']),
+      lang: serializer.fromJson<String>(json['lang']),
+      name: serializer.fromJson<String>(json['name']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dataRevision': serializer.toJson<int>(dataRevision),
+      'geonameId': serializer.toJson<int>(geonameId),
+      'lang': serializer.toJson<String>(lang),
+      'name': serializer.toJson<String>(name),
+    };
+  }
+
+  ImageLocationName copyWith({
+    int? dataRevision,
+    int? geonameId,
+    String? lang,
+    String? name,
+  }) => ImageLocationName(
+    dataRevision: dataRevision ?? this.dataRevision,
+    geonameId: geonameId ?? this.geonameId,
+    lang: lang ?? this.lang,
+    name: name ?? this.name,
+  );
+  ImageLocationName copyWithCompanion(ImageLocationNamesCompanion data) {
+    return ImageLocationName(
+      dataRevision: data.dataRevision.present
+          ? data.dataRevision.value
+          : this.dataRevision,
+      geonameId: data.geonameId.present ? data.geonameId.value : this.geonameId,
+      lang: data.lang.present ? data.lang.value : this.lang,
+      name: data.name.present ? data.name.value : this.name,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImageLocationName(')
+          ..write('dataRevision: $dataRevision, ')
+          ..write('geonameId: $geonameId, ')
+          ..write('lang: $lang, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(dataRevision, geonameId, lang, name);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImageLocationName &&
+          other.dataRevision == this.dataRevision &&
+          other.geonameId == this.geonameId &&
+          other.lang == this.lang &&
+          other.name == this.name);
+}
+
+class ImageLocationNamesCompanion extends UpdateCompanion<ImageLocationName> {
+  final Value<int> dataRevision;
+  final Value<int> geonameId;
+  final Value<String> lang;
+  final Value<String> name;
+  final Value<int> rowid;
+  const ImageLocationNamesCompanion({
+    this.dataRevision = const Value.absent(),
+    this.geonameId = const Value.absent(),
+    this.lang = const Value.absent(),
+    this.name = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImageLocationNamesCompanion.insert({
+    required int dataRevision,
+    required int geonameId,
+    required String lang,
+    required String name,
+    this.rowid = const Value.absent(),
+  }) : dataRevision = Value(dataRevision),
+       geonameId = Value(geonameId),
+       lang = Value(lang),
+       name = Value(name);
+  static Insertable<ImageLocationName> custom({
+    Expression<int>? dataRevision,
+    Expression<int>? geonameId,
+    Expression<String>? lang,
+    Expression<String>? name,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dataRevision != null) 'data_revision': dataRevision,
+      if (geonameId != null) 'geoname_id': geonameId,
+      if (lang != null) 'lang': lang,
+      if (name != null) 'name': name,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImageLocationNamesCompanion copyWith({
+    Value<int>? dataRevision,
+    Value<int>? geonameId,
+    Value<String>? lang,
+    Value<String>? name,
+    Value<int>? rowid,
+  }) {
+    return ImageLocationNamesCompanion(
+      dataRevision: dataRevision ?? this.dataRevision,
+      geonameId: geonameId ?? this.geonameId,
+      lang: lang ?? this.lang,
+      name: name ?? this.name,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dataRevision.present) {
+      map['data_revision'] = Variable<int>(dataRevision.value);
+    }
+    if (geonameId.present) {
+      map['geoname_id'] = Variable<int>(geonameId.value);
+    }
+    if (lang.present) {
+      map['lang'] = Variable<String>(lang.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImageLocationNamesCompanion(')
+          ..write('dataRevision: $dataRevision, ')
+          ..write('geonameId: $geonameId, ')
+          ..write('lang: $lang, ')
+          ..write('name: $name, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ImageLocationIdsTable extends ImageLocationIds
+    with TableInfo<$ImageLocationIdsTable, ImageLocationId> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImageLocationIdsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _accountFileMeta = const VerificationMeta(
+    'accountFile',
+  );
+  @override
+  late final GeneratedColumn<int> accountFile = GeneratedColumn<int>(
+    'account_file',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES account_files (row_id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _geonameIdMeta = const VerificationMeta(
+    'geonameId',
+  );
+  @override
+  late final GeneratedColumn<int> geonameId = GeneratedColumn<int>(
+    'geoname_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ImageLocationType, int> type =
+      GeneratedColumn<int>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<ImageLocationType>($ImageLocationIdsTable.$convertertype);
+  @override
+  List<GeneratedColumn> get $columns => [accountFile, geonameId, type];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'image_location_ids';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImageLocationId> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('account_file')) {
+      context.handle(
+        _accountFileMeta,
+        accountFile.isAcceptableOrUnknown(
+          data['account_file']!,
+          _accountFileMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accountFileMeta);
+    }
+    if (data.containsKey('geoname_id')) {
+      context.handle(
+        _geonameIdMeta,
+        geonameId.isAcceptableOrUnknown(data['geoname_id']!, _geonameIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_geonameIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => const {};
+  @override
+  ImageLocationId map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImageLocationId(
+      accountFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_file'],
+      )!,
+      geonameId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}geoname_id'],
+      )!,
+      type: $ImageLocationIdsTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $ImageLocationIdsTable createAlias(String alias) {
+    return $ImageLocationIdsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<ImageLocationType, int> $convertertype =
+      const ImageLocationTypeConverter();
+}
+
+class ImageLocationId extends DataClass implements Insertable<ImageLocationId> {
+  final int accountFile;
+  final int geonameId;
+  final ImageLocationType type;
+  const ImageLocationId({
+    required this.accountFile,
+    required this.geonameId,
+    required this.type,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['account_file'] = Variable<int>(accountFile);
+    map['geoname_id'] = Variable<int>(geonameId);
+    {
+      map['type'] = Variable<int>(
+        $ImageLocationIdsTable.$convertertype.toSql(type),
+      );
+    }
+    return map;
+  }
+
+  ImageLocationIdsCompanion toCompanion(bool nullToAbsent) {
+    return ImageLocationIdsCompanion(
+      accountFile: Value(accountFile),
+      geonameId: Value(geonameId),
+      type: Value(type),
+    );
+  }
+
+  factory ImageLocationId.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImageLocationId(
+      accountFile: serializer.fromJson<int>(json['accountFile']),
+      geonameId: serializer.fromJson<int>(json['geonameId']),
+      type: serializer.fromJson<ImageLocationType>(json['type']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'accountFile': serializer.toJson<int>(accountFile),
+      'geonameId': serializer.toJson<int>(geonameId),
+      'type': serializer.toJson<ImageLocationType>(type),
+    };
+  }
+
+  ImageLocationId copyWith({
+    int? accountFile,
+    int? geonameId,
+    ImageLocationType? type,
+  }) => ImageLocationId(
+    accountFile: accountFile ?? this.accountFile,
+    geonameId: geonameId ?? this.geonameId,
+    type: type ?? this.type,
+  );
+  ImageLocationId copyWithCompanion(ImageLocationIdsCompanion data) {
+    return ImageLocationId(
+      accountFile: data.accountFile.present
+          ? data.accountFile.value
+          : this.accountFile,
+      geonameId: data.geonameId.present ? data.geonameId.value : this.geonameId,
+      type: data.type.present ? data.type.value : this.type,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImageLocationId(')
+          ..write('accountFile: $accountFile, ')
+          ..write('geonameId: $geonameId, ')
+          ..write('type: $type')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(accountFile, geonameId, type);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImageLocationId &&
+          other.accountFile == this.accountFile &&
+          other.geonameId == this.geonameId &&
+          other.type == this.type);
+}
+
+class ImageLocationIdsCompanion extends UpdateCompanion<ImageLocationId> {
+  final Value<int> accountFile;
+  final Value<int> geonameId;
+  final Value<ImageLocationType> type;
+  final Value<int> rowid;
+  const ImageLocationIdsCompanion({
+    this.accountFile = const Value.absent(),
+    this.geonameId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImageLocationIdsCompanion.insert({
+    required int accountFile,
+    required int geonameId,
+    required ImageLocationType type,
+    this.rowid = const Value.absent(),
+  }) : accountFile = Value(accountFile),
+       geonameId = Value(geonameId),
+       type = Value(type);
+  static Insertable<ImageLocationId> custom({
+    Expression<int>? accountFile,
+    Expression<int>? geonameId,
+    Expression<int>? type,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (accountFile != null) 'account_file': accountFile,
+      if (geonameId != null) 'geoname_id': geonameId,
+      if (type != null) 'type': type,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImageLocationIdsCompanion copyWith({
+    Value<int>? accountFile,
+    Value<int>? geonameId,
+    Value<ImageLocationType>? type,
+    Value<int>? rowid,
+  }) {
+    return ImageLocationIdsCompanion(
+      accountFile: accountFile ?? this.accountFile,
+      geonameId: geonameId ?? this.geonameId,
+      type: type ?? this.type,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (accountFile.present) {
+      map['account_file'] = Variable<int>(accountFile.value);
+    }
+    if (geonameId.present) {
+      map['geoname_id'] = Variable<int>(geonameId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<int>(
+        $ImageLocationIdsTable.$convertertype.toSql(type.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImageLocationIdsCompanion(')
+          ..write('accountFile: $accountFile, ')
+          ..write('geonameId: $geonameId, ')
+          ..write('type: $type, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$SqliteDb extends GeneratedDatabase {
   _$SqliteDb(QueryExecutor e) : super(e);
   $SqliteDbManager get managers => $SqliteDbManager(this);
@@ -7836,6 +8183,11 @@ abstract class _$SqliteDb extends GeneratedDatabase {
   late final $RecognizeFacesTable recognizeFaces = $RecognizeFacesTable(this);
   late final $RecognizeFaceItemsTable recognizeFaceItems =
       $RecognizeFaceItemsTable(this);
+  late final $ImageLocationNamesTable imageLocationNames =
+      $ImageLocationNamesTable(this);
+  late final $ImageLocationIdsTable imageLocationIds = $ImageLocationIdsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7857,6 +8209,8 @@ abstract class _$SqliteDb extends GeneratedDatabase {
     ncAlbumItems,
     recognizeFaces,
     recognizeFaceItems,
+    imageLocationNames,
+    imageLocationIds,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -7981,6 +8335,13 @@ abstract class _$SqliteDb extends GeneratedDatabase {
       ),
       result: [TableUpdate('recognize_face_items', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'account_files',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('image_location_ids', kind: UpdateKind.delete)],
+    ),
   ]);
 }
 
@@ -8004,7 +8365,7 @@ final class $$ServersTableReferences
     final manager = $$AccountsTableTableManager(
       $_db,
       $_db.accounts,
-    ).filter((f) => f.server.rowId($_item.rowId));
+    ).filter((f) => f.server.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_accountsRefsTable($_db));
     return ProcessedTableManager(
@@ -8023,7 +8384,7 @@ final class $$ServersTableReferences
     final manager = $$FilesTableTableManager(
       $_db,
       $_db.files,
-    ).filter((f) => f.server.rowId($_item.rowId));
+    ).filter((f) => f.server.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_filesRefsTable($_db));
     return ProcessedTableManager(
@@ -8042,7 +8403,7 @@ final class $$ServersTableReferences
     final manager = $$TagsTableTableManager(
       $_db,
       $_db.tags,
-    ).filter((f) => f.server.rowId($_item.rowId));
+    ).filter((f) => f.server.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_tagsRefsTable($_db));
     return ProcessedTableManager(
@@ -8280,12 +8641,12 @@ class $$ServersTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ServersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$ServersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$ServersTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$ServersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ServersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ServersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -8296,83 +8657,77 @@ class $$ServersTableTableManager
                 Value<int> rowId = const Value.absent(),
                 required String address,
               }) => ServersCompanion.insert(rowId: rowId, address: address),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$ServersTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            accountsRefs = false,
-            filesRefs = false,
-            tagsRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (accountsRefs) db.accounts,
-                if (filesRefs) db.files,
-                if (tagsRefs) db.tags,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (accountsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$ServersTableReferences
-                          ._accountsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ServersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({accountsRefs = false, filesRefs = false, tagsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (accountsRefs) db.accounts,
+                    if (filesRefs) db.files,
+                    if (tagsRefs) db.tags,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (accountsRefs)
+                        await $_getPrefetchedData<
+                          Server,
+                          $ServersTable,
+                          Account
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ServersTableReferences
+                              ._accountsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$ServersTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).accountsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.server == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (filesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$ServersTableReferences._filesRefsTable(
-                        db,
-                      ),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.server == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (filesRefs)
+                        await $_getPrefetchedData<Server, $ServersTable, File>(
+                          currentTable: table,
+                          referencedTable: $$ServersTableReferences
+                              ._filesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$ServersTableReferences(db, table, p0).filesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.server == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (tagsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$ServersTableReferences._tagsRefsTable(
-                        db,
-                      ),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.server == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (tagsRefs)
+                        await $_getPrefetchedData<Server, $ServersTable, Tag>(
+                          currentTable: table,
+                          referencedTable: $$ServersTableReferences
+                              ._tagsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$ServersTableReferences(db, table, p0).tagsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.server == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.server == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -8413,10 +8768,12 @@ final class $$AccountsTableReferences
   );
 
   $$ServersTableProcessedTableManager get server {
+    final $_column = $_itemColumn<int>('server')!;
+
     final manager = $$ServersTableTableManager(
       $_db,
       $_db.servers,
-    ).filter((f) => f.rowId($_item.server!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_serverTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -8434,7 +8791,7 @@ final class $$AccountsTableReferences
     final manager = $$AccountFilesTableTableManager(
       $_db,
       $_db.accountFiles,
-    ).filter((f) => f.account.rowId($_item.rowId));
+    ).filter((f) => f.account.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_accountFilesRefsTable($_db));
     return ProcessedTableManager(
@@ -8460,7 +8817,7 @@ final class $$AccountsTableReferences
     final manager = $$FaceRecognitionPersonsTableTableManager(
       $_db,
       $_db.faceRecognitionPersons,
-    ).filter((f) => f.account.rowId($_item.rowId));
+    ).filter((f) => f.account.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(
       _faceRecognitionPersonsRefsTable($_db),
@@ -8481,7 +8838,7 @@ final class $$AccountsTableReferences
     final manager = $$NcAlbumsTableTableManager(
       $_db,
       $_db.ncAlbums,
-    ).filter((f) => f.account.rowId($_item.rowId));
+    ).filter((f) => f.account.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_ncAlbumsRefsTable($_db));
     return ProcessedTableManager(
@@ -8502,7 +8859,7 @@ final class $$AccountsTableReferences
     final manager = $$RecognizeFacesTableTableManager(
       $_db,
       $_db.recognizeFaces,
-    ).filter((f) => f.account.rowId($_item.rowId));
+    ).filter((f) => f.account.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_recognizeFacesRefsTable($_db));
     return ProcessedTableManager(
@@ -8864,12 +9221,12 @@ class $$AccountsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$AccountsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$AccountsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$AccountsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AccountsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AccountsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AccountsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -8890,141 +9247,152 @@ class $$AccountsTableTableManager
                 server: server,
                 userId: userId,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$AccountsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            server = false,
-            accountFilesRefs = false,
-            faceRecognitionPersonsRefs = false,
-            ncAlbumsRefs = false,
-            recognizeFacesRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (accountFilesRefs) db.accountFiles,
-                if (faceRecognitionPersonsRefs) db.faceRecognitionPersons,
-                if (ncAlbumsRefs) db.ncAlbums,
-                if (recognizeFacesRefs) db.recognizeFaces,
-              ],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (server) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.server,
-                            referencedTable: $$AccountsTableReferences
-                                ._serverTable(db),
-                            referencedColumn:
-                                $$AccountsTableReferences
-                                    ._serverTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AccountsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                server = false,
+                accountFilesRefs = false,
+                faceRecognitionPersonsRefs = false,
+                ncAlbumsRefs = false,
+                recognizeFacesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (accountFilesRefs) db.accountFiles,
+                    if (faceRecognitionPersonsRefs) db.faceRecognitionPersons,
+                    if (ncAlbumsRefs) db.ncAlbums,
+                    if (recognizeFacesRefs) db.recognizeFaces,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (server) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.server,
+                                    referencedTable: $$AccountsTableReferences
+                                        ._serverTable(db),
+                                    referencedColumn: $$AccountsTableReferences
+                                        ._serverTable(db)
+                                        .rowId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (accountFilesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$AccountsTableReferences
-                          ._accountFilesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (accountFilesRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          AccountFile
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._accountFilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$AccountsTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).accountFilesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.account == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (faceRecognitionPersonsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$AccountsTableReferences
-                          ._faceRecognitionPersonsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.account == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (faceRecognitionPersonsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          FaceRecognitionPerson
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._faceRecognitionPersonsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$AccountsTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).faceRecognitionPersonsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.account == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (ncAlbumsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$AccountsTableReferences
-                          ._ncAlbumsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.account == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (ncAlbumsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          NcAlbum
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._ncAlbumsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$AccountsTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).ncAlbumsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.account == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (recognizeFacesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$AccountsTableReferences
-                          ._recognizeFacesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.account == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (recognizeFacesRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          RecognizeFace
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._recognizeFacesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$AccountsTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).recognizeFacesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.account == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.account == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -9089,10 +9457,12 @@ final class $$FilesTableReferences
   );
 
   $$ServersTableProcessedTableManager get server {
+    final $_column = $_itemColumn<int>('server')!;
+
     final manager = $$ServersTableTableManager(
       $_db,
       $_db.servers,
-    ).filter((f) => f.rowId($_item.server!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_serverTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -9110,7 +9480,7 @@ final class $$FilesTableReferences
     final manager = $$AccountFilesTableTableManager(
       $_db,
       $_db.accountFiles,
-    ).filter((f) => f.file.rowId($_item.rowId));
+    ).filter((f) => f.file.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_accountFilesRefsTable($_db));
     return ProcessedTableManager(
@@ -9129,7 +9499,7 @@ final class $$FilesTableReferences
     final manager = $$TrashesTableTableManager(
       $_db,
       $_db.trashes,
-    ).filter((f) => f.file.rowId($_item.rowId));
+    ).filter((f) => f.file.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_trashesRefsTable($_db));
     return ProcessedTableManager(
@@ -9148,7 +9518,7 @@ final class $$FilesTableReferences
     final manager = $$DirFilesTableTableManager(
       $_db,
       $_db.dirFiles,
-    ).filter((f) => f.dir.rowId($_item.rowId));
+    ).filter((f) => f.dir.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_dirFilesRefsTable($_db));
     return ProcessedTableManager(
@@ -9167,7 +9537,7 @@ final class $$FilesTableReferences
     final manager = $$DirFilesTableTableManager(
       $_db,
       $_db.dirFiles,
-    ).filter((f) => f.child.rowId($_item.rowId));
+    ).filter((f) => f.child.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_childTable($_db));
     return ProcessedTableManager(
@@ -9186,7 +9556,7 @@ final class $$FilesTableReferences
     final manager = $$AlbumsTableTableManager(
       $_db,
       $_db.albums,
-    ).filter((f) => f.file.rowId($_item.rowId));
+    ).filter((f) => f.file.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_albumsRefsTable($_db));
     return ProcessedTableManager(
@@ -9725,12 +10095,12 @@ class $$FilesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$FilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$FilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$FilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$FilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FilesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -9787,146 +10157,146 @@ class $$FilesTableTableManager
                 ownerId: ownerId,
                 ownerDisplayName: ownerDisplayName,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$FilesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            server = false,
-            accountFilesRefs = false,
-            trashesRefs = false,
-            dirFilesRefs = false,
-            child = false,
-            albumsRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (accountFilesRefs) db.accountFiles,
-                if (trashesRefs) db.trashes,
-                if (dirFilesRefs) db.dirFiles,
-                if (child) db.dirFiles,
-                if (albumsRefs) db.albums,
-              ],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (server) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.server,
-                            referencedTable: $$FilesTableReferences
-                                ._serverTable(db),
-                            referencedColumn:
-                                $$FilesTableReferences._serverTable(db).rowId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$FilesTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                server = false,
+                accountFilesRefs = false,
+                trashesRefs = false,
+                dirFilesRefs = false,
+                child = false,
+                albumsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (accountFilesRefs) db.accountFiles,
+                    if (trashesRefs) db.trashes,
+                    if (dirFilesRefs) db.dirFiles,
+                    if (child) db.dirFiles,
+                    if (albumsRefs) db.albums,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (server) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.server,
+                                    referencedTable: $$FilesTableReferences
+                                        ._serverTable(db),
+                                    referencedColumn: $$FilesTableReferences
+                                        ._serverTable(db)
+                                        .rowId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (accountFilesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$FilesTableReferences
-                          ._accountFilesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (accountFilesRefs)
+                        await $_getPrefetchedData<
+                          File,
+                          $FilesTable,
+                          AccountFile
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FilesTableReferences
+                              ._accountFilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$FilesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).accountFilesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.file == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (trashesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$FilesTableReferences._trashesRefsTable(
-                        db,
-                      ),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.file == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (trashesRefs)
+                        await $_getPrefetchedData<File, $FilesTable, Trash>(
+                          currentTable: table,
+                          referencedTable: $$FilesTableReferences
+                              ._trashesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$FilesTableReferences(db, table, p0).trashesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.file == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (dirFilesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$FilesTableReferences
-                          ._dirFilesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.file == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (dirFilesRefs)
+                        await $_getPrefetchedData<File, $FilesTable, DirFile>(
+                          currentTable: table,
+                          referencedTable: $$FilesTableReferences
+                              ._dirFilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$FilesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).dirFilesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) =>
-                              referencedItems.where((e) => e.dir == item.rowId),
-                      typedResults: items,
-                    ),
-                  if (child)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$FilesTableReferences._childTable(db),
-                      managerFromTypedResult:
-                          (p0) => $$FilesTableReferences(db, table, p0).child,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.child == item.rowId,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.dir == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (child)
+                        await $_getPrefetchedData<File, $FilesTable, DirFile>(
+                          currentTable: table,
+                          referencedTable: $$FilesTableReferences._childTable(
+                            db,
                           ),
-                      typedResults: items,
-                    ),
-                  if (albumsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$FilesTableReferences._albumsRefsTable(
-                        db,
-                      ),
-                      managerFromTypedResult:
-                          (p0) =>
+                          managerFromTypedResult: (p0) =>
+                              $$FilesTableReferences(db, table, p0).child,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.child == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (albumsRefs)
+                        await $_getPrefetchedData<File, $FilesTable, Album>(
+                          currentTable: table,
+                          referencedTable: $$FilesTableReferences
+                              ._albumsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$FilesTableReferences(db, table, p0).albumsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.file == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.file == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -9984,10 +10354,12 @@ final class $$AccountFilesTableReferences
   );
 
   $$AccountsTableProcessedTableManager get account {
+    final $_column = $_itemColumn<int>('account')!;
+
     final manager = $$AccountsTableTableManager(
       $_db,
       $_db.accounts,
-    ).filter((f) => f.rowId($_item.account!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -10000,10 +10372,12 @@ final class $$AccountFilesTableReferences
   );
 
   $$FilesTableProcessedTableManager get file {
+    final $_column = $_itemColumn<int>('file')!;
+
     final manager = $$FilesTableTableManager(
       $_db,
       $_db.files,
-    ).filter((f) => f.rowId($_item.file!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_fileTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -10022,10 +10396,9 @@ final class $$AccountFilesTableReferences
   );
 
   $$ImagesTableProcessedTableManager get imagesRefs {
-    final manager = $$ImagesTableTableManager(
-      $_db,
-      $_db.images,
-    ).filter((f) => f.accountFile.rowId($_item.rowId));
+    final manager = $$ImagesTableTableManager($_db, $_db.images).filter(
+      (f) => f.accountFile.rowId.sqlEquals($_itemColumn<int>('row_id')!),
+    );
 
     final cache = $_typedResult.readTableOrNull(_imagesRefsTable($_db));
     return ProcessedTableManager(
@@ -10043,12 +10416,35 @@ final class $$AccountFilesTableReferences
   );
 
   $$ImageLocationsTableProcessedTableManager get imageLocationsRefs {
-    final manager = $$ImageLocationsTableTableManager(
-      $_db,
-      $_db.imageLocations,
-    ).filter((f) => f.accountFile.rowId($_item.rowId));
+    final manager = $$ImageLocationsTableTableManager($_db, $_db.imageLocations)
+        .filter(
+          (f) => f.accountFile.rowId.sqlEquals($_itemColumn<int>('row_id')!),
+        );
 
     final cache = $_typedResult.readTableOrNull(_imageLocationsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ImageLocationIdsTable, List<ImageLocationId>>
+  _imageLocationIdsRefsTable(_$SqliteDb db) => MultiTypedResultKey.fromTable(
+    db.imageLocationIds,
+    aliasName: $_aliasNameGenerator(
+      db.accountFiles.rowId,
+      db.imageLocationIds.accountFile,
+    ),
+  );
+
+  $$ImageLocationIdsTableProcessedTableManager get imageLocationIdsRefs {
+    final manager =
+        $$ImageLocationIdsTableTableManager($_db, $_db.imageLocationIds).filter(
+          (f) => f.accountFile.rowId.sqlEquals($_itemColumn<int>('row_id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _imageLocationIdsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -10183,6 +10579,31 @@ class $$AccountFilesTableFilterComposer
           }) => $$ImageLocationsTableFilterComposer(
             $db: $db,
             $table: $db.imageLocations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> imageLocationIdsRefs(
+    Expression<bool> Function($$ImageLocationIdsTableFilterComposer f) f,
+  ) {
+    final $$ImageLocationIdsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rowId,
+      referencedTable: $db.imageLocationIds,
+      getReferencedColumn: (t) => t.accountFile,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ImageLocationIdsTableFilterComposer(
+            $db: $db,
+            $table: $db.imageLocationIds,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -10413,6 +10834,31 @@ class $$AccountFilesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> imageLocationIdsRefs<T extends Object>(
+    Expression<T> Function($$ImageLocationIdsTableAnnotationComposer a) f,
+  ) {
+    final $$ImageLocationIdsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rowId,
+      referencedTable: $db.imageLocationIds,
+      getReferencedColumn: (t) => t.accountFile,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ImageLocationIdsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.imageLocationIds,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountFilesTableTableManager
@@ -10433,6 +10879,7 @@ class $$AccountFilesTableTableManager
             bool file,
             bool imagesRefs,
             bool imageLocationsRefs,
+            bool imageLocationIdsRefs,
           })
         > {
   $$AccountFilesTableTableManager(_$SqliteDb db, $AccountFilesTable table)
@@ -10440,13 +10887,12 @@ class $$AccountFilesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$AccountFilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$AccountFilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$AccountFilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AccountFilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AccountFilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AccountFilesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -10487,116 +10933,147 @@ class $$AccountFilesTableTableManager
                 overrideDateTime: overrideDateTime,
                 bestDateTime: bestDateTime,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$AccountFilesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            account = false,
-            file = false,
-            imagesRefs = false,
-            imageLocationsRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (imagesRefs) db.images,
-                if (imageLocationsRefs) db.imageLocations,
-              ],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (account) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.account,
-                            referencedTable: $$AccountFilesTableReferences
-                                ._accountTable(db),
-                            referencedColumn:
-                                $$AccountFilesTableReferences
-                                    ._accountTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
-                if (file) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.file,
-                            referencedTable: $$AccountFilesTableReferences
-                                ._fileTable(db),
-                            referencedColumn:
-                                $$AccountFilesTableReferences
-                                    ._fileTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AccountFilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                account = false,
+                file = false,
+                imagesRefs = false,
+                imageLocationsRefs = false,
+                imageLocationIdsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (imagesRefs) db.images,
+                    if (imageLocationsRefs) db.imageLocations,
+                    if (imageLocationIdsRefs) db.imageLocationIds,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (account) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.account,
+                                    referencedTable:
+                                        $$AccountFilesTableReferences
+                                            ._accountTable(db),
+                                    referencedColumn:
+                                        $$AccountFilesTableReferences
+                                            ._accountTable(db)
+                                            .rowId,
+                                  )
+                                  as T;
+                        }
+                        if (file) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.file,
+                                    referencedTable:
+                                        $$AccountFilesTableReferences
+                                            ._fileTable(db),
+                                    referencedColumn:
+                                        $$AccountFilesTableReferences
+                                            ._fileTable(db)
+                                            .rowId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (imagesRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$AccountFilesTableReferences
-                          ._imagesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (imagesRefs)
+                        await $_getPrefetchedData<
+                          AccountFile,
+                          $AccountFilesTable,
+                          Image
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountFilesTableReferences
+                              ._imagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$AccountFilesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).imagesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.accountFile == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                  if (imageLocationsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$AccountFilesTableReferences
-                          ._imageLocationsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountFile == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (imageLocationsRefs)
+                        await $_getPrefetchedData<
+                          AccountFile,
+                          $AccountFilesTable,
+                          ImageLocation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountFilesTableReferences
+                              ._imageLocationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$AccountFilesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).imageLocationsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.accountFile == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountFile == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (imageLocationIdsRefs)
+                        await $_getPrefetchedData<
+                          AccountFile,
+                          $AccountFilesTable,
+                          ImageLocationId
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountFilesTableReferences
+                              ._imageLocationIdsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountFilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).imageLocationIdsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountFile == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -10618,6 +11095,7 @@ typedef $$AccountFilesTableProcessedTableManager =
         bool file,
         bool imagesRefs,
         bool imageLocationsRefs,
+        bool imageLocationIdsRefs,
       })
     >;
 typedef $$ImagesTableCreateCompanionBuilder =
@@ -10628,6 +11106,7 @@ typedef $$ImagesTableCreateCompanionBuilder =
       Value<int?> width,
       Value<int?> height,
       Value<String?> exifRaw,
+      Value<String?> xmpRaw,
       Value<int?> src,
       Value<DateTime?> dateTimeOriginal,
     });
@@ -10639,6 +11118,7 @@ typedef $$ImagesTableUpdateCompanionBuilder =
       Value<int?> width,
       Value<int?> height,
       Value<String?> exifRaw,
+      Value<String?> xmpRaw,
       Value<int?> src,
       Value<DateTime?> dateTimeOriginal,
     });
@@ -10653,10 +11133,12 @@ final class $$ImagesTableReferences
       );
 
   $$AccountFilesTableProcessedTableManager get accountFile {
+    final $_column = $_itemColumn<int>('account_file')!;
+
     final manager = $$AccountFilesTableTableManager(
       $_db,
       $_db.accountFiles,
-    ).filter((f) => f.rowId($_item.accountFile!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountFileTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -10696,6 +11178,11 @@ class $$ImagesTableFilterComposer extends Composer<_$SqliteDb, $ImagesTable> {
 
   ColumnFilters<String> get exifRaw => $composableBuilder(
     column: $table.exifRaw,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get xmpRaw => $composableBuilder(
+    column: $table.xmpRaw,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10767,6 +11254,11 @@ class $$ImagesTableOrderingComposer extends Composer<_$SqliteDb, $ImagesTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get xmpRaw => $composableBuilder(
+    column: $table.xmpRaw,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get src => $composableBuilder(
     column: $table.src,
     builder: (column) => ColumnOrderings(column),
@@ -10828,6 +11320,9 @@ class $$ImagesTableAnnotationComposer
   GeneratedColumn<String> get exifRaw =>
       $composableBuilder(column: $table.exifRaw, builder: (column) => column);
 
+  GeneratedColumn<String> get xmpRaw =>
+      $composableBuilder(column: $table.xmpRaw, builder: (column) => column);
+
   GeneratedColumn<int> get src =>
       $composableBuilder(column: $table.src, builder: (column) => column);
 
@@ -10881,12 +11376,12 @@ class $$ImagesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ImagesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$ImagesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$ImagesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$ImagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImagesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> accountFile = const Value.absent(),
@@ -10895,6 +11390,7 @@ class $$ImagesTableTableManager
                 Value<int?> width = const Value.absent(),
                 Value<int?> height = const Value.absent(),
                 Value<String?> exifRaw = const Value.absent(),
+                Value<String?> xmpRaw = const Value.absent(),
                 Value<int?> src = const Value.absent(),
                 Value<DateTime?> dateTimeOriginal = const Value.absent(),
               }) => ImagesCompanion(
@@ -10904,6 +11400,7 @@ class $$ImagesTableTableManager
                 width: width,
                 height: height,
                 exifRaw: exifRaw,
+                xmpRaw: xmpRaw,
                 src: src,
                 dateTimeOriginal: dateTimeOriginal,
               ),
@@ -10915,6 +11412,7 @@ class $$ImagesTableTableManager
                 Value<int?> width = const Value.absent(),
                 Value<int?> height = const Value.absent(),
                 Value<String?> exifRaw = const Value.absent(),
+                Value<String?> xmpRaw = const Value.absent(),
                 Value<int?> src = const Value.absent(),
                 Value<DateTime?> dateTimeOriginal = const Value.absent(),
               }) => ImagesCompanion.insert(
@@ -10924,55 +11422,52 @@ class $$ImagesTableTableManager
                 width: width,
                 height: height,
                 exifRaw: exifRaw,
+                xmpRaw: xmpRaw,
                 src: src,
                 dateTimeOriginal: dateTimeOriginal,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$ImagesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$ImagesTableReferences(db, table, e)),
+              )
+              .toList(),
           prefetchHooksCallback: ({accountFile = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (accountFile) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.accountFile,
-                            referencedTable: $$ImagesTableReferences
-                                ._accountFileTable(db),
-                            referencedColumn:
-                                $$ImagesTableReferences
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountFile) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountFile,
+                                referencedTable: $$ImagesTableReferences
+                                    ._accountFileTable(db),
+                                referencedColumn: $$ImagesTableReferences
                                     ._accountFileTable(db)
                                     .rowId,
-                          )
-                          as T;
-                }
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -10999,24 +11494,18 @@ typedef $$ImagesTableProcessedTableManager =
 typedef $$ImageLocationsTableCreateCompanionBuilder =
     ImageLocationsCompanion Function({
       Value<int> accountFile,
-      required int version,
-      Value<String?> name,
+      required int dataRevision,
       Value<double?> latitude,
       Value<double?> longitude,
       Value<String?> countryCode,
-      Value<String?> admin1,
-      Value<String?> admin2,
     });
 typedef $$ImageLocationsTableUpdateCompanionBuilder =
     ImageLocationsCompanion Function({
       Value<int> accountFile,
-      Value<int> version,
-      Value<String?> name,
+      Value<int> dataRevision,
       Value<double?> latitude,
       Value<double?> longitude,
       Value<String?> countryCode,
-      Value<String?> admin1,
-      Value<String?> admin2,
     });
 
 final class $$ImageLocationsTableReferences
@@ -11036,10 +11525,12 @@ final class $$ImageLocationsTableReferences
       );
 
   $$AccountFilesTableProcessedTableManager get accountFile {
+    final $_column = $_itemColumn<int>('account_file')!;
+
     final manager = $$AccountFilesTableTableManager(
       $_db,
       $_db.accountFiles,
-    ).filter((f) => f.rowId($_item.accountFile!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountFileTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -11057,13 +11548,8 @@ class $$ImageLocationsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get version => $composableBuilder(
-    column: $table.version,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
+  ColumnFilters<int> get dataRevision => $composableBuilder(
+    column: $table.dataRevision,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11079,16 +11565,6 @@ class $$ImageLocationsTableFilterComposer
 
   ColumnFilters<String> get countryCode => $composableBuilder(
     column: $table.countryCode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get admin1 => $composableBuilder(
-    column: $table.admin1,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get admin2 => $composableBuilder(
-    column: $table.admin2,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11125,13 +11601,8 @@ class $$ImageLocationsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get version => $composableBuilder(
-    column: $table.version,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
+  ColumnOrderings<int> get dataRevision => $composableBuilder(
+    column: $table.dataRevision,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11147,16 +11618,6 @@ class $$ImageLocationsTableOrderingComposer
 
   ColumnOrderings<String> get countryCode => $composableBuilder(
     column: $table.countryCode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get admin1 => $composableBuilder(
-    column: $table.admin1,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get admin2 => $composableBuilder(
-    column: $table.admin2,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11193,11 +11654,10 @@ class $$ImageLocationsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get version =>
-      $composableBuilder(column: $table.version, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<int> get dataRevision => $composableBuilder(
+    column: $table.dataRevision,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get latitude =>
       $composableBuilder(column: $table.latitude, builder: (column) => column);
@@ -11209,12 +11669,6 @@ class $$ImageLocationsTableAnnotationComposer
     column: $table.countryCode,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get admin1 =>
-      $composableBuilder(column: $table.admin1, builder: (column) => column);
-
-  GeneratedColumn<String> get admin2 =>
-      $composableBuilder(column: $table.admin2, builder: (column) => column);
 
   $$AccountFilesTableAnnotationComposer get accountFile {
     final $$AccountFilesTableAnnotationComposer composer = $composerBuilder(
@@ -11260,102 +11714,85 @@ class $$ImageLocationsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ImageLocationsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () =>
-                  $$ImageLocationsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$ImageLocationsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
+          createFilteringComposer: () =>
+              $$ImageLocationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImageLocationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImageLocationsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> accountFile = const Value.absent(),
-                Value<int> version = const Value.absent(),
-                Value<String?> name = const Value.absent(),
+                Value<int> dataRevision = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 Value<String?> countryCode = const Value.absent(),
-                Value<String?> admin1 = const Value.absent(),
-                Value<String?> admin2 = const Value.absent(),
               }) => ImageLocationsCompanion(
                 accountFile: accountFile,
-                version: version,
-                name: name,
+                dataRevision: dataRevision,
                 latitude: latitude,
                 longitude: longitude,
                 countryCode: countryCode,
-                admin1: admin1,
-                admin2: admin2,
               ),
           createCompanionCallback:
               ({
                 Value<int> accountFile = const Value.absent(),
-                required int version,
-                Value<String?> name = const Value.absent(),
+                required int dataRevision,
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 Value<String?> countryCode = const Value.absent(),
-                Value<String?> admin1 = const Value.absent(),
-                Value<String?> admin2 = const Value.absent(),
               }) => ImageLocationsCompanion.insert(
                 accountFile: accountFile,
-                version: version,
-                name: name,
+                dataRevision: dataRevision,
                 latitude: latitude,
                 longitude: longitude,
                 countryCode: countryCode,
-                admin1: admin1,
-                admin2: admin2,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$ImageLocationsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ImageLocationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({accountFile = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (accountFile) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.accountFile,
-                            referencedTable: $$ImageLocationsTableReferences
-                                ._accountFileTable(db),
-                            referencedColumn:
-                                $$ImageLocationsTableReferences
-                                    ._accountFileTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountFile) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountFile,
+                                referencedTable: $$ImageLocationsTableReferences
+                                    ._accountFileTable(db),
+                                referencedColumn:
+                                    $$ImageLocationsTableReferences
+                                        ._accountFileTable(db)
+                                        .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -11403,10 +11840,12 @@ final class $$TrashesTableReferences
   );
 
   $$FilesTableProcessedTableManager get file {
+    final $_column = $_itemColumn<int>('file')!;
+
     final manager = $$FilesTableTableManager(
       $_db,
       $_db.files,
-    ).filter((f) => f.rowId($_item.file!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_fileTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -11578,12 +12017,12 @@ class $$TrashesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$TrashesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$TrashesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$TrashesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$TrashesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrashesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrashesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> file = const Value.absent(),
@@ -11608,50 +12047,50 @@ class $$TrashesTableTableManager
                 originalLocation: originalLocation,
                 deletionTime: deletionTime,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$TrashesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TrashesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({file = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (file) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.file,
-                            referencedTable: $$TrashesTableReferences
-                                ._fileTable(db),
-                            referencedColumn:
-                                $$TrashesTableReferences._fileTable(db).rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (file) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.file,
+                                referencedTable: $$TrashesTableReferences
+                                    ._fileTable(db),
+                                referencedColumn: $$TrashesTableReferences
+                                    ._fileTable(db)
+                                    .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -11697,10 +12136,12 @@ final class $$DirFilesTableReferences
   );
 
   $$FilesTableProcessedTableManager get dir {
+    final $_column = $_itemColumn<int>('dir')!;
+
     final manager = $$FilesTableTableManager(
       $_db,
       $_db.files,
-    ).filter((f) => f.rowId($_item.dir!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_dirTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -11713,10 +12154,12 @@ final class $$DirFilesTableReferences
   );
 
   $$FilesTableProcessedTableManager get child {
+    final $_column = $_itemColumn<int>('child')!;
+
     final manager = $$FilesTableTableManager(
       $_db,
       $_db.files,
-    ).filter((f) => f.rowId($_item.child!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_childTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -11913,12 +12356,12 @@ class $$DirFilesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$DirFilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$DirFilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$DirFilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$DirFilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DirFilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DirFilesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> dir = const Value.absent(),
@@ -11935,62 +12378,63 @@ class $$DirFilesTableTableManager
                 child: child,
                 rowid: rowid,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$DirFilesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DirFilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({dir = false, child = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (dir) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.dir,
-                            referencedTable: $$DirFilesTableReferences
-                                ._dirTable(db),
-                            referencedColumn:
-                                $$DirFilesTableReferences._dirTable(db).rowId,
-                          )
-                          as T;
-                }
-                if (child) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.child,
-                            referencedTable: $$DirFilesTableReferences
-                                ._childTable(db),
-                            referencedColumn:
-                                $$DirFilesTableReferences._childTable(db).rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (dir) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.dir,
+                                referencedTable: $$DirFilesTableReferences
+                                    ._dirTable(db),
+                                referencedColumn: $$DirFilesTableReferences
+                                    ._dirTable(db)
+                                    .rowId,
+                              )
+                              as T;
+                    }
+                    if (child) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.child,
+                                referencedTable: $$DirFilesTableReferences
+                                    ._childTable(db),
+                                referencedColumn: $$DirFilesTableReferences
+                                    ._childTable(db)
+                                    .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -12054,10 +12498,12 @@ final class $$AlbumsTableReferences
   );
 
   $$FilesTableProcessedTableManager get file {
+    final $_column = $_itemColumn<int>('file')!;
+
     final manager = $$FilesTableTableManager(
       $_db,
       $_db.files,
-    ).filter((f) => f.rowId($_item.file!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_fileTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -12075,7 +12521,7 @@ final class $$AlbumsTableReferences
     final manager = $$AlbumSharesTableTableManager(
       $_db,
       $_db.albumShares,
-    ).filter((f) => f.album.rowId($_item.rowId));
+    ).filter((f) => f.album.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_albumSharesRefsTable($_db));
     return ProcessedTableManager(
@@ -12410,12 +12856,12 @@ class $$AlbumsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$AlbumsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$AlbumsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$AlbumsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AlbumsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AlbumsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AlbumsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -12472,69 +12918,62 @@ class $$AlbumsTableTableManager
                 sortProviderType: sortProviderType,
                 sortProviderContent: sortProviderContent,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$AlbumsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$AlbumsTableReferences(db, table, e)),
+              )
+              .toList(),
           prefetchHooksCallback: ({file = false, albumSharesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [if (albumSharesRefs) db.albumShares],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (file) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.file,
-                            referencedTable: $$AlbumsTableReferences._fileTable(
-                              db,
-                            ),
-                            referencedColumn:
-                                $$AlbumsTableReferences._fileTable(db).rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (file) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.file,
+                                referencedTable: $$AlbumsTableReferences
+                                    ._fileTable(db),
+                                referencedColumn: $$AlbumsTableReferences
+                                    ._fileTable(db)
+                                    .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (albumSharesRefs)
-                    await $_getPrefetchedData(
+                    await $_getPrefetchedData<Album, $AlbumsTable, AlbumShare>(
                       currentTable: table,
                       referencedTable: $$AlbumsTableReferences
                           ._albumSharesRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
-                              $$AlbumsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).albumSharesRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.album == item.rowId,
-                          ),
+                      managerFromTypedResult: (p0) => $$AlbumsTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).albumSharesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.album == item.rowId),
                       typedResults: items,
                     ),
                 ];
@@ -12585,10 +13024,12 @@ final class $$AlbumSharesTableReferences
   );
 
   $$AlbumsTableProcessedTableManager get album {
+    final $_column = $_itemColumn<int>('album')!;
+
     final manager = $$AlbumsTableTableManager(
       $_db,
       $_db.albums,
-    ).filter((f) => f.rowId($_item.album!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_albumTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -12758,13 +13199,12 @@ class $$AlbumSharesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$AlbumSharesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$AlbumSharesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$AlbumSharesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AlbumSharesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AlbumSharesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AlbumSharesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> album = const Value.absent(),
@@ -12793,52 +13233,50 @@ class $$AlbumSharesTableTableManager
                 sharedAt: sharedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$AlbumSharesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AlbumSharesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({album = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (album) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.album,
-                            referencedTable: $$AlbumSharesTableReferences
-                                ._albumTable(db),
-                            referencedColumn:
-                                $$AlbumSharesTableReferences
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (album) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.album,
+                                referencedTable: $$AlbumSharesTableReferences
+                                    ._albumTable(db),
+                                referencedColumn: $$AlbumSharesTableReferences
                                     ._albumTable(db)
                                     .rowId,
-                          )
-                          as T;
-                }
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -12890,10 +13328,12 @@ final class $$TagsTableReferences
   );
 
   $$ServersTableProcessedTableManager get server {
+    final $_column = $_itemColumn<int>('server')!;
+
     final manager = $$ServersTableTableManager(
       $_db,
       $_db.servers,
-    ).filter((f) => f.rowId($_item.server!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_serverTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -13089,12 +13529,12 @@ class $$TagsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$TagsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$TagsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$TagsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$TagsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TagsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TagsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -13127,51 +13567,48 @@ class $$TagsTableTableManager
                 userVisible: userVisible,
                 userAssignable: userAssignable,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$TagsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$TagsTableReferences(db, table, e)),
+              )
+              .toList(),
           prefetchHooksCallback: ({server = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (server) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.server,
-                            referencedTable: $$TagsTableReferences._serverTable(
-                              db,
-                            ),
-                            referencedColumn:
-                                $$TagsTableReferences._serverTable(db).rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (server) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.server,
+                                referencedTable: $$TagsTableReferences
+                                    ._serverTable(db),
+                                referencedColumn: $$TagsTableReferences
+                                    ._serverTable(db)
+                                    .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -13230,10 +13667,12 @@ final class $$FaceRecognitionPersonsTableReferences
   );
 
   $$AccountsTableProcessedTableManager get account {
+    final $_column = $_itemColumn<int>('account')!;
+
     final manager = $$AccountsTableTableManager(
       $_db,
       $_db.accounts,
-    ).filter((f) => f.rowId($_item.account!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -13417,18 +13856,18 @@ class $$FaceRecognitionPersonsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$FaceRecognitionPersonsTableFilterComposer(
+          createFilteringComposer: () =>
+              $$FaceRecognitionPersonsTableFilterComposer(
                 $db: db,
                 $table: table,
               ),
-          createOrderingComposer:
-              () => $$FaceRecognitionPersonsTableOrderingComposer(
+          createOrderingComposer: () =>
+              $$FaceRecognitionPersonsTableOrderingComposer(
                 $db: db,
                 $table: table,
               ),
-          createComputedFieldComposer:
-              () => $$FaceRecognitionPersonsTableAnnotationComposer(
+          createComputedFieldComposer: () =>
+              $$FaceRecognitionPersonsTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
@@ -13460,53 +13899,52 @@ class $$FaceRecognitionPersonsTableTableManager
                 thumbFaceId: thumbFaceId,
                 count: count,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$FaceRecognitionPersonsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FaceRecognitionPersonsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({account = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (account) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.account,
-                            referencedTable:
-                                $$FaceRecognitionPersonsTableReferences
-                                    ._accountTable(db),
-                            referencedColumn:
-                                $$FaceRecognitionPersonsTableReferences
-                                    ._accountTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (account) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.account,
+                                referencedTable:
+                                    $$FaceRecognitionPersonsTableReferences
+                                        ._accountTable(db),
+                                referencedColumn:
+                                    $$FaceRecognitionPersonsTableReferences
+                                        ._accountTable(db)
+                                        .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -13566,10 +14004,12 @@ final class $$NcAlbumsTableReferences
   );
 
   $$AccountsTableProcessedTableManager get account {
+    final $_column = $_itemColumn<int>('account')!;
+
     final manager = $$AccountsTableTableManager(
       $_db,
       $_db.accounts,
-    ).filter((f) => f.rowId($_item.account!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -13587,7 +14027,7 @@ final class $$NcAlbumsTableReferences
     final manager = $$NcAlbumItemsTableTableManager(
       $_db,
       $_db.ncAlbumItems,
-    ).filter((f) => f.parent.rowId($_item.rowId));
+    ).filter((f) => f.parent.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(_ncAlbumItemsRefsTable($_db));
     return ProcessedTableManager(
@@ -13888,12 +14328,12 @@ class $$NcAlbumsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$NcAlbumsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$NcAlbumsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$NcAlbumsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$NcAlbumsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NcAlbumsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NcAlbumsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -13942,70 +14382,68 @@ class $$NcAlbumsTableTableManager
                 collaborators: collaborators,
                 isOwned: isOwned,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$NcAlbumsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NcAlbumsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({account = false, ncAlbumItemsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [if (ncAlbumItemsRefs) db.ncAlbumItems],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (account) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.account,
-                            referencedTable: $$NcAlbumsTableReferences
-                                ._accountTable(db),
-                            referencedColumn:
-                                $$NcAlbumsTableReferences
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (account) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.account,
+                                referencedTable: $$NcAlbumsTableReferences
+                                    ._accountTable(db),
+                                referencedColumn: $$NcAlbumsTableReferences
                                     ._accountTable(db)
                                     .rowId,
-                          )
-                          as T;
-                }
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (ncAlbumItemsRefs)
-                    await $_getPrefetchedData(
+                    await $_getPrefetchedData<
+                      NcAlbum,
+                      $NcAlbumsTable,
+                      NcAlbumItem
+                    >(
                       currentTable: table,
                       referencedTable: $$NcAlbumsTableReferences
                           ._ncAlbumItemsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
-                              $$NcAlbumsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).ncAlbumItemsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.parent == item.rowId,
-                          ),
+                      managerFromTypedResult: (p0) => $$NcAlbumsTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).ncAlbumItemsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.parent == item.rowId),
                       typedResults: items,
                     ),
                 ];
@@ -14070,10 +14508,12 @@ final class $$NcAlbumItemsTableReferences
   );
 
   $$NcAlbumsTableProcessedTableManager get parent {
+    final $_column = $_itemColumn<int>('parent')!;
+
     final manager = $$NcAlbumsTableTableManager(
       $_db,
       $_db.ncAlbums,
-    ).filter((f) => f.rowId($_item.parent!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_parentTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -14362,13 +14802,12 @@ class $$NcAlbumItemsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$NcAlbumItemsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$NcAlbumItemsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$NcAlbumItemsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$NcAlbumItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NcAlbumItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NcAlbumItemsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -14425,52 +14864,50 @@ class $$NcAlbumItemsTableTableManager
                 fileMetadataWidth: fileMetadataWidth,
                 fileMetadataHeight: fileMetadataHeight,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$NcAlbumItemsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NcAlbumItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({parent = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (parent) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.parent,
-                            referencedTable: $$NcAlbumItemsTableReferences
-                                ._parentTable(db),
-                            referencedColumn:
-                                $$NcAlbumItemsTableReferences
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (parent) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.parent,
+                                referencedTable: $$NcAlbumItemsTableReferences
+                                    ._parentTable(db),
+                                referencedColumn: $$NcAlbumItemsTableReferences
                                     ._parentTable(db)
                                     .rowId,
-                          )
-                          as T;
-                }
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -14520,10 +14957,12 @@ final class $$RecognizeFacesTableReferences
   );
 
   $$AccountsTableProcessedTableManager get account {
+    final $_column = $_itemColumn<int>('account')!;
+
     final manager = $$AccountsTableTableManager(
       $_db,
       $_db.accounts,
-    ).filter((f) => f.rowId($_item.account!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_accountTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -14544,7 +14983,7 @@ final class $$RecognizeFacesTableReferences
     final manager = $$RecognizeFaceItemsTableTableManager(
       $_db,
       $_db.recognizeFaceItems,
-    ).filter((f) => f.parent.rowId($_item.rowId));
+    ).filter((f) => f.parent.rowId.sqlEquals($_itemColumn<int>('row_id')!));
 
     final cache = $_typedResult.readTableOrNull(
       _recognizeFaceItemsRefsTable($_db),
@@ -14751,16 +15190,12 @@ class $$RecognizeFacesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$RecognizeFacesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () =>
-                  $$RecognizeFacesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$RecognizeFacesTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
+          createFilteringComposer: () =>
+              $$RecognizeFacesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecognizeFacesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecognizeFacesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> rowId = const Value.absent(),
@@ -14781,81 +15216,82 @@ class $$RecognizeFacesTableTableManager
                 account: account,
                 label: label,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$RecognizeFacesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({
-            account = false,
-            recognizeFaceItemsRefs = false,
-          }) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (recognizeFaceItemsRefs) db.recognizeFaceItems,
-              ],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (account) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.account,
-                            referencedTable: $$RecognizeFacesTableReferences
-                                ._accountTable(db),
-                            referencedColumn:
-                                $$RecognizeFacesTableReferences
-                                    ._accountTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RecognizeFacesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({account = false, recognizeFaceItemsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recognizeFaceItemsRefs) db.recognizeFaceItems,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (account) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.account,
+                                    referencedTable:
+                                        $$RecognizeFacesTableReferences
+                                            ._accountTable(db),
+                                    referencedColumn:
+                                        $$RecognizeFacesTableReferences
+                                            ._accountTable(db)
+                                            .rowId,
+                                  )
+                                  as T;
+                        }
 
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (recognizeFaceItemsRefs)
-                    await $_getPrefetchedData(
-                      currentTable: table,
-                      referencedTable: $$RecognizeFacesTableReferences
-                          ._recognizeFaceItemsRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recognizeFaceItemsRefs)
+                        await $_getPrefetchedData<
+                          RecognizeFace,
+                          $RecognizeFacesTable,
+                          RecognizeFaceItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecognizeFacesTableReferences
+                              ._recognizeFaceItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
                               $$RecognizeFacesTableReferences(
                                 db,
                                 table,
                                 p0,
                               ).recognizeFaceItemsRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.parent == item.rowId,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.parent == item.rowId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -14931,10 +15367,12 @@ final class $$RecognizeFaceItemsTableReferences
       );
 
   $$RecognizeFacesTableProcessedTableManager get parent {
+    final $_column = $_itemColumn<int>('parent')!;
+
     final manager = $$RecognizeFacesTableTableManager(
       $_db,
       $_db.recognizeFaces,
-    ).filter((f) => f.rowId($_item.parent!));
+    ).filter((f) => f.rowId.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_parentTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -15253,18 +15691,12 @@ class $$RecognizeFaceItemsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$RecognizeFaceItemsTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer:
-              () => $$RecognizeFaceItemsTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer:
-              () => $$RecognizeFaceItemsTableAnnotationComposer(
+          createFilteringComposer: () =>
+              $$RecognizeFaceItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecognizeFaceItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecognizeFaceItemsTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
@@ -15332,52 +15764,52 @@ class $$RecognizeFaceItemsTableTableManager
                 fileMetadataHeight: fileMetadataHeight,
                 faceDetections: faceDetections,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$RecognizeFaceItemsTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RecognizeFaceItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({parent = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (parent) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.parent,
-                            referencedTable: $$RecognizeFaceItemsTableReferences
-                                ._parentTable(db),
-                            referencedColumn:
-                                $$RecognizeFaceItemsTableReferences
-                                    ._parentTable(db)
-                                    .rowId,
-                          )
-                          as T;
-                }
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (parent) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.parent,
+                                referencedTable:
+                                    $$RecognizeFaceItemsTableReferences
+                                        ._parentTable(db),
+                                referencedColumn:
+                                    $$RecognizeFaceItemsTableReferences
+                                        ._parentTable(db)
+                                        .rowId,
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -15400,6 +15832,492 @@ typedef $$RecognizeFaceItemsTableProcessedTableManager =
       (RecognizeFaceItem, $$RecognizeFaceItemsTableReferences),
       RecognizeFaceItem,
       PrefetchHooks Function({bool parent})
+    >;
+typedef $$ImageLocationNamesTableCreateCompanionBuilder =
+    ImageLocationNamesCompanion Function({
+      required int dataRevision,
+      required int geonameId,
+      required String lang,
+      required String name,
+      Value<int> rowid,
+    });
+typedef $$ImageLocationNamesTableUpdateCompanionBuilder =
+    ImageLocationNamesCompanion Function({
+      Value<int> dataRevision,
+      Value<int> geonameId,
+      Value<String> lang,
+      Value<String> name,
+      Value<int> rowid,
+    });
+
+class $$ImageLocationNamesTableFilterComposer
+    extends Composer<_$SqliteDb, $ImageLocationNamesTable> {
+  $$ImageLocationNamesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get dataRevision => $composableBuilder(
+    column: $table.dataRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get geonameId => $composableBuilder(
+    column: $table.geonameId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lang => $composableBuilder(
+    column: $table.lang,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ImageLocationNamesTableOrderingComposer
+    extends Composer<_$SqliteDb, $ImageLocationNamesTable> {
+  $$ImageLocationNamesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get dataRevision => $composableBuilder(
+    column: $table.dataRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get geonameId => $composableBuilder(
+    column: $table.geonameId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lang => $composableBuilder(
+    column: $table.lang,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ImageLocationNamesTableAnnotationComposer
+    extends Composer<_$SqliteDb, $ImageLocationNamesTable> {
+  $$ImageLocationNamesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get dataRevision => $composableBuilder(
+    column: $table.dataRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get geonameId =>
+      $composableBuilder(column: $table.geonameId, builder: (column) => column);
+
+  GeneratedColumn<String> get lang =>
+      $composableBuilder(column: $table.lang, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+}
+
+class $$ImageLocationNamesTableTableManager
+    extends
+        RootTableManager<
+          _$SqliteDb,
+          $ImageLocationNamesTable,
+          ImageLocationName,
+          $$ImageLocationNamesTableFilterComposer,
+          $$ImageLocationNamesTableOrderingComposer,
+          $$ImageLocationNamesTableAnnotationComposer,
+          $$ImageLocationNamesTableCreateCompanionBuilder,
+          $$ImageLocationNamesTableUpdateCompanionBuilder,
+          (
+            ImageLocationName,
+            BaseReferences<
+              _$SqliteDb,
+              $ImageLocationNamesTable,
+              ImageLocationName
+            >,
+          ),
+          ImageLocationName,
+          PrefetchHooks Function()
+        > {
+  $$ImageLocationNamesTableTableManager(
+    _$SqliteDb db,
+    $ImageLocationNamesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImageLocationNamesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImageLocationNamesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImageLocationNamesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> dataRevision = const Value.absent(),
+                Value<int> geonameId = const Value.absent(),
+                Value<String> lang = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImageLocationNamesCompanion(
+                dataRevision: dataRevision,
+                geonameId: geonameId,
+                lang: lang,
+                name: name,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int dataRevision,
+                required int geonameId,
+                required String lang,
+                required String name,
+                Value<int> rowid = const Value.absent(),
+              }) => ImageLocationNamesCompanion.insert(
+                dataRevision: dataRevision,
+                geonameId: geonameId,
+                lang: lang,
+                name: name,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ImageLocationNamesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SqliteDb,
+      $ImageLocationNamesTable,
+      ImageLocationName,
+      $$ImageLocationNamesTableFilterComposer,
+      $$ImageLocationNamesTableOrderingComposer,
+      $$ImageLocationNamesTableAnnotationComposer,
+      $$ImageLocationNamesTableCreateCompanionBuilder,
+      $$ImageLocationNamesTableUpdateCompanionBuilder,
+      (
+        ImageLocationName,
+        BaseReferences<_$SqliteDb, $ImageLocationNamesTable, ImageLocationName>,
+      ),
+      ImageLocationName,
+      PrefetchHooks Function()
+    >;
+typedef $$ImageLocationIdsTableCreateCompanionBuilder =
+    ImageLocationIdsCompanion Function({
+      required int accountFile,
+      required int geonameId,
+      required ImageLocationType type,
+      Value<int> rowid,
+    });
+typedef $$ImageLocationIdsTableUpdateCompanionBuilder =
+    ImageLocationIdsCompanion Function({
+      Value<int> accountFile,
+      Value<int> geonameId,
+      Value<ImageLocationType> type,
+      Value<int> rowid,
+    });
+
+final class $$ImageLocationIdsTableReferences
+    extends
+        BaseReferences<_$SqliteDb, $ImageLocationIdsTable, ImageLocationId> {
+  $$ImageLocationIdsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AccountFilesTable _accountFileTable(_$SqliteDb db) =>
+      db.accountFiles.createAlias(
+        $_aliasNameGenerator(
+          db.imageLocationIds.accountFile,
+          db.accountFiles.rowId,
+        ),
+      );
+
+  $$AccountFilesTableProcessedTableManager get accountFile {
+    final $_column = $_itemColumn<int>('account_file')!;
+
+    final manager = $$AccountFilesTableTableManager(
+      $_db,
+      $_db.accountFiles,
+    ).filter((f) => f.rowId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountFileTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ImageLocationIdsTableFilterComposer
+    extends Composer<_$SqliteDb, $ImageLocationIdsTable> {
+  $$ImageLocationIdsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get geonameId => $composableBuilder(
+    column: $table.geonameId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ImageLocationType, ImageLocationType, int>
+  get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  $$AccountFilesTableFilterComposer get accountFile {
+    final $$AccountFilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountFile,
+      referencedTable: $db.accountFiles,
+      getReferencedColumn: (t) => t.rowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountFilesTableFilterComposer(
+            $db: $db,
+            $table: $db.accountFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImageLocationIdsTableOrderingComposer
+    extends Composer<_$SqliteDb, $ImageLocationIdsTable> {
+  $$ImageLocationIdsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get geonameId => $composableBuilder(
+    column: $table.geonameId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountFilesTableOrderingComposer get accountFile {
+    final $$AccountFilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountFile,
+      referencedTable: $db.accountFiles,
+      getReferencedColumn: (t) => t.rowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountFilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.accountFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImageLocationIdsTableAnnotationComposer
+    extends Composer<_$SqliteDb, $ImageLocationIdsTable> {
+  $$ImageLocationIdsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get geonameId =>
+      $composableBuilder(column: $table.geonameId, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ImageLocationType, int> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  $$AccountFilesTableAnnotationComposer get accountFile {
+    final $$AccountFilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountFile,
+      referencedTable: $db.accountFiles,
+      getReferencedColumn: (t) => t.rowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountFilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accountFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImageLocationIdsTableTableManager
+    extends
+        RootTableManager<
+          _$SqliteDb,
+          $ImageLocationIdsTable,
+          ImageLocationId,
+          $$ImageLocationIdsTableFilterComposer,
+          $$ImageLocationIdsTableOrderingComposer,
+          $$ImageLocationIdsTableAnnotationComposer,
+          $$ImageLocationIdsTableCreateCompanionBuilder,
+          $$ImageLocationIdsTableUpdateCompanionBuilder,
+          (ImageLocationId, $$ImageLocationIdsTableReferences),
+          ImageLocationId,
+          PrefetchHooks Function({bool accountFile})
+        > {
+  $$ImageLocationIdsTableTableManager(
+    _$SqliteDb db,
+    $ImageLocationIdsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImageLocationIdsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImageLocationIdsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImageLocationIdsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> accountFile = const Value.absent(),
+                Value<int> geonameId = const Value.absent(),
+                Value<ImageLocationType> type = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImageLocationIdsCompanion(
+                accountFile: accountFile,
+                geonameId: geonameId,
+                type: type,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int accountFile,
+                required int geonameId,
+                required ImageLocationType type,
+                Value<int> rowid = const Value.absent(),
+              }) => ImageLocationIdsCompanion.insert(
+                accountFile: accountFile,
+                geonameId: geonameId,
+                type: type,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ImageLocationIdsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountFile = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountFile) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountFile,
+                                referencedTable:
+                                    $$ImageLocationIdsTableReferences
+                                        ._accountFileTable(db),
+                                referencedColumn:
+                                    $$ImageLocationIdsTableReferences
+                                        ._accountFileTable(db)
+                                        .rowId,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ImageLocationIdsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SqliteDb,
+      $ImageLocationIdsTable,
+      ImageLocationId,
+      $$ImageLocationIdsTableFilterComposer,
+      $$ImageLocationIdsTableOrderingComposer,
+      $$ImageLocationIdsTableAnnotationComposer,
+      $$ImageLocationIdsTableCreateCompanionBuilder,
+      $$ImageLocationIdsTableUpdateCompanionBuilder,
+      (ImageLocationId, $$ImageLocationIdsTableReferences),
+      ImageLocationId,
+      PrefetchHooks Function({bool accountFile})
     >;
 
 class $SqliteDbManager {
@@ -15439,6 +16357,10 @@ class $SqliteDbManager {
       $$RecognizeFacesTableTableManager(_db, _db.recognizeFaces);
   $$RecognizeFaceItemsTableTableManager get recognizeFaceItems =>
       $$RecognizeFaceItemsTableTableManager(_db, _db.recognizeFaceItems);
+  $$ImageLocationNamesTableTableManager get imageLocationNames =>
+      $$ImageLocationNamesTableTableManager(_db, _db.imageLocationNames);
+  $$ImageLocationIdsTableTableManager get imageLocationIds =>
+      $$ImageLocationIdsTableTableManager(_db, _db.imageLocationIds);
 }
 
 // **************************************************************************

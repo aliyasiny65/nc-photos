@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:nc_photos/widget/image_editor/transform_toolbar.dart';
+import 'package:np_ffi_image_editor/np_ffi_image_editor.dart' as image_editor;
 import 'package:np_log/np_log.dart';
-import 'package:np_platform_image_processor/np_platform_image_processor.dart';
 import 'package:np_platform_raw_image/np_platform_raw_image.dart';
 import 'package:np_ui/np_ui.dart';
 
@@ -100,7 +100,9 @@ class _WrappedCropControllerState extends State<_WrappedCropController> {
                   return;
                 }
                 setState(() {
-                  if (_size == null) return;
+                  if (_size == null) {
+                    return;
+                  }
                   final pos = details.localPosition;
                   if (pos.dx > 0 &&
                       pos.dx < _size!.width &&
@@ -159,7 +161,9 @@ class _WrappedCropControllerState extends State<_WrappedCropController> {
                   },
                   onPanUpdate: (details) {
                     setState(() {
-                      if (_size == null) return;
+                      if (_size == null) {
+                        return;
+                      }
                       _moveTopByDy(details.delta.dy);
                       _moveLeftByDx(details.delta.dx);
                     });
@@ -180,7 +184,9 @@ class _WrappedCropControllerState extends State<_WrappedCropController> {
                   },
                   onPanUpdate: (details) {
                     setState(() {
-                      if (_size == null) return;
+                      if (_size == null) {
+                        return;
+                      }
                       _moveTopByDy(details.delta.dy);
                       _moveRightByDx(details.delta.dx);
                     });
@@ -201,7 +207,9 @@ class _WrappedCropControllerState extends State<_WrappedCropController> {
                   },
                   onPanUpdate: (details) {
                     setState(() {
-                      if (_size == null) return;
+                      if (_size == null) {
+                        return;
+                      }
                       _moveBottomByDy(details.delta.dy);
                       _moveLeftByDx(details.delta.dx);
                     });
@@ -222,7 +230,9 @@ class _WrappedCropControllerState extends State<_WrappedCropController> {
                   },
                   onPanUpdate: (details) {
                     setState(() {
-                      if (_size == null) return;
+                      if (_size == null) {
+                        return;
+                      }
                       _moveBottomByDy(details.delta.dy);
                       _moveRightByDx(details.delta.dx);
                     });
@@ -511,7 +521,7 @@ class _CropArguments implements TransformArguments {
   const _CropArguments(this.top, this.left, this.bottom, this.right);
 
   @override
-  toImageFilter() => TransformCropFilter(top, left, bottom, right);
+  image_editor.Edit toEdit() => image_editor.CropEdit(top, left, bottom, right);
 
   @override
   getToolType() => TransformToolType.crop;

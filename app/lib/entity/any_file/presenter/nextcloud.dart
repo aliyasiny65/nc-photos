@@ -3,10 +3,12 @@ import 'package:logging/logging.dart';
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/api/api_util.dart' as api_util;
 import 'package:nc_photos/cache_manager_util.dart';
+import 'package:nc_photos/controller/pref_controller.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/presenter/factory.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/file_view_util.dart';
+import 'package:nc_photos/flutter_util.dart' as flutter_util;
 import 'package:nc_photos/np_api_util.dart';
 import 'package:nc_photos/use_case/request_public_link.dart';
 import 'package:nc_photos/widget/image_viewer.dart';
@@ -93,6 +95,7 @@ class AnyFileNextcloudLargeImagePresenter
   Widget buildWidget({
     BoxFit? fit,
     Widget Function(BuildContext context, Widget child)? imageBuilder,
+    Widget Function(BuildContext context)? errorBuilder,
   }) {
     return CachedNetworkImageBuilder(
       type: CachedNetworkImageType.largeImage,
@@ -103,6 +106,44 @@ class AnyFileNextcloudLargeImagePresenter
       imageBuilder: (context, child, imageProvider) {
         return imageBuilder?.call(context, child) ?? child;
       },
+      errorWidget: errorBuilder == null
+          ? null
+          : (context, url, error) {
+              return errorBuilder.call(context);
+            },
+    ).build();
+  }
+
+  final Account account;
+
+  final AnyFileNextcloudProvider _provider;
+}
+
+class AnyFileNextcloudOriginalImagePresenter
+    implements AnyFileLargeImagePresenter {
+  AnyFileNextcloudOriginalImagePresenter(AnyFile file, {required this.account})
+    : _provider = file.provider as AnyFileNextcloudProvider;
+
+  @override
+  Widget buildWidget({
+    BoxFit? fit,
+    Widget Function(BuildContext context, Widget child)? imageBuilder,
+    Widget Function(BuildContext context)? errorBuilder,
+  }) {
+    return CachedNetworkImageBuilder(
+      type: CachedNetworkImageType.originalImage,
+      imageUrl: getViewerUrlForOriginalImageFile(account, _provider.file),
+      mime: _provider.file.fdMime,
+      account: account,
+      fit: fit,
+      imageBuilder: (context, child, imageProvider) {
+        return imageBuilder?.call(context, child) ?? child;
+      },
+      errorWidget: errorBuilder == null
+          ? null
+          : (context, url, error) {
+              return errorBuilder.call(context);
+            },
     ).build();
   }
 
@@ -113,8 +154,11 @@ class AnyFileNextcloudLargeImagePresenter
 
 class AnyFileNextcloudImageViewerPresenter
     implements AnyFileImageViewerPresenter {
-  AnyFileNextcloudImageViewerPresenter(AnyFile file, {required this.account})
-    : _provider = file.provider as AnyFileNextcloudProvider;
+  AnyFileNextcloudImageViewerPresenter(
+    AnyFile file, {
+    required this.prefController,
+    required this.account,
+  }) : _provider = file.provider as AnyFileNextcloudProvider;
 
   @override
   Widget buildWidget({
@@ -137,9 +181,10 @@ class AnyFileNextcloudImageViewerPresenter
 
   @override
   void preloadImage() {
-    RemoteImageViewer.preloadImage(account, _provider.file);
+    RemoteImageViewer.preloadImage(account, prefController, _provider.file);
   }
 
+  final PrefController? prefController;
   final Account account;
 
   final AnyFileNextcloudProvider _provider;
@@ -147,19 +192,54 @@ class AnyFileNextcloudImageViewerPresenter
 
 class AnyFileNextcloudPhotoListImagePresenter
     implements AnyFilePhotoListImagePresenter {
-  AnyFileNextcloudPhotoListImagePresenter(AnyFile file, {required this.account})
+  AnyFileNextcloudPhotoListImagePresenter(this.file, {required this.account})
     : _provider = file.provider as AnyFileNextcloudProvider;
 
   @override
-  Widget buildWidget() {
+  Widget buildWidget({
+    bool? shouldShowFavorite,
+    bool? shouldUseHero,
+    bool? isUploading,
+  }) {
     return PhotoListImage(
       account: account,
       previewUrl: NetworkRectThumbnail.imageUrlForFile(account, _provider.file),
       mime: _provider.file.fdMime,
+      isFavorite: shouldShowFavorite == true && _provider.file.fdIsFavorite,
+      heroKey: shouldUseHero == true
+          ? flutter_util.HeroTag.fromAnyFile(file)
+          : null,
     );
   }
 
+  final AnyFile file;
   final Account account;
+
+  final AnyFileNextcloudProvider _provider;
+}
+
+class AnyFileNextcloudPhotoListVideoPresenter
+    implements AnyFilePhotoListVideoPresenter {
+  AnyFileNextcloudPhotoListVideoPresenter(
+    this.file, {
+    required this.account,
+    this.onError,
+  }) : _provider = file.provider as AnyFileNextcloudProvider;
+
+  @override
+  Widget buildWidget({bool? shouldShowFavorite, bool? isUploading}) {
+    return PhotoListVideo(
+      account: account,
+      previewUrl: NetworkRectThumbnail.imageUrlForFile(account, _provider.file),
+      mime: _provider.file.fdMime,
+      isFavorite: shouldShowFavorite == true && _provider.file.fdIsFavorite,
+      onError: onError,
+    );
+  }
+
+  final AnyFile file;
+  final Account account;
+  final VoidCallback? onError;
 
   final AnyFileNextcloudProvider _provider;
 }

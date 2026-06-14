@@ -6,6 +6,7 @@ import 'package:nc_photos/mobile/platform.dart'
 import 'package:nc_photos/np_api_util.dart';
 import 'package:nc_photos/platform/download.dart';
 
+@Deprecated("Use DownloadPublicFile or DownloadInternalTempFile")
 class DownloadFile {
   /// Create a new download but don't start it yet
   ///
@@ -16,6 +17,7 @@ class DownloadFile {
     Account account,
     FileDescriptor file, {
     String? parentDir,
+    required bool isPublic,
     bool? shouldNotify,
     void Function(double progress)? onProgress,
   }) {
@@ -26,6 +28,7 @@ class DownloadFile {
       mimeType: file.fdMime,
       filename: file.filename,
       parentDir: parentDir,
+      isPublic: isPublic,
       shouldNotify: shouldNotify,
       onProgress: onProgress,
     );
@@ -34,18 +37,19 @@ class DownloadFile {
   /// Download [file]
   ///
   /// See [DownloadBuilder]
-  Future<dynamic> call(
+  Future<String> call(
     Account account,
     FileDescriptor file, {
     String? parentDir,
+    required bool isPublic,
     bool? shouldNotify,
     void Function(double progress)? onProgress,
-  }) =>
-      build(
-        account,
-        file,
-        parentDir: parentDir,
-        shouldNotify: shouldNotify,
-        onProgress: onProgress,
-      )();
+  }) => build(
+    account,
+    file,
+    parentDir: parentDir,
+    isPublic: isPublic,
+    shouldNotify: shouldNotify,
+    onProgress: onProgress,
+  )();
 }

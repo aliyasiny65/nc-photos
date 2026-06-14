@@ -1,32 +1,70 @@
 part of 'viewer_detail_pane.dart';
 
 @npLog
-class _Bloc extends Bloc<_Event, _State> {
+class _Bloc extends Bloc<_Event, _State> with BlocLogger {
   _Bloc({
     required this.c,
     required this.collectionsController,
+    required this.anyFilesController,
+    required this.prefController,
     required this.account,
-    required this.file,
+    required AnyFile initialFile,
     required this.fromCollection,
-  }) : super(_State.init()) {
+  }) : super(_State.init(file: initialFile)) {
     on<_Init>(_onInit);
     on<_SetAlbumCover>(_onSetAlbumCover);
+    on<_SetFile>(_onSetFile);
+    on<_FileUpdated>(_onFileUpdated);
+    on<_EditDateTime>(_onEditDateTime);
+    on<_EditGps>(_onEditGps);
+
+    _subscriptions.add(
+      anyFilesController.stream.listen((event) {
+        final f = event.data[initialFile.id];
+        if (f != null) {
+          add(_SetFile(f));
+        }
+      }),
+    );
+    _subscriptions.add(
+      stream.distinctBy((e) => e.file).skip(1).listen((e) {
+        add(const _FileUpdated());
+      }),
+    );
 
     add(const _Init());
   }
 
+  @override
+  Future<void> close() {
+    for (final s in _subscriptions) {
+      s.cancel();
+    }
+    return super.close();
+  }
+
+  @override
+  String get tag => _log.fullName;
+
   Future<void> _onInit(_Init ev, _Emitter emit) async {
     _log.info(ev);
+    emit(state.copyWith(isLoading: true));
     await Future.wait([
-      _initMetadata(emit),
-      _initTag(emit),
       _initCapability(emit),
+      _initTag(emit),
+      () async {
+        try {
+          await _initMetadata(emit);
+        } finally {
+          emit(state.copyWith(isLoading: false));
+        }
+      }(),
     ]);
   }
 
   Future<void> _initMetadata(_Emitter emit) async {
     final metadataGetter = AnyFileContentGetterFactory.metadata(
-      file,
+      state.file,
       c: c,
       account: account,
     );
@@ -39,6 +77,9 @@ class _Bloc extends Bloc<_Event, _State> {
     int? isoSpeedRatings;
     MapCoord? gps;
     ImageLocation? location;
+    Duration? offsetTime;
+    double? fps;
+    Duration? duration;
 
     /// Convert EXIF data to readable format
     size = await tryOrNullFN(() => metadataGetter.size);
@@ -48,7 +89,12 @@ class _Bloc extends Bloc<_Event, _State> {
       if (rawMake != null) {
         final rawModel = await metadataGetter.model;
         if (rawModel != null) {
-          return "$rawMake $rawModel";
+          // some phones also write its make to the model string
+          if (rawModel.contains(rawMake)) {
+            return rawModel;
+          } else {
+            return "$rawMake $rawModel";
+          }
         }
       }
       return null;
@@ -58,10 +104,11 @@ class _Bloc extends Bloc<_Event, _State> {
     );
     exposureTime = await tryOrNullFN(
       () async => (await metadataGetter.exposureTime)?.let((e) {
-        if (e.denominator == 1) {
-          return e.numerator.toString();
+        if (e.toDouble() >= 1) {
+          return e.toDouble().toStringAsFixedTruncated(1);
         } else {
-          return e.toString();
+          final x = e.denominator / e.numerator;
+          return "1/${x.toInt()}";
         }
       }),
     );
@@ -71,6 +118,9 @@ class _Bloc extends Bloc<_Event, _State> {
     isoSpeedRatings = await tryOrNullFN(() => metadataGetter.isoSpeedRatings);
     gps = await tryOrNullFN(() => metadataGetter.gpsCoord);
     location = await tryOrNullFN(() => metadataGetter.location);
+    offsetTime = await tryOrNullFN(() => metadataGetter.offsetTime);
+    fps = await tryOrNullFN(() => metadataGetter.fps);
+    duration = await tryOrNullFN(() => metadataGetter.duration);
 
     emit(
       state.copyWith(
@@ -83,13 +133,16 @@ class _Bloc extends Bloc<_Event, _State> {
         isoSpeedRatings: isoSpeedRatings,
         gps: gps,
         location: location,
+        offsetTime: offsetTime,
+        fps: fps,
+        duration: duration,
       ),
     );
   }
 
   Future<void> _initTag(_Emitter emit) async {
     final getter = AnyFileContentGetterFactory.tag(
-      file,
+      state.file,
       c: c,
       account: account,
     );
@@ -98,34 +151,50 @@ class _Bloc extends Bloc<_Event, _State> {
   }
 
   Future<void> _initCapability(_Emitter emit) async {
-    final capability = AnyFileWorkerFactory.capability(file);
-    final collectionAdapter = fromCollection?.let(
-      (e) => CollectionAdapter.of(c, account, e.collection),
-    );
-
+    final capability = AnyFileWorkerFactory.capability(state.file);
     var canRemoveFromAlbum =
-        collectionAdapter?.isItemRemovable(fromCollection!.item) ?? false;
+        fromCollection?.let(
+          (e) => CollectionWorkerFactory.isItemRemovable(
+            c,
+            account,
+            e.collection,
+          ).isItemRemovable(e.item),
+        ) ??
+        false;
 
     var canSetCover =
-        collectionAdapter?.isPermitted(CollectionCapability.manualCover) ??
+        fromCollection?.let(
+          (e) => CollectionWorkerFactory.isPermitted(
+            c,
+            account,
+            e.collection,
+          ).isPermitted(CollectionCapability.manualCover),
+        ) ??
         false;
     if (canSetCover) {
-      canSetCover = switch (file.provider) {
-        AnyFileNextcloudProvider _ => true,
+      canSetCover = switch (state.file.provider) {
+        AnyFileNextcloudProvider _ || AnyFileMergedProvider _ => true,
         AnyFileLocalProvider _ => false,
       };
     }
 
-    var canAddToCollection = switch (file.provider) {
-      AnyFileNextcloudProvider _ => true,
-      AnyFileLocalProvider _ => false,
-    };
+    var canAddToCollection = capability.isPermitted(
+      AnyFileCapability.collection,
+    );
 
     var canDelete = capability.isPermitted(AnyFileCapability.delete);
-    if (canDelete && collectionAdapter != null) {
+    if (canDelete && fromCollection != null) {
       canDelete =
-          collectionAdapter.isPermitted(CollectionCapability.deleteItem) &&
-          collectionAdapter.isItemDeletable(fromCollection!.item);
+          CollectionWorkerFactory.isPermitted(
+            c,
+            account,
+            fromCollection!.collection,
+          ).isPermitted(CollectionCapability.deleteItem) &&
+          CollectionWorkerFactory.isItemDeletable(
+            c,
+            account,
+            fromCollection!.collection,
+          ).isItemDeletable(fromCollection!.item);
     }
 
     emit(
@@ -135,7 +204,7 @@ class _Bloc extends Bloc<_Event, _State> {
         canAddToCollection: canAddToCollection,
         canSetAs:
             getRawPlatform() == NpPlatform.android &&
-            file_util.isSupportedImageMime(file.mime ?? ""),
+            file_util.isSupportedImageMime(state.file.mime ?? ""),
         canArchive: capability.isPermitted(AnyFileCapability.archive),
         canDelete: canDelete,
       ),
@@ -145,9 +214,9 @@ class _Bloc extends Bloc<_Event, _State> {
   Future<void> _onSetAlbumCover(_SetAlbumCover ev, _Emitter emit) async {
     assert(fromCollection != null);
     _log.info(
-      "[_onSetAlbumCover] Set '${file.displayPath}' as album cover for '${fromCollection!.collection.name}'",
+      "[_onSetAlbumCover] Set '${state.file.displayPath}' as album cover for '${fromCollection!.collection.name}'",
     );
-    final f = (file.provider as AnyFileNextcloudProvider).file;
+    final f = (state.file.provider as AnyFileNextcloudProvider).file;
     try {
       await collectionsController.edit(
         fromCollection!.collection,
@@ -167,9 +236,92 @@ class _Bloc extends Bloc<_Event, _State> {
     }
   }
 
+  void _onSetFile(_SetFile ev, _Emitter emit) {
+    _log.info(ev);
+    emit(state.copyWith(file: ev.file));
+  }
+
+  Future<void> _onFileUpdated(_FileUpdated ev, _Emitter emit) async {
+    _log.info(ev);
+    await _initMetadata(emit);
+  }
+
+  Future<void> _onEditDateTime(_EditDateTime ev, _Emitter emit) async {
+    _log.info(ev);
+    try {
+      await UpdateAnyFileMetadata(
+        c,
+        filesController: anyFilesController.filesController,
+        prefController: prefController,
+      ).setDateTimeOriginal(
+        state.file,
+        ev.value,
+        account: account,
+        onProgress: (step, progress) {
+          emit(
+            state.copyWith(
+              editMetadataProgress: _EditMetadataProgress(
+                step: step,
+                progress: progress,
+              ),
+            ),
+          );
+        },
+        onBackedUp: (backupFilename) {
+          emit(state.copyWith(editBackupFilename: Unique(backupFilename)));
+        },
+      );
+      emit(state.copyWith(editMetadataProgress: null));
+    } catch (e, stackTrace) {
+      _log.severe(
+        "[_onEditDateTime] Failed while setDateTimeOriginal",
+        e,
+        stackTrace,
+      );
+      emit(state.copyWith(editMetadataProgress: null));
+      emit(state.copyWith(error: ExceptionEvent(e, stackTrace)));
+    }
+  }
+
+  Future<void> _onEditGps(_EditGps ev, _Emitter emit) async {
+    _log.info(ev);
+    try {
+      await UpdateAnyFileMetadata(
+        c,
+        filesController: anyFilesController.filesController,
+        prefController: prefController,
+      ).setGps(
+        state.file,
+        ev.value,
+        account: account,
+        onProgress: (step, progress) {
+          emit(
+            state.copyWith(
+              editMetadataProgress: _EditMetadataProgress(
+                step: step,
+                progress: progress,
+              ),
+            ),
+          );
+        },
+        onBackedUp: (backupFilename) {
+          emit(state.copyWith(editBackupFilename: Unique(backupFilename)));
+        },
+      );
+      emit(state.copyWith(editMetadataProgress: null));
+    } catch (e, stackTrace) {
+      _log.severe("[_onEditGps] Failed while setGps", e, stackTrace);
+      emit(state.copyWith(editMetadataProgress: null));
+      emit(state.copyWith(error: ExceptionEvent(e, stackTrace)));
+    }
+  }
+
   final DiContainer c;
   final CollectionsController collectionsController;
+  final AnyFilesController anyFilesController;
+  final PrefController prefController;
   final Account account;
-  final AnyFile file;
   final ViewerSingleCollectionData? fromCollection;
+
+  final _subscriptions = <StreamSubscription>[];
 }

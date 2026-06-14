@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:nc_photos/app_localizations.dart';
 import 'package:nc_photos/widget/image_editor/toolbar_button.dart';
-import 'package:np_platform_image_processor/np_platform_image_processor.dart';
+import 'package:np_ffi_image_editor/np_ffi_image_editor.dart' as image_editor;
 
 enum TransformToolType { crop, orientation }
 
 abstract class TransformArguments {
-  ImageFilter? toImageFilter();
+  image_editor.Edit? toEdit();
 
   TransformToolType getToolType();
 }
@@ -76,8 +76,9 @@ class _TransformToolbarState extends State<TransformToolbar> {
                 label: L10n.global().imageEditTransformCrop,
                 onPressed: _onCropPressed,
                 isSelected: _selectedFilter == TransformToolType.crop,
-                activationOrder:
-                    _filters.containsKey(TransformToolType.crop) ? -1 : null,
+                activationOrder: _filters.containsKey(TransformToolType.crop)
+                    ? -1
+                    : null,
               ),
               ToolbarButton(
                 icon: Icons.rotate_90_degrees_ccw_outlined,
@@ -86,8 +87,8 @@ class _TransformToolbarState extends State<TransformToolbar> {
                 isSelected: _selectedFilter == TransformToolType.orientation,
                 activationOrder:
                     _filters.containsKey(TransformToolType.orientation)
-                        ? -1
-                        : null,
+                    ? -1
+                    : null,
               ),
               const SizedBox(width: 16),
             ],
@@ -165,12 +166,14 @@ class _TransformToolbarState extends State<TransformToolbar> {
   }
 
   void _onFilterPressed(TransformToolType type, TransformArguments defArgs) {
+    var isChanged = false;
     if (_selectedFilter == type) {
       // deactivate filter
       setState(() {
         _selectedFilter = null;
         _filters.remove(type);
       });
+      isChanged = true;
       if (type == TransformToolType.crop) {
         widget.isCropModeChanged(false);
         widget.onCropToolDeactivated();
@@ -181,13 +184,18 @@ class _TransformToolbarState extends State<TransformToolbar> {
       }
       setState(() {
         _selectedFilter = type;
-        _filters[type] ??= defArgs;
+        if (!_filters.containsKey(type)) {
+          _filters[type] = defArgs;
+          isChanged = true;
+        }
       });
       if (type == TransformToolType.crop) {
         widget.isCropModeChanged(true);
       }
     }
-    _notifyFiltersChanged();
+    if (isChanged) {
+      _notifyFiltersChanged();
+    }
   }
 
   void _onCropPressed() =>
@@ -218,7 +226,7 @@ class _DummyCropArguments implements TransformArguments {
   const _DummyCropArguments();
 
   @override
-  toImageFilter() => null;
+  image_editor.Edit? toEdit() => null;
 
   @override
   getToolType() => TransformToolType.crop;
@@ -228,7 +236,7 @@ class _OrientationArguments implements TransformArguments {
   const _OrientationArguments(this.value);
 
   @override
-  toImageFilter() => TransformOrientationFilter(value);
+  image_editor.Edit toEdit() => image_editor.OrientationEdit(value);
 
   @override
   getToolType() => TransformToolType.orientation;
@@ -255,10 +263,9 @@ class _OrientationButton extends StatelessWidget {
             onTap: onPressed,
             child: Container(
               decoration: BoxDecoration(
-                color:
-                    isSelected
-                        ? Theme.of(context).colorScheme.secondaryContainer
-                        : null,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.secondaryContainer
+                    : null,
                 // borderRadius: const BorderRadius.all(Radius.circular(24)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -267,10 +274,9 @@ class _OrientationButton extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color:
-                      isSelected
-                          ? Theme.of(context).colorScheme.onSecondaryContainer
-                          : Theme.of(context).colorScheme.onSurface,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.onSecondaryContainer
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),

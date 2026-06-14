@@ -132,6 +132,11 @@ extension on Pref {
     }
   }
 
+  bool? isSaveEditResultToServer() =>
+      provider.getBool(PrefKey.saveEditResultToServer);
+  Future<bool> setSaveEditResultToServer(bool value) =>
+      provider.setBool(PrefKey.saveEditResultToServer, value);
+
   PrefMapDefaultRangeType? getMapDefaultRangeType() => provider
       .getInt(PrefKey.mapDefaultRangeType)
       ?.let(PrefMapDefaultRangeType.fromValue);
@@ -162,11 +167,10 @@ extension on Pref {
   Future<bool> setSlideshowReverse(bool value) =>
       provider.setBool(PrefKey.isSlideshowReverse, value);
 
-  List<ViewerAppBarButtonType>? getViewerAppBarButtons() =>
-      provider
-          .getIntList(PrefKey.viewerAppBarButtons)
-          ?.map(ViewerAppBarButtonType.fromValue)
-          .toList();
+  List<ViewerAppBarButtonType>? getViewerAppBarButtons() => provider
+      .getIntList(PrefKey.viewerAppBarButtons)
+      ?.map(ViewerAppBarButtonType.fromValue)
+      .toList();
   Future<bool> setViewerAppBarButtons(List<ViewerAppBarButtonType>? value) {
     if (value == null) {
       return provider.remove(PrefKey.viewerAppBarButtons);
@@ -178,11 +182,10 @@ extension on Pref {
     }
   }
 
-  List<ViewerAppBarButtonType>? getViewerBottomAppBarButtons() =>
-      provider
-          .getIntList(PrefKey.viewerBottomAppBarButtons)
-          ?.map(ViewerAppBarButtonType.fromValue)
-          .toList();
+  List<ViewerAppBarButtonType>? getViewerBottomAppBarButtons() => provider
+      .getIntList(PrefKey.viewerBottomAppBarButtons)
+      ?.map(ViewerAppBarButtonType.fromValue)
+      .toList();
   Future<bool> setViewerBottomAppBarButtons(
     List<ViewerAppBarButtonType>? value,
   ) {
@@ -214,6 +217,50 @@ extension on Pref {
   List<String>? getLocalDirs() => provider.getStringList(PrefKey.localDirs);
   Future<bool> setLocalDirs(List<String> value) =>
       provider.setStringList(PrefKey.localDirs, value);
+
+  bool? isEnableUploadConvert() =>
+      provider.getBool(PrefKey.isEnableUploadConvert);
+  Future<bool> setEnableUploadConvert(bool value) =>
+      provider.setBool(PrefKey.isEnableUploadConvert, value);
+
+  ConvertFormat? getUploadConvertFormat() =>
+      provider.getInt(PrefKey.uploadConvertFormat)?.let(ConvertFormat.tryParse);
+  Future<bool> setUploadConvertFormat(ConvertFormat value) =>
+      provider.setInt(PrefKey.uploadConvertFormat, value.value);
+
+  int? getUploadConvertQuality() =>
+      provider.getInt(PrefKey.uploadConvertQuality);
+  Future<bool> setUploadConvertQuality(int value) =>
+      provider.setInt(PrefKey.uploadConvertQuality, value);
+
+  double? getUploadConvertDownsizeMp() =>
+      provider.getDouble(PrefKey.uploadConvertDownsizeMp);
+  Future<bool> setUploadConvertDownsizeMp(double? value) {
+    if (value == null) {
+      return provider.remove(PrefKey.uploadConvertDownsizeMp);
+    } else {
+      return provider.setDouble(PrefKey.uploadConvertDownsizeMp, value);
+    }
+  }
+
+  bool? isShowUploadConvertWarning() =>
+      provider.getBool(PrefKey.isShowUploadConvertWarning);
+  Future<bool> setShowUploadConvertWarning(bool value) =>
+      provider.setBool(PrefKey.isShowUploadConvertWarning, value);
+
+  bool? isEnableLocalFile() => provider.getBool(PrefKey.isEnableLocalFile);
+  Future<bool> setEnableLocalFile(bool value) =>
+      provider.setBool(PrefKey.isEnableLocalFile, value);
+
+  bool? isViewerUseOriginalImage() =>
+      provider.getBool(PrefKey.isViewerUseOriginalImage);
+  Future<bool> setViewerUseOriginalImage(bool value) =>
+      provider.setBool(PrefKey.isViewerUseOriginalImage, value);
+
+  bool? isBackupOnRemoteExifEdit() =>
+      provider.getBool(PrefKey.backupOnRemoteExifEdit);
+  Future<bool> setBackupOnRemoteExifEdit(bool value) =>
+      provider.setBool(PrefKey.backupOnRemoteExifEdit, value);
 }
 
 MapCoord? _tryMapCoordFromJson(dynamic json) {

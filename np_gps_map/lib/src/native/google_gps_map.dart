@@ -9,6 +9,7 @@ class GoogleGpsMap extends StatelessWidget {
   Widget build(BuildContext context) {
     final center = LatLng(location.center.latitude, location.center.longitude);
     return GoogleMap(
+      key: Key(center.toString()),
       compassEnabled: false,
       mapToolbarEnabled: false,
       rotateGesturesEnabled: false,
@@ -35,6 +36,9 @@ class GoogleGpsMap extends StatelessWidget {
       },
       onTap: (_) => onTap?.call(),
       onMapCreated: (controller) {
+        if (!context.mounted) {
+          return;
+        }
         if (Theme.of(context).brightness == Brightness.dark) {
           controller.setMapStyle(_mapStyleNight);
         }

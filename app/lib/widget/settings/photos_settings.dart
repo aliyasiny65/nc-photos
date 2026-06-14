@@ -9,8 +9,8 @@ import 'package:nc_photos/controller/account_pref_controller.dart';
 import 'package:nc_photos/controller/pref_controller.dart';
 import 'package:nc_photos/exception_event.dart';
 import 'package:nc_photos/snack_bar_manager.dart';
-import 'package:nc_photos/widget/local_root_picker/local_root_picker.dart';
 import 'package:nc_photos/widget/page_visibility_mixin.dart';
+import 'package:nc_photos/widget/settings/local_files_settings.dart';
 import 'package:np_log/np_log.dart';
 import 'package:np_ui/np_ui.dart';
 import 'package:to_string/to_string.dart';
@@ -28,12 +28,12 @@ class PhotosSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (_) => _Bloc(
-            prefController: context.read(),
-            accountPrefController:
-                context.read<AccountController>().accountPrefController,
-          ),
+      create: (_) => _Bloc(
+        prefController: context.read(),
+        accountPrefController: context
+            .read<AccountController>()
+            .accountPrefController,
+      ),
       child: const _WrappedPhotosSettings(),
     );
   }
@@ -82,15 +82,14 @@ class _WrappedPhotosSettingsState extends State<_WrappedPhotosSettings>
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const LocalRootPicker(),
+                        builder: (_) => const LocalFilesSettings(),
                       ),
                     );
                   },
                 ),
                 _BlocBuilder(
-                  buildWhen:
-                      (previous, current) =>
-                          previous.isEnableMemories != current.isEnableMemories,
+                  buildWhen: (previous, current) =>
+                      previous.isEnableMemories != current.isEnableMemories,
                   builder: (context, state) {
                     return SwitchListTile(
                       title: Text(L10n.global().settingsMemoriesTitle),
@@ -103,10 +102,9 @@ class _WrappedPhotosSettingsState extends State<_WrappedPhotosSettings>
                   },
                 ),
                 _BlocBuilder(
-                  buildWhen:
-                      (previous, current) =>
-                          previous.memoriesRange != current.memoriesRange ||
-                          previous.isEnableMemories != current.isEnableMemories,
+                  buildWhen: (previous, current) =>
+                      previous.memoriesRange != current.memoriesRange ||
+                      previous.isEnableMemories != current.isEnableMemories,
                   builder: (context, state) {
                     return ListTile(
                       title: Text(L10n.global().settingsMemoriesRangeTitle),
@@ -122,6 +120,7 @@ class _WrappedPhotosSettingsState extends State<_WrappedPhotosSettings>
                 ),
               ]),
             ),
+            const SliverSafeBottom(),
           ],
         ),
       ),
@@ -132,24 +131,23 @@ class _WrappedPhotosSettingsState extends State<_WrappedPhotosSettings>
     var memoriesRange = _bloc.state.memoriesRange;
     final result = await showDialog<bool>(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            content: _MemoriesRangeSlider(
-              initialRange: memoriesRange,
-              onChanged: (value) {
-                memoriesRange = value;
-              },
-            ),
-            contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-                child: Text(L10n.global().applyButtonLabel),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        content: _MemoriesRangeSlider(
+          initialRange: memoriesRange,
+          onChanged: (value) {
+            memoriesRange = value;
+          },
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text(L10n.global().applyButtonLabel),
           ),
+        ],
+      ),
     );
     if (!context.mounted ||
         result != true ||

@@ -13,9 +13,10 @@ class _ShareRequest {
 }
 
 class _StartSlideshowRequest {
-  const _StartSlideshowRequest({required this.afId});
+  const _StartSlideshowRequest({required this.afId, required this.fromPage});
 
   final String afId;
+  final int fromPage;
 }
 
 class _SlideshowRequest {
@@ -24,12 +25,14 @@ class _SlideshowRequest {
     required this.startIndex,
     required this.collectionId,
     required this.config,
+    required this.fromPage,
   });
 
   final List<String> afIds;
   final int startIndex;
   final String? collectionId;
   final SlideshowConfig config;
+  final int fromPage;
 }
 
 class _SetAsRequest {
@@ -41,6 +44,13 @@ class _SetAsRequest {
 
 class _UploadRequest {
   const _UploadRequest({required this.account, required this.file});
+
+  final Account account;
+  final AnyFile file;
+}
+
+class _DeleteRequest {
+  const _DeleteRequest({required this.account, required this.file});
 
   final Account account;
   final AnyFile file;

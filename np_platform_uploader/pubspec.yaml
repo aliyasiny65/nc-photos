@@ -5,20 +5,46 @@ homepage:
 publish_to: none
 
 environment:
-  sdk: ">=3.7.0 <4.0.0"
-  flutter: ">=3.29.0"
+  sdk: ">=3.10.0"
+  flutter: ">=3.38.0"
 
 dependencies:
+  copy_with:
+    git:
+      url: https://github.com/nkming2/dart-copy-with.git
+      path: copy_with
+      ref: copy_with-3.0.0
+  equatable: ^2.0.5
   flutter:
     sdk: flutter
+  np_common:
+    path: ../np_common
   np_platform_util:
     path: ../np_platform_util
   plugin_platform_interface: ^2.0.2
+  to_string:
+    git:
+      url: https://github.com/nkming2/dart-to-string.git
+      ref: to_string-3.0.0
+      path: to_string
+  uuid: ^4.5.1
 
 dev_dependencies:
-  dart_style: 3.0.1
+  build_runner: ^2.13.1
+  copy_with_build:
+    git:
+      url: https://github.com/nkming2/dart-copy-with.git
+      path: copy_with_build
+      ref: copy_with_build-3.0.1
+  dart_style: 3.1.2
   np_lints:
     path: ../np_lints
+  pigeon: ^26.1.0
+  to_string_build:
+    git:
+      url: https://github.com/nkming2/dart-to-string.git
+      ref: to_string_build-3.0.1
+      path: to_string_build
 
 flutter:
   plugin:

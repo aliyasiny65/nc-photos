@@ -4,11 +4,9 @@ part of 'viewer.dart';
 class _ViewerContentController {
   _ViewerContentController({
     required this.contentProvider,
-    required this.allFilesCount,
     required this.initialFile,
-    required this.initialIndex,
   }) {
-    _pageContentMap[initialIndex] = initialFile;
+    _pageContentMap[0] = initialFile;
   }
 
   Future<Map<int, AnyFile>> getForwardContent() async {
@@ -17,17 +15,10 @@ class _ViewerContentController {
       final from = _pageContentMap.entries.last.let(
         (e) => ViewerPositionInfo(pageIndex: e.key, originalFile: e.value),
       );
-      if (from.pageIndex >= allFilesCount - 1) {
-        _log.severe(
-          "[_getForwardContent] Trying to query beyond max count, contentEnd: ${from.pageIndex}, max: $allFilesCount",
-        );
-        return const {};
-      }
       final results = await contentProvider.getFiles(from, _fileCountPerQuery);
-      final resultMap =
-          results.files
-              .mapIndexed((i, e) => MapEntry(from.pageIndex + 1 + i, e))
-              .toMap();
+      final resultMap = results.files
+          .mapIndexed((i, e) => MapEntry(from.pageIndex + 1 + i, e))
+          .toMap();
       _log.info("[_getForwardContent] Result: $results");
       _pageContentMap.addAll(resultMap);
       return resultMap;
@@ -45,17 +36,10 @@ class _ViewerContentController {
       final from = _pageContentMap.entries.first.let(
         (e) => ViewerPositionInfo(pageIndex: e.key, originalFile: e.value),
       );
-      if (from.pageIndex == 0) {
-        _log.severe(
-          "[_getBackwardContent] Trying to query beyond max count, contentBegin: ${from.pageIndex}",
-        );
-        return const {};
-      }
       final results = await contentProvider.getFiles(from, -_fileCountPerQuery);
-      final resultMap =
-          results.files
-              .mapIndexed((i, e) => MapEntry(from.pageIndex - 1 - i, e))
-              .toMap();
+      final resultMap = results.files
+          .mapIndexed((i, e) => MapEntry(from.pageIndex - 1 - i, e))
+          .toMap();
       _log.info("[_getBackwardContent] Result: $results");
       _pageContentMap.addAll(resultMap);
       return resultMap;
@@ -68,7 +52,7 @@ class _ViewerContentController {
   }
 
   bool needQueryForward(int page) {
-    if (page > _pageContentMap.keys.last && page < allFilesCount) {
+    if (page > _pageContentMap.keys.last) {
       if (!_isQueryingForward) {
         return true;
       }
@@ -77,7 +61,7 @@ class _ViewerContentController {
   }
 
   bool needQueryBackward(int page) {
-    if (page < _pageContentMap.keys.first && page >= 0) {
+    if (page < _pageContentMap.keys.first) {
       if (!_isQueryingBackward) {
         return true;
       }
@@ -121,14 +105,16 @@ class _ViewerContentController {
     }
   }
 
+  int get firstKnownPage => _pageContentMap.keys.first;
+
+  int get lastKnownPage => _pageContentMap.keys.last;
+
   final ViewerContentProvider contentProvider;
-  final int allFilesCount;
   final AnyFile initialFile;
-  final int initialIndex;
 
   var _pageContentMap = SplayTreeMap<int, AnyFile>();
   var _isQueryingForward = false;
   var _isQueryingBackward = false;
 }
 
-const _fileCountPerQuery = 30;
+const _fileCountPerQuery = 60;

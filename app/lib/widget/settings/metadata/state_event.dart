@@ -5,8 +5,8 @@ part of '../metadata_settings.dart';
 class _State {
   const _State({
     required this.isEnable,
-    required this.isWifiOnly,
     required this.isFallback,
+    required this.isBackupOnRemoteExifEdit,
     this.error,
   });
 
@@ -14,8 +14,8 @@ class _State {
   String toString() => _$toString();
 
   final bool isEnable;
-  final bool isWifiOnly;
   final bool isFallback;
+  final bool isBackupOnRemoteExifEdit;
 
   final ExceptionEvent? error;
 }
@@ -43,8 +43,8 @@ class _SetEnable implements _Event {
 }
 
 @toString
-class _SetWifiOnly implements _Event {
-  const _SetWifiOnly(this.value);
+class _SetFallback implements _Event {
+  const _SetFallback(this.value);
 
   @override
   String toString() => _$toString();
@@ -53,8 +53,8 @@ class _SetWifiOnly implements _Event {
 }
 
 @toString
-class _SetFallback implements _Event {
-  const _SetFallback(this.value);
+class _SetBackupOnRemoteExifEdit implements _Event {
+  const _SetBackupOnRemoteExifEdit(this.value);
 
   @override
   String toString() => _$toString();

@@ -26,11 +26,8 @@ bool isSupportedVideoMime(String mime) =>
 bool isSupportedVideoFormat(FileDescriptor file) =>
     isSupportedVideoMime(file.fdMime ?? "");
 
-bool isMetadataSupportedMime(String mime) =>
-    _metadataSupportedFormatMimes.contains(mime);
-
-bool isMetadataSupportedFormat(FileDescriptor file) =>
-    isMetadataSupportedMime(file.fdMime ?? "");
+bool isSupportedEditMetadataMime(String mime) =>
+    supportedEditMetadataFormatMimes.contains(mime);
 
 bool isTrash(Account account, FileDescriptor file) =>
     file.fdPath.startsWith(api_util.getTrashbinPath(account));
@@ -115,10 +112,10 @@ bool isMissingMetadata(File file) =>
 
 DateTime getBestDateTime({
   DateTime? overrideDateTime,
-  DateTime? dateTimeOriginal,
+  DateTime? metadataDateTime,
   DateTime? lastModified,
 }) =>
-    overrideDateTime ?? dateTimeOriginal ?? lastModified ?? clock.now().toUtc();
+    overrideDateTime ?? metadataDateTime ?? lastModified ?? clock.now().toUtc();
 
 final supportedFormatMimes = [
   "image/jpeg",
@@ -133,16 +130,23 @@ final supportedFormatMimes = [
     "video/webm",
 ];
 
-final supportedImageFormatMimes =
-    supportedFormatMimes.where((f) => f.startsWith("image/")).toList();
-
-final supportedVideoFormatMimes =
-    supportedFormatMimes.where((f) => f.startsWith("video/")).toList();
-
-const _metadataSupportedFormatMimes = [
+final supportedMetadataFormatMimes = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/heic",
   "image/gif",
+  "image/jxl",
+  "video/mp4",
+  "video/quicktime",
 ];
+
+final supportedImageFormatMimes = supportedFormatMimes
+    .where((f) => f.startsWith("image/"))
+    .toList();
+
+final supportedVideoFormatMimes = supportedFormatMimes
+    .where((f) => f.startsWith("video/"))
+    .toList();
+
+final supportedEditMetadataFormatMimes = ["image/jpeg", "image/webp"];

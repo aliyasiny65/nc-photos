@@ -2,4 +2,6 @@
 <paths>
     <external-path name="downloads" path="Download"/>
     <cache-path name="previews" path="largeImageCache"/>
+    <cache-path name="shares" path="shares"/>
+    <cache-path name="imageEditor" path="image_editor"/>
 </paths>

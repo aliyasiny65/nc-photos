@@ -2,17 +2,24 @@ import 'package:logging/logging.dart';
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/entity/file.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:np_common/or_null.dart';
 import 'package:np_datetime/np_datetime.dart';
+import 'package:np_db/np_db.dart';
 import 'package:np_log/np_log.dart';
 
 part 'repo.g.dart';
 
 class FileIdWithTimestamp {
-  const FileIdWithTimestamp({required this.fileId, required this.timestamp});
+  const FileIdWithTimestamp({
+    required this.fileId,
+    required this.timestamp,
+    required this.filename,
+  });
 
   final int fileId;
   final int timestamp;
+  final String filename;
 }
 
 abstract class FileRepo2 {
@@ -27,6 +34,7 @@ abstract class FileRepo2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -65,6 +73,7 @@ class BasicFileRepo implements FileRepo2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -73,6 +82,7 @@ class BasicFileRepo implements FileRepo2 {
   }) => dataSrc.getFileDescriptors(
     account,
     shareDirPath,
+    location: location,
     timeRange: timeRange,
     isArchived: isArchived,
     isAscending: isAscending,
@@ -126,6 +136,7 @@ class CachedFileRepo implements FileRepo2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,
@@ -134,6 +145,7 @@ class CachedFileRepo implements FileRepo2 {
   }) => cacheDataSrc.getFileDescriptors(
     account,
     shareDirPath,
+    location: location,
     timeRange: timeRange,
     isArchived: isArchived,
     isAscending: isAscending,
@@ -207,6 +219,7 @@ abstract class FileDataSource2 {
   Future<List<FileDescriptor>> getFileDescriptors(
     Account account,
     String shareDirPath, {
+    DbFileQueryByLocation? location,
     TimeRange? timeRange,
     bool? isArchived,
     bool? isAscending,

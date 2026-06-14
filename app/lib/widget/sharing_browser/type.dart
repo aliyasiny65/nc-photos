@@ -1,4 +1,4 @@
-part of '../sharing_browser.dart';
+part of 'sharing_browser.dart';
 
 abstract class _Item {
   static _Item fromSharingStreamData(
@@ -41,10 +41,9 @@ class _FileShareItem implements _Item {
   String get name => shares.first.filename;
 
   @override
-  String? get sharedBy =>
-      shares.first.uidOwner == account.userId
-          ? null
-          : shares.first.displaynameOwner;
+  String? get sharedBy => shares.first.uidOwner == account.userId
+      ? null
+      : shares.first.displaynameOwner;
 
   @override
   DateTime? get sharedTime => shares.first.stime;
@@ -68,10 +67,9 @@ class _AlbumShareItem implements _Item {
   String get name => album.name;
 
   @override
-  String? get sharedBy =>
-      shares.first.uidOwner == account.userId
-          ? null
-          : shares.first.displaynameOwner;
+  String? get sharedBy => shares.first.uidOwner == account.userId
+      ? null
+      : shares.first.displaynameOwner;
 
   @override
   DateTime? get sharedTime => shares.first.stime;

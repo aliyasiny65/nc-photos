@@ -1,11 +1,16 @@
+import 'dart:io' as io;
+import 'dart:typed_data';
+
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/di_container.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/content/local.dart';
+import 'package:nc_photos/entity/any_file/content/merged.dart';
 import 'package:nc_photos/entity/any_file/content/nextcloud.dart';
-import 'package:nc_photos/entity/file.dart';
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:np_common/size.dart';
 import 'package:np_gps_map/np_gps_map.dart';
+import 'package:np_platform_raw_image/np_platform_raw_image.dart';
 
 abstract interface class AnyFileContentGetterFactory {
   /// Return the uri of this file
@@ -15,6 +20,8 @@ abstract interface class AnyFileContentGetterFactory {
         return AnyFileNextcloudUriGetter(file, account: account);
       case AnyFileLocalProvider _:
         return AnyFileLocalUriGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedUriGetter(file);
     }
   }
 
@@ -30,6 +37,41 @@ abstract interface class AnyFileContentGetterFactory {
         return AnyFileNextcloudLargePreviewUriGetter(file, account: account);
       case AnyFileLocalProvider _:
         return AnyFileLocalLargePreviewUriGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedLargePreviewUriGetter(file);
+    }
+  }
+
+  static AnyFileLocalFileUriGetter localFileUri(
+    AnyFile file, {
+    required bool isPublic,
+    required Account account,
+  }) {
+    switch (file.provider) {
+      case AnyFileNextcloudProvider _:
+        return AnyFileNextcloudLocalFileUriGetter(
+          file,
+          isPublic: isPublic,
+          account: account,
+        );
+      case AnyFileLocalProvider _:
+        return AnyFileLocalLocalFileUriGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedLocalFileUriGetter(file);
+    }
+  }
+
+  static AnyFileLocalPreviewUriGetter localPreviewUri(
+    AnyFile file, {
+    required Account account,
+  }) {
+    switch (file.provider) {
+      case AnyFileNextcloudProvider _:
+        return AnyFileNextcloudLocalPreviewUriGetter(file, account: account);
+      case AnyFileLocalProvider _:
+        return AnyFileLocalLocalPreviewUriGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedLocalPreviewUriGetter(file);
     }
   }
 
@@ -43,6 +85,8 @@ abstract interface class AnyFileContentGetterFactory {
         return AnyFileNextcloudMetadataGetter(file, c: c, account: account);
       case AnyFileLocalProvider _:
         return AnyFileLocalMetadataGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedMetadataGetter(file, c: c, account: account);
     }
   }
 
@@ -56,6 +100,41 @@ abstract interface class AnyFileContentGetterFactory {
         return AnyFileNextcloudTagGetter(file, c: c, account: account);
       case AnyFileLocalProvider _:
         return const AnyFileLocalTagGetter();
+      case AnyFileMergedProvider _:
+        return AnyFileMergedTagGetter(file, c: c, account: account);
+    }
+  }
+
+  static AnyFileBinaryBitmapGetter binaryBitmap(
+    AnyFile file, {
+    required Account account,
+  }) {
+    switch (file.provider) {
+      case AnyFileNextcloudProvider _:
+        return AnyFileNextcloudBinaryBitmapGetter(file, account: account);
+      case AnyFileLocalProvider _:
+        return AnyFileLocalBinaryBitmapGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedBinaryBitmapGetter(file);
+    }
+  }
+
+  static AnyFilePrivateFileCopyGetter privateFileCopy(
+    AnyFile file, {
+    required Account account,
+    bool isPreferRemote = false,
+  }) {
+    switch (file.provider) {
+      case AnyFileNextcloudProvider _:
+        return AnyFileNextcloudPrivateFileCopyGetter(file, account: account);
+      case AnyFileLocalProvider _:
+        return AnyFileLocalPrivateFileCopyGetter(file);
+      case AnyFileMergedProvider _:
+        return AnyFileMergedPrivateFileCopyGetter(
+          file,
+          account: account,
+          isPreferRemote: isPreferRemote,
+        );
     }
   }
 }
@@ -70,6 +149,22 @@ abstract interface class AnyFileLargePreviewUriGetter {
   ///
   /// This might be identical to [AnyFileUriGetter.get] if a preview is not
   /// available
+  Future<Uri> get();
+}
+
+abstract interface class AnyFileLocalFileUriGetter {
+  /// Return the content uri of this file, accessible locally. For remote files,
+  /// this should download the file and return the uri of the downloaded file
+  Future<Uri> get();
+}
+
+abstract interface class AnyFileLocalPreviewUriGetter {
+  /// Return the content uri of this file's preview image, accessible locally.
+  /// For remote files, this should download the file and return the uri of the
+  /// downloaded file
+  ///
+  /// This might be identical to [AnyFileLocalFileUriGetter.get] if a preview is
+  /// not available
   Future<Uri> get();
 }
 
@@ -116,6 +211,12 @@ abstract interface class AnyFileMetadataGetter {
   Future<MapCoord?> get gpsCoord;
 
   Future<ImageLocation?> get location;
+
+  Future<Duration?> get offsetTime;
+
+  Future<double?> get fps;
+
+  Future<Duration?> get duration;
 }
 
 class AnyFileTag {
@@ -128,4 +229,19 @@ class AnyFileTag {
 abstract interface class AnyFileTagGetter {
   /// Return the list of tags associated to this file
   Future<List<AnyFileTag>?> get();
+}
+
+abstract interface class AnyFileBinaryBitmapGetter {
+  /// Return the file bytes with the decoded bitmap of this file
+  Future<({Uint8List bytes, Rgba8Image bitmap})> get({
+    required int maxWidth,
+    required int maxHeight,
+    bool shouldFixOrientation = false,
+    void Function(double progress)? onProgress,
+  });
+}
+
+abstract interface class AnyFilePrivateFileCopyGetter {
+  /// Return a private local copy of this file
+  Future<io.File> get({void Function(double progress)? onProgress});
 }

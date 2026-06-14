@@ -28,6 +28,7 @@ class ApiFiles {
     required String path,
     String mime = "application/octet-stream",
     required Uint8List content,
+    void Function(double progress)? onProgress,
   }) async {
     try {
       return await _api.request(
@@ -35,6 +36,7 @@ class ApiFiles {
         path,
         header: {"Content-Type": mime},
         bodyBytes: content,
+        onSendProgress: onProgress,
       );
     } catch (e) {
       _log.severe("[put] Failed while put", e);
@@ -76,32 +78,32 @@ class ApiFiles {
     try {
       final bool hasDavNs =
           (getlastmodified != null ||
-              getetag != null ||
-              getcontenttype != null ||
-              resourcetype != null ||
-              getcontentlength != null);
+          getetag != null ||
+          getcontenttype != null ||
+          resourcetype != null ||
+          getcontentlength != null);
       final bool hasOcNs =
           (id != null ||
-              fileid != null ||
-              favorite != null ||
-              commentsHref != null ||
-              commentsCount != null ||
-              commentsUnread != null ||
-              ownerId != null ||
-              ownerDisplayName != null ||
-              shareTypes != null ||
-              checksums != null ||
-              size != null);
+          fileid != null ||
+          favorite != null ||
+          commentsHref != null ||
+          commentsCount != null ||
+          commentsUnread != null ||
+          ownerId != null ||
+          ownerDisplayName != null ||
+          shareTypes != null ||
+          checksums != null ||
+          size != null);
       final bool hasNcNs =
           (hasPreview != null ||
-              richWorkspace != null ||
-              trashbinFilename != null ||
-              trashbinOriginalLocation != null ||
-              trashbinDeletionTime != null ||
-              metadataPhotosIfd0 != null ||
-              metadataPhotosExif != null ||
-              metadataPhotosGps != null ||
-              metadataPhotosSize != null);
+          richWorkspace != null ||
+          trashbinFilename != null ||
+          trashbinOriginalLocation != null ||
+          trashbinDeletionTime != null ||
+          metadataPhotosIfd0 != null ||
+          metadataPhotosExif != null ||
+          metadataPhotosGps != null ||
+          metadataPhotosSize != null);
       if (!hasDavNs && !hasOcNs && !hasNcNs) {
         // no body
         return await _api.request("PROPFIND", path);

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:kiwi/kiwi.dart';
 import 'package:logging/logging.dart';
 import 'package:nc_photos/account.dart';
 import 'package:nc_photos/app_localizations.dart';
-import 'package:nc_photos/cache_manager_util.dart';
 import 'package:nc_photos/di_container.dart';
+import 'package:nc_photos/entity/any_file/presenter/factory.dart';
 import 'package:nc_photos/entity/file.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
 import 'package:nc_photos/entity/share.dart';
 import 'package:nc_photos/entity/share/data_source.dart';
-import 'package:nc_photos/file_view_util.dart';
 import 'package:nc_photos/k.dart' as k;
 import 'package:nc_photos/remote_storage_util.dart' as remote_storage_util;
 import 'package:nc_photos/snack_bar_manager.dart';
@@ -19,6 +19,7 @@ import 'package:nc_photos/use_case/remove.dart';
 import 'package:nc_photos/use_case/remove_share.dart';
 import 'package:nc_photos/widget/list_tile_center_leading.dart';
 import 'package:np_log/np_log.dart';
+import 'package:np_ui/np_ui.dart';
 import 'package:path/path.dart' as path_lib;
 
 part 'shared_file_viewer.g.dart';
@@ -89,19 +90,16 @@ class _SharedFileViewerState extends State<SharedFileViewer> {
                 fit: BoxFit.cover,
                 clipBehavior: Clip.hardEdge,
                 child:
-                    CachedNetworkImageBuilder(
-                      type: CachedNetworkImageType.largeImage,
-                      imageUrl: getViewerUrlForImageFile(
-                        widget.account,
-                        widget.file,
-                      ),
-                      mime: widget.file.fdMime,
+                    AnyFilePresenterFactory.largeImage(
+                      widget.file.toAnyFile(),
                       account: widget.account,
-                      errorWidget: (context, url, error) {
+                      prefController: context.read(),
+                    ).buildWidget(
+                      errorBuilder: (context) {
                         // just leave it empty
                         return Container();
                       },
-                    ).build(),
+                    ),
               ),
             ),
           ),
@@ -134,6 +132,7 @@ class _SharedFileViewerState extends State<SharedFileViewer> {
             ),
           ),
         ],
+        const SliverSafeBottom(),
       ],
     );
   }
@@ -160,15 +159,14 @@ class _SharedFileViewerState extends State<SharedFileViewer> {
             ),
           PopupMenuButton<_ItemMenuOption>(
             tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
-            itemBuilder:
-                (_) => [
-                  PopupMenuItem(
-                    value: _ItemMenuOption.unshare,
-                    child: Text(L10n.global().unshareTooltip),
-                  ),
-                ],
-            onSelected:
-                (option) => _onItemMenuOptionSelected(context, share, option),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: _ItemMenuOption.unshare,
+                child: Text(L10n.global().unshareTooltip),
+              ),
+            ],
+            onSelected: (option) =>
+                _onItemMenuOptionSelected(context, share, option),
           ),
         ],
       ),
@@ -241,27 +239,24 @@ class _SharedFileViewerState extends State<SharedFileViewer> {
   Future<bool> _askDeleteLinkShareDir() async {
     final result = await showDialog<bool>(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text(L10n.global().unshareLinkShareDirDialogTitle),
-            content: Text(L10n.global().unshareLinkShareDirDialogContent),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
-                child: Text(
-                  MaterialLocalizations.of(context).cancelButtonLabel,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-                child: Text(MaterialLocalizations.of(context).okButtonLabel),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: Text(L10n.global().unshareLinkShareDirDialogTitle),
+        content: Text(L10n.global().unshareLinkShareDirDialogContent),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text(MaterialLocalizations.of(context).okButtonLabel),
+          ),
+        ],
+      ),
     );
     return result == true;
   }

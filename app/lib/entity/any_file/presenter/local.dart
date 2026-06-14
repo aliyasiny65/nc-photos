@@ -3,7 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/presenter/factory.dart';
 import 'package:nc_photos/entity/local_file.dart';
-import 'package:nc_photos/mobile/android/content_uri_image_provider.dart';
+import 'package:nc_photos/mobile/local_media_image.dart';
 import 'package:nc_photos/widget/image_viewer.dart';
 import 'package:nc_photos/widget/photo_list_item.dart';
 import 'package:np_log/np_log.dart';
@@ -52,19 +52,21 @@ class AnyFileLocalLargeImagePresenter implements AnyFileLargeImagePresenter {
   Widget buildWidget({
     BoxFit? fit,
     Widget Function(BuildContext context, Widget child)? imageBuilder,
+    Widget Function(BuildContext context)? errorBuilder,
   }) {
-    if (_provider.file is LocalUriFile) {
-      final provider = ContentUriImage((_provider.file as LocalUriFile).uri);
-      return Image(
-        image: provider,
-        fit: fit,
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          return imageBuilder?.call(context, child) ?? child;
-        },
-      );
-    } else {
-      throw StateError("File type not supported");
-    }
+    final provider = LocalMediaImage(_provider.file.platformIdentifier);
+    return Image(
+      image: provider,
+      fit: fit,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        return imageBuilder?.call(context, child) ?? child;
+      },
+      errorBuilder: errorBuilder == null
+          ? null
+          : (context, error, stackTrace) {
+              return errorBuilder.call(context);
+            },
+    );
   }
 
   final AnyFileLocalProvider _provider;
@@ -82,18 +84,14 @@ class AnyFileLocalImageViewerPresenter implements AnyFileImageViewerPresenter {
     VoidCallback? onZoomStarted,
     VoidCallback? onZoomEnded,
   }) {
-    if (_provider.file is LocalUriFile) {
-      return LocalImageViewer(
-        file: _provider.file as LocalUriFile,
-        canZoom: canZoom,
-        onLoaded: onLoaded,
-        onHeightChanged: onHeightChanged,
-        onZoomStarted: onZoomStarted,
-        onZoomEnded: onZoomEnded,
-      );
-    } else {
-      throw StateError("File type not supported");
-    }
+    return LocalImageViewer(
+      file: _provider.file,
+      canZoom: canZoom,
+      onLoaded: onLoaded,
+      onHeightChanged: onHeightChanged,
+      onZoomStarted: onZoomStarted,
+      onZoomEnded: onZoomEnded,
+    );
   }
 
   @override
@@ -108,8 +106,35 @@ class AnyFileLocalPhotoListImagePresenter
     : _provider = file.provider as AnyFileLocalProvider;
 
   @override
-  Widget buildWidget() {
-    return PhotoListLocalImage(file: _provider.file);
+  Widget buildWidget({
+    bool? shouldShowFavorite,
+    bool? shouldUseHero,
+    bool? isUploading,
+  }) {
+    return PhotoListLocalImage(
+      file: _provider.file,
+      backupStatus: isUploading == true
+          ? PhotoListLocalFileBackupStatus.uploading
+          : PhotoListLocalFileBackupStatus.none,
+    );
+  }
+
+  final AnyFileLocalProvider _provider;
+}
+
+class AnyFileLocalPhotoListVideoPresenter
+    implements AnyFilePhotoListVideoPresenter {
+  AnyFileLocalPhotoListVideoPresenter(AnyFile file)
+    : _provider = file.provider as AnyFileLocalProvider;
+
+  @override
+  Widget buildWidget({bool? shouldShowFavorite, bool? isUploading}) {
+    return PhotoListLocalVideo(
+      file: _provider.file,
+      backupStatus: isUploading == true
+          ? PhotoListLocalFileBackupStatus.uploading
+          : PhotoListLocalFileBackupStatus.none,
+    );
   }
 
   final AnyFileLocalProvider _provider;

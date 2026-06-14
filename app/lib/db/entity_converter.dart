@@ -9,12 +9,14 @@ import 'package:nc_photos/entity/exif.dart';
 import 'package:nc_photos/entity/face_recognition_person.dart';
 import 'package:nc_photos/entity/file.dart';
 import 'package:nc_photos/entity/file_descriptor.dart';
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/entity/image_location/repo.dart';
 import 'package:nc_photos/entity/nc_album.dart';
 import 'package:nc_photos/entity/nc_album_item.dart';
 import 'package:nc_photos/entity/recognize_face.dart';
 import 'package:nc_photos/entity/recognize_face_item.dart';
 import 'package:nc_photos/entity/tag.dart';
+import 'package:nc_photos/entity/xmp.dart';
 import 'package:nc_photos/use_case/list_location_group.dart';
 import 'package:np_api/np_api.dart' as api;
 import 'package:np_common/object_util.dart';
@@ -53,18 +55,17 @@ abstract class DbAlbumConverter {
         "type": src.sortProviderType,
         "content": src.sortProviderContent,
       }),
-      shares:
-          src.shares.isEmpty
-              ? null
-              : src.shares
-                  .map(
-                    (e) => AlbumShare(
-                      userId: e.userId.toCi(),
-                      displayName: e.displayName,
-                      sharedAt: e.sharedAt.toUtc(),
-                    ),
-                  )
-                  .toList(),
+      shares: src.shares.isEmpty
+          ? null
+          : src.shares
+                .map(
+                  (e) => AlbumShare(
+                    userId: e.userId.toCi(),
+                    displayName: e.displayName,
+                    sharedAt: e.sharedAt.toUtc(),
+                  ),
+                )
+                .toList(),
       // replace with the original etag when this album was cached
       albumFile: albumFile.copyWith(etag: OrNull(src.fileEtag)),
       savedVersion: src.version,
@@ -173,29 +174,19 @@ abstract class DbFileConverter {
           width: s.imageWidth,
           height: s.imageHeight,
           exif: s.exif?.toJson(),
-          exifDateTimeOriginal: s.exif?.dateTimeOriginal,
+          xmp: s.xmp?.toJson(),
+          dateTime: s.dateTime,
           src: s.src.index,
         ),
       ),
-      location: src.location?.let(
-        (s) => DbLocation(
-          version: s.version,
-          name: s.name,
-          latitude: s.latitude,
-          longitude: s.longitude,
-          countryCode: s.countryCode,
-          admin1: s.admin1,
-          admin2: s.admin2,
-        ),
-      ),
-      trashData:
-          src.trashbinDeletionTime == null
-              ? null
-              : DbTrashData(
-                filename: src.trashbinFilename!,
-                originalLocation: src.trashbinOriginalLocation!,
-                deletionTime: src.trashbinDeletionTime!,
-              ),
+      location: src.location?.toDb(),
+      trashData: src.trashbinDeletionTime == null
+          ? null
+          : DbTrashData(
+              filename: src.trashbinFilename!,
+              originalLocation: src.trashbinOriginalLocation!,
+              deletionTime: src.trashbinDeletionTime!,
+            ),
     );
   }
 }
@@ -225,6 +216,7 @@ abstract class DbMetadataConverter {
       imageWidth: src.width,
       imageHeight: src.height,
       exif: src.exif?.let(Exif.fromJson),
+      xmp: src.xmp?.let(Xmp.fromJson),
       src: src.src?.let(MetadataSrc.fromValue) ?? MetadataSrc.legacy,
     );
   }
@@ -236,7 +228,8 @@ abstract class DbMetadataConverter {
       width: src.imageWidth,
       height: src.imageHeight,
       exif: src.exif?.toJson(),
-      exifDateTimeOriginal: src.exif?.dateTimeOriginal,
+      xmp: src.xmp?.toJson(),
+      dateTime: src.dateTime,
       src: src.src.index,
     );
   }
@@ -249,25 +242,37 @@ extension MetadataExtension on Metadata {
 abstract class DbImageLocationConverter {
   static ImageLocation fromDb(DbLocation src) {
     return ImageLocation(
-      version: src.version,
-      name: src.name,
+      dataRevision: src.dataRevision,
       latitude: src.latitude,
       longitude: src.longitude,
       countryCode: src.countryCode,
-      admin1: src.admin1,
-      admin2: src.admin2,
+      city: src.city?.let(
+        (e) => ImageLocationName(geonameId: e.geonameId, name: e.name),
+      ),
+      admin1: src.admin1?.let(
+        (e) => ImageLocationName(geonameId: e.geonameId, name: e.name),
+      ),
+      admin2: src.admin2?.let(
+        (e) => ImageLocationName(geonameId: e.geonameId, name: e.name),
+      ),
     );
   }
 
   static DbLocation toDb(ImageLocation src) {
     return DbLocation(
-      version: src.version,
-      name: src.name,
+      dataRevision: src.dataRevision,
       latitude: src.latitude,
       longitude: src.longitude,
       countryCode: src.countryCode,
-      admin1: src.admin1,
-      admin2: src.admin2,
+      city: src.city?.let(
+        (e) => DbLocationName(geonameId: e.geonameId, name: e.name),
+      ),
+      admin1: src.admin1?.let(
+        (e) => DbLocationName(geonameId: e.geonameId, name: e.name),
+      ),
+      admin2: src.admin2?.let(
+        (e) => DbLocationName(geonameId: e.geonameId, name: e.name),
+      ),
     );
   }
 }
@@ -279,7 +284,7 @@ extension ImageLocationExtension on ImageLocation {
 abstract class DbLocationGroupConverter {
   static LocationGroup fromDb(DbLocationGroup src) {
     return LocationGroup(
-      src.place,
+      src.name,
       src.countryCode,
       src.count,
       src.latestFileId,
@@ -324,8 +329,9 @@ abstract class DbNcAlbumConverter {
       location: src.location,
       dateStart: src.dateStart,
       dateEnd: src.dateEnd,
-      collaborators:
-          src.collaborators.map(NcAlbumCollaborator.fromJson).toList(),
+      collaborators: src.collaborators
+          .map(NcAlbumCollaborator.fromJson)
+          .toList(),
     );
   }
 

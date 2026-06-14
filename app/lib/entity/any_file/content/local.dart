@@ -1,9 +1,23 @@
+import 'dart:async';
+import 'dart:io' as io;
+import 'dart:typed_data';
+
 import 'package:nc_photos/entity/any_file/any_file.dart';
 import 'package:nc_photos/entity/any_file/content/factory.dart';
 import 'package:nc_photos/entity/file.dart';
+import 'package:nc_photos/entity/file_util.dart' as file_util;
+import 'package:nc_photos/entity/image_location/image_location.dart';
 import 'package:nc_photos/entity/local_file.dart';
+import 'package:nc_photos/geocoder_util.dart';
+import 'package:nc_photos/use_case/load_metadata.dart';
 import 'package:np_common/size.dart';
+import 'package:np_exiv2/np_exiv2.dart';
+import 'package:np_geocoder/np_geocoder.dart';
 import 'package:np_gps_map/np_gps_map.dart';
+import 'package:np_platform_local_media/np_platform_local_media.dart';
+import 'package:np_platform_raw_image/np_platform_raw_image.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class AnyFileLocalUriGetter implements AnyFileUriGetter {
   AnyFileLocalUriGetter(AnyFile file)
@@ -32,8 +46,29 @@ class AnyFileLocalLargePreviewUriGetter
   final AnyFileLocalUriGetter _impl;
 }
 
+class AnyFileLocalLocalFileUriGetter implements AnyFileLocalFileUriGetter {
+  AnyFileLocalLocalFileUriGetter(AnyFile file)
+    : _impl = AnyFileLocalUriGetter(file);
+
+  @override
+  Future<Uri> get() => _impl.get();
+
+  final AnyFileLocalUriGetter _impl;
+}
+
+class AnyFileLocalLocalPreviewUriGetter
+    implements AnyFileLocalPreviewUriGetter {
+  AnyFileLocalLocalPreviewUriGetter(AnyFile file)
+    : _impl = AnyFileLocalUriGetter(file);
+
+  @override
+  Future<Uri> get() => _impl.get();
+
+  final AnyFileLocalUriGetter _impl;
+}
+
 class AnyFileLocalMetadataGetter implements AnyFileMetadataGetter {
-  AnyFileLocalMetadataGetter(AnyFile file)
+  AnyFileLocalMetadataGetter(this.file)
     : _provider = file.provider as AnyFileLocalProvider;
 
   @override
@@ -49,30 +84,78 @@ class AnyFileLocalMetadataGetter implements AnyFileMetadataGetter {
   Future<int?> get byteSize => Future.value(_provider.file.byteSize);
 
   @override
-  Future<String?> get make => Future.value(null);
+  Future<String?> get make => _ensureMetadata().then((e) => e?.make);
 
   @override
-  Future<String?> get model => Future.value(null);
+  Future<String?> get model => _ensureMetadata().then((e) => e?.model);
 
   @override
-  Future<AnyFileMetadataRational?> get fNumber => Future.value(null);
+  Future<AnyFileMetadataRational?> get fNumber =>
+      _ensureMetadata().then((e) => e?.exif?.fNumber?.toAnyFile());
 
   @override
-  Future<AnyFileMetadataRational?> get exposureTime => Future.value(null);
+  Future<AnyFileMetadataRational?> get exposureTime =>
+      _ensureMetadata().then((e) => e?.exif?.exposureTime?.toAnyFile());
 
   @override
-  Future<AnyFileMetadataRational?> get focalLength => Future.value(null);
+  Future<AnyFileMetadataRational?> get focalLength =>
+      _ensureMetadata().then((e) => e?.exif?.focalLength?.toAnyFile());
 
   @override
-  Future<int?> get isoSpeedRatings => Future.value(null);
+  Future<int?> get isoSpeedRatings =>
+      _ensureMetadata().then((e) => e?.exif?.isoSpeedRatings);
 
   @override
-  Future<MapCoord?> get gpsCoord => Future.value(null);
+  Future<MapCoord?> get gpsCoord => _ensureMetadata().then((e) {
+    final gps = e?.gpsCoord;
+    if (gps != null) {
+      return MapCoord(gps.lat, gps.lng);
+    } else {
+      return null;
+    }
+  });
 
   @override
-  Future<ImageLocation?> get location => Future.value(null);
+  Future<ImageLocation?> get location => gpsCoord.then((e) async {
+    if (e == null) {
+      return null;
+    }
+    final geocoder = ReverseGeocoder();
+    await geocoder.init();
+    final result = await geocoder(e.latitude, e.longitude);
+    return result?.toImageLocation();
+  });
+
+  @override
+  Future<Duration?> get offsetTime =>
+      _ensureMetadata().then((e) => e?.exif?.offsetTimeOriginal);
+
+  @override
+  Future<double?> get fps => Future.value(null);
+
+  @override
+  Future<Duration?> get duration => Future.value(null);
+
+  Future<Metadata?> _ensureMetadata() {
+    if (_metadataTask == null) {
+      _metadataTask = Completer();
+      _loadMetadata().then(_metadataTask!.complete);
+    }
+    return _metadataTask!.future;
+  }
+
+  Future<Metadata?> _loadMetadata() async {
+    if (file_util.isSupportedImageMime(file.mime ?? "")) {
+      final data = await LocalMedia.readFile(_provider.file.platformIdentifier);
+      return LoadMetadata().loadAnyfile(file, data);
+    }
+    return null;
+  }
+
+  final AnyFile file;
 
   final AnyFileLocalProvider _provider;
+  Completer<Metadata?>? _metadataTask;
 }
 
 class AnyFileLocalTagGetter implements AnyFileTagGetter {
@@ -80,4 +163,98 @@ class AnyFileLocalTagGetter implements AnyFileTagGetter {
 
   @override
   Future<List<AnyFileTag>?> get() => Future.value(null);
+}
+
+class AnyFileLocalBinaryBitmapGetter implements AnyFileBinaryBitmapGetter {
+  AnyFileLocalBinaryBitmapGetter(AnyFile file)
+    : _provider = file.provider as AnyFileLocalProvider;
+
+  @override
+  Future<({Uint8List bytes, Rgba8Image bitmap})> get({
+    required int maxWidth,
+    required int maxHeight,
+    bool shouldFixOrientation = false,
+    void Function(double progress)? onProgress,
+  }) async {
+    final bytes = await LocalMedia.readFile(_provider.file.platformIdentifier);
+    if (_provider.file is LocalUriFile) {
+      final fileUri = Uri.parse((_provider.file as LocalUriFile).uri);
+      return (
+        bytes: bytes,
+        bitmap: await ImageLoader.loadUri(
+          fileUri,
+          maxWidth,
+          maxHeight,
+          ImageLoaderResizeMethod.fit,
+          isAllowSwapSide: true,
+          shouldUpscale: false,
+          shouldFixOrientation: shouldFixOrientation,
+        ),
+      );
+    } else {
+      throw UnimplementedError();
+    }
+  }
+
+  final AnyFileLocalProvider _provider;
+}
+
+class AnyFileLocalPrivateFileCopyGetter
+    implements AnyFilePrivateFileCopyGetter {
+  AnyFileLocalPrivateFileCopyGetter(AnyFile file)
+    : _provider = file.provider as AnyFileLocalProvider;
+
+  @override
+  Future<io.File> get({void Function(double progress)? onProgress}) async {
+    if (_isInitialDownload) {
+      await _cleanUp();
+      _isInitialDownload = false;
+    }
+
+    if (_provider.file.filename == null) {
+      throw StateError("Can't get filename");
+    }
+    final dst = await _createTempFile(_provider.file.filename!);
+    await LocalMedia.copyFileToPrivateDir(
+      _provider.file.platformIdentifier,
+      dstPath: dst.path,
+    );
+    return dst;
+  }
+
+  static Future<io.File> _createTempFile(String filename) async {
+    final dir = await _openTempDir();
+    final subdir = io.Directory("${dir.path}/${const Uuid().v4()}");
+    await subdir.create();
+    return io.File("${subdir.path}/$filename");
+  }
+
+  static Future<io.Directory> _openTempDir() async {
+    final root = await getTemporaryDirectory();
+    final dir = io.Directory("${root.path}/private-file-copy");
+    if (!await dir.exists()) {
+      return dir.create();
+    } else {
+      return dir;
+    }
+  }
+
+  static Future<void> _cleanUp() async {
+    final tempDir = await _openTempDir();
+    await for (final f in tempDir.list(followLinks: false)) {
+      try {
+        await f.delete(recursive: true);
+      } catch (_) {}
+    }
+  }
+
+  final AnyFileLocalProvider _provider;
+
+  static bool _isInitialDownload = true;
+}
+
+extension on Rational {
+  AnyFileMetadataRational toAnyFile() {
+    return AnyFileMetadataRational(numerator, denominator);
+  }
 }

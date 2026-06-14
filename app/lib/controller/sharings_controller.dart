@@ -132,14 +132,13 @@ class SharingsController {
     }
     _sharingStreamContorller.addWithValue(
       (value) => value.copyWith(
-        data:
-            value.data.where((e) {
-              if (e is SharingStreamShareData) {
-                return e.share.id != ev.share.id;
-              } else {
-                return true;
-              }
-            }).toList(),
+        data: value.data.where((e) {
+          if (e is SharingStreamShareData) {
+            return e.share.id != ev.share.id;
+          } else {
+            return true;
+          }
+        }).toList(),
       ),
     );
   }
@@ -151,14 +150,14 @@ class SharingsController {
     if (ev.destination.startsWith(
           remote_storage_util.getRemoteAlbumsDir(ev.account),
         ) &&
-        ev.file.path.startsWith(
+        ev.file.fdPath.startsWith(
           remote_storage_util.getRemotePendingSharedAlbumsDir(ev.account),
         )) {
       // moving from pending dir to album dir
     } else if (ev.destination.startsWith(
           remote_storage_util.getRemotePendingSharedAlbumsDir(ev.account),
         ) &&
-        ev.file.path.startsWith(
+        ev.file.fdPath.startsWith(
           remote_storage_util.getRemoteAlbumsDir(ev.account),
         )) {
       // moving from album dir to pending dir
@@ -166,7 +165,7 @@ class SharingsController {
       // unrelated file
       return;
     }
-    _log.info("[_onFileMovedEvent] ${ev.file.path} -> ${ev.destination}");
+    _log.info("[_onFileMovedEvent] ${ev.file.fdPath} -> ${ev.destination}");
     final newShares = await ListShareWithMe(_c)(
       ev.account,
       File(path: ev.destination),

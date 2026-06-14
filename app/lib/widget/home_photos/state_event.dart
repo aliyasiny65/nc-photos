@@ -1,15 +1,20 @@
-part of '../home_photos2.dart';
+part of 'home_photos.dart';
 
 @genCopyWith
 @toString
 class _State {
   const _State({
-    required this.files,
+    required this.anyFiles,
+    required this.anyFilesSummary,
     required this.isLoading,
     required this.transformedItems,
     required this.selectedItems,
+    required this.visibleDateItems,
     required this.visibleDates,
+    this.dateBarContent,
     required this.queriedDates,
+    required this.mergedCounts,
+    required this.hasRemoteData,
     required this.isEnableMemoryCollection,
     required this.memoryCollections,
     this.syncProgress,
@@ -22,15 +27,16 @@ class _State {
     this.itemPerRow,
     this.itemSize,
     required this.isScrolling,
-    required this.filesSummary,
-    required this.localFiles,
-    required this.localFilesSummary,
     this.minimapItems,
     required this.minimapYRatio,
-    this.scrollDate,
+    this.appBarPosition,
+    this.appBarPositionUpdateRequest,
+    required this.isDragging,
     required this.hasMissingVideoPreview,
     required this.shareRequest,
     required this.uploadRequest,
+    required this.uploadingFiles,
+    required this.deleteRequest,
     required this.selectedCanArchive,
     required this.selectedCanDownload,
     required this.selectedCanDelete,
@@ -45,24 +51,28 @@ class _State {
     required bool isEnableMemoryCollection,
     required int zoom,
   }) => _State(
-    files: const [],
+    anyFiles: const [],
+    anyFilesSummary: const AnyFilesSummary(items: {}),
     isLoading: false,
     transformedItems: const [],
     selectedItems: const {},
+    visibleDateItems: const {},
     visibleDates: const {},
     queriedDates: const {},
+    mergedCounts: const {},
+    hasRemoteData: false,
     isEnableMemoryCollection: isEnableMemoryCollection,
     memoryCollections: const [],
     zoom: zoom,
     finger: 0,
     isScrolling: false,
-    filesSummary: const DbFilesSummary(items: {}),
-    localFiles: const [],
-    localFilesSummary: const LocalFilesSummary(items: {}),
     minimapYRatio: 1,
+    isDragging: false,
     hasMissingVideoPreview: false,
     shareRequest: Unique(null),
     uploadRequest: Unique(null),
+    uploadingFiles: const [],
+    deleteRequest: Unique(null),
     selectedCanArchive: false,
     selectedCanDownload: false,
     selectedCanDelete: false,
@@ -75,15 +85,17 @@ class _State {
   @override
   String toString() => _$toString();
 
-  final List<FileDescriptor> files;
+  final List<AnyFile> anyFiles;
+  final AnyFilesSummary anyFilesSummary;
   final bool isLoading;
   final List<List<_Item>> transformedItems;
   final Set<_Item> selectedItems;
-  final DbFilesSummary filesSummary;
-  final List<LocalFile> localFiles;
-  final LocalFilesSummary localFilesSummary;
-  final Set<_VisibleDate> visibleDates;
+  final Set<_VisibleDate> visibleDateItems;
+  final Set<Date> visibleDates;
+  final Date? dateBarContent;
   final Set<Date> queriedDates;
+  final Map<Date, int> mergedCounts;
+  final bool hasRemoteData;
 
   final bool isEnableMemoryCollection;
   final List<Collection> memoryCollections;
@@ -102,12 +114,16 @@ class _State {
   final bool isScrolling;
   final List<_MinimapItem>? minimapItems;
   final double minimapYRatio;
-  final Date? scrollDate;
+  final Offset? appBarPosition;
+  final Unique<bool>? appBarPositionUpdateRequest;
+  final bool isDragging;
 
   final bool hasMissingVideoPreview;
 
   final Unique<_ShareRequest?> shareRequest;
   final Unique<_UploadRequest?> uploadRequest;
+  final List<AnyFile> uploadingFiles;
+  final Unique<_DeleteRequest?> deleteRequest;
 
   final bool selectedCanArchive;
   final bool selectedCanDownload;
@@ -144,20 +160,14 @@ class _RequestRefresh implements _Event {
 /// Transform the file list (e.g., filtering, sorting, etc)
 @toString
 class _TransformItems implements _Event {
-  const _TransformItems(
-    this.files,
-    this.summary,
-    this.localFiles,
-    this.localSummary,
-  );
+  const _TransformItems(this.anyFiles, this.mergedCounts, this.summary);
 
   @override
   String toString() => _$toString();
 
-  final List<FileDescriptor> files;
-  final DbFilesSummary summary;
-  final List<LocalFile> localFiles;
-  final LocalFilesSummary localSummary;
+  final List<AnyFile> anyFiles;
+  final AnyFilesSummary summary;
+  final Map<Date, int> mergedCounts;
 }
 
 @toString
@@ -180,6 +190,42 @@ class _SetSelectedItems implements _Event {
   String toString() => _$toString();
 
   final Set<_Item> items;
+}
+
+@toString
+class _SelectSection implements _Event {
+  const _SelectSection(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final Date value;
+}
+
+@toString
+class _UnselectSection implements _Event {
+  const _UnselectSection(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final Date value;
+}
+
+@toString
+class _SelectedItemsUpdated implements _Event {
+  const _SelectedItemsUpdated();
+
+  @override
+  String toString() => _$toString();
+}
+
+@toString
+class _SelectionModeUpdated implements _Event {
+  const _SelectionModeUpdated();
+
+  @override
+  String toString() => _$toString();
 }
 
 @toString
@@ -209,6 +255,17 @@ class _DeleteSelectedItems implements _Event {
 }
 
 @toString
+class _DeleteItemsWithHint implements _Event {
+  const _DeleteItemsWithHint({required this.files, required this.hint});
+
+  @override
+  String toString() => _$toString();
+
+  final List<AnyFile> files;
+  final AnyFileRemoveHint hint;
+}
+
+@toString
 class _DownloadSelectedItems implements _Event {
   const _DownloadSelectedItems();
 
@@ -230,6 +287,28 @@ class _UploadSelectedItems implements _Event {
 
   @override
   String toString() => _$toString();
+}
+
+@toString
+class _UploadRequestResult implements _Event {
+  const _UploadRequestResult({required this.request, required this.config});
+
+  @override
+  String toString() => _$toString();
+
+  final _UploadRequest request;
+  final UploadConfig config;
+}
+
+@toString
+class _SetFileUploadResult implements _Event {
+  const _SetFileUploadResult(this.file, this.isSuccess);
+
+  @override
+  String toString() => _$toString();
+
+  final AnyFile file;
+  final bool isSuccess;
 }
 
 @toString
@@ -315,6 +394,16 @@ class _EndScrolling implements _Event {
 }
 
 @toString
+class _SetIsDragging implements _Event {
+  const _SetIsDragging(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final bool value;
+}
+
+@toString
 class _SetLayoutConstraint implements _Event {
   const _SetLayoutConstraint(
     this.viewWidth,
@@ -339,11 +428,21 @@ class _TransformMinimap implements _Event {
 }
 
 @toString
-class _UpdateScrollDate implements _Event {
-  const _UpdateScrollDate();
+class _UpdateDateBar implements _Event {
+  const _UpdateDateBar();
 
   @override
   String toString() => _$toString();
+}
+
+@toString
+class _SetAppBarPosition implements _Event {
+  const _SetAppBarPosition(this.value);
+
+  @override
+  String toString() => _$toString();
+
+  final Offset value;
 }
 
 @toString

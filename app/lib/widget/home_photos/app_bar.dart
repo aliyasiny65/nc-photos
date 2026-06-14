@@ -1,4 +1,4 @@
-part of '../home_photos2.dart';
+part of 'home_photos.dart';
 
 class _AppBar extends StatelessWidget {
   const _AppBar();
@@ -7,11 +7,10 @@ class _AppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return _BlocSelector<bool>(
       selector: (state) => state.isLoading || state.syncProgress != null,
-      builder:
-          (context, isProcessing) => HomeSliverAppBar(
-            account: context.bloc.account,
-            isShowProgressIcon: isProcessing,
-          ),
+      builder: (context, isProcessing) => HomeSliverAppBar(
+        account: context.bloc.account,
+        isShowProgressIcon: isProcessing,
+      ),
     );
   }
 }
@@ -23,38 +22,36 @@ class _SelectionAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.selectedItems != current.selectedItems ||
-              previous.selectedCanAddToCollection !=
-                  current.selectedCanAddToCollection,
-      builder:
-          (context, state) => SelectionAppBar(
-            count: state.selectedItems.length,
-            onClosePressed: () {
-              context.addEvent(const _SetSelectedItems(items: {}));
-            },
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share_outlined),
-                tooltip: L10n.global().shareTooltip,
-                onPressed: () => _onSharePressed(context),
-              ),
-              if (state.selectedCanAddToCollection)
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: L10n.global().addItemToCollectionTooltip,
-                  onPressed: () => _onAddPressed(context),
-                ),
-              if (state.selectedCanUpload)
-                IconButton(
-                  icon: const Icon(Icons.cloud_upload_outlined),
-                  tooltip: L10n.global().uploadTooltip,
-                  onPressed: () => _onUploadPressed(context),
-                ),
-              const _SelectionAppBarMenu(),
-            ],
+      buildWhen: (previous, current) =>
+          previous.selectedItems != current.selectedItems ||
+          previous.selectedCanAddToCollection !=
+              current.selectedCanAddToCollection,
+      builder: (context, state) => SelectionAppBar(
+        count: state.selectedItems.length,
+        onClosePressed: () {
+          context.addEvent(const _SetSelectedItems(items: {}));
+        },
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: L10n.global().shareTooltip,
+            onPressed: () => _onSharePressed(context),
           ),
+          if (state.selectedCanAddToCollection)
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: L10n.global().addItemToCollectionTooltip,
+              onPressed: () => _onAddPressed(context),
+            ),
+          if (state.selectedCanUpload)
+            IconButton(
+              icon: const Icon(Icons.cloud_upload_outlined),
+              tooltip: L10n.global().uploadTooltip,
+              onPressed: () => _onUploadPressed(context),
+            ),
+          const _SelectionAppBarMenu(),
+        ],
+      ),
     );
   }
 
@@ -84,52 +81,153 @@ class _SelectionAppBarMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _BlocBuilder(
-      buildWhen:
-          (previous, current) =>
-              previous.selectedCanArchive != current.selectedCanArchive ||
-              previous.selectedCanDownload != current.selectedCanDownload ||
-              previous.selectedCanDelete != current.selectedCanDelete,
-      builder:
-          (context, state) =>
-              state.selectedCanDownload ||
-                      state.selectedCanArchive ||
-                      state.selectedCanDelete
-                  ? PopupMenuButton<_SelectionMenuOption>(
-                    tooltip:
-                        MaterialLocalizations.of(context).moreButtonTooltip,
-                    itemBuilder:
-                        (context) => [
-                          if (state.selectedCanDownload)
-                            PopupMenuItem(
-                              value: _SelectionMenuOption.download,
-                              child: Text(L10n.global().downloadTooltip),
-                            ),
-                          if (state.selectedCanArchive)
-                            PopupMenuItem(
-                              value: _SelectionMenuOption.archive,
-                              child: Text(L10n.global().archiveTooltip),
-                            ),
-                          if (state.selectedCanDelete)
-                            PopupMenuItem(
-                              value: _SelectionMenuOption.delete,
-                              child: Text(L10n.global().deleteTooltip),
-                            ),
-                        ],
-                    onSelected: (option) {
-                      switch (option) {
-                        case _SelectionMenuOption.archive:
-                          context.addEvent(const _ArchiveSelectedItems());
-                          break;
-                        case _SelectionMenuOption.delete:
-                          context.addEvent(const _DeleteSelectedItems());
-                          break;
-                        case _SelectionMenuOption.download:
-                          context.addEvent(const _DownloadSelectedItems());
-                          break;
-                      }
-                    },
-                  )
-                  : const SizedBox.shrink(),
+      buildWhen: (previous, current) =>
+          previous.selectedCanArchive != current.selectedCanArchive ||
+          previous.selectedCanDownload != current.selectedCanDownload ||
+          previous.selectedCanDelete != current.selectedCanDelete,
+      builder: (context, state) =>
+          state.selectedCanDownload ||
+              state.selectedCanArchive ||
+              state.selectedCanDelete
+          ? PopupMenuButton<_SelectionMenuOption>(
+              tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
+              itemBuilder: (context) => [
+                if (state.selectedCanDownload)
+                  PopupMenuItem(
+                    value: _SelectionMenuOption.download,
+                    child: Text(L10n.global().downloadTooltip),
+                  ),
+                if (state.selectedCanArchive)
+                  PopupMenuItem(
+                    value: _SelectionMenuOption.archive,
+                    child: Text(L10n.global().archiveTooltip),
+                  ),
+                if (state.selectedCanDelete)
+                  PopupMenuItem(
+                    value: _SelectionMenuOption.delete,
+                    child: Text(L10n.global().deleteTooltip),
+                  ),
+              ],
+              onSelected: (option) {
+                switch (option) {
+                  case _SelectionMenuOption.archive:
+                    context.addEvent(const _ArchiveSelectedItems());
+                    break;
+                  case _SelectionMenuOption.delete:
+                    context.addEvent(const _DeleteSelectedItems());
+                    break;
+                  case _SelectionMenuOption.download:
+                    context.addEvent(const _DownloadSelectedItems());
+                    break;
+                }
+              },
+            )
+          : const SizedBox.shrink(),
     );
   }
+}
+
+class _AppBarAnchorDelegate extends SliverPersistentHeaderDelegate {
+  const _AppBarAnchorDelegate();
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return const _AppBarAnchor();
+  }
+
+  @override
+  double get maxExtent => 0;
+
+  @override
+  double get minExtent => 0;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
+  }
+}
+
+class _AppBarAnchor extends StatefulWidget {
+  const _AppBarAnchor();
+
+  @override
+  State<StatefulWidget> createState() => _AppBarAnchorState();
+}
+
+class _AppBarAnchorState extends State<_AppBarAnchor>
+    with WidgetsBindingObserver {
+  @override
+  void dispose() {
+    _positionTimer?.cancel();
+    _positionTimer = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        _BlocListenerT(
+          selector: (state) => state.isScrolling,
+          listener: (context, isScrolling) {
+            if (isScrolling) {
+              if (!_shouldWork) {
+                _shouldWork = true;
+                _beginUpdatePosition();
+              }
+            } else {
+              _shouldWork = false;
+            }
+          },
+        ),
+        _BlocListenerT(
+          selector: (state) => state.appBarPositionUpdateRequest,
+          listener: (context, appBarPositionUpdateRequest) {
+            if (appBarPositionUpdateRequest?.value == true) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _updatePoisitonOnce();
+              });
+            }
+          },
+        ),
+      ],
+      child: SizedBox.shrink(key: _key),
+    );
+  }
+
+  void _beginUpdatePosition() {
+    _positionTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      _updatePoisitonOnce();
+      if (!_shouldWork) {
+        _positionTimer?.cancel();
+        _positionTimer = null;
+      }
+    });
+  }
+
+  void _updatePoisitonOnce() {
+    if (!mounted) {
+      return;
+    }
+    final translation = _key.currentContext
+        ?.findRenderObject()
+        ?.getTransformTo(null)
+        .getTranslation();
+    if (translation != null) {
+      final p = Offset(translation.x, translation.y);
+      if (_position != p) {
+        _position = p;
+        context.addEvent(_SetAppBarPosition(p));
+      }
+    }
+  }
+
+  final _key = GlobalKey();
+  Offset? _position;
+  Timer? _positionTimer;
+  var _shouldWork = false;
 }
